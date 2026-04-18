@@ -252,7 +252,7 @@ Verbatim capture matters: an auditor reading the gate later should see exactly w
 
 - **Phase:** plan
 - **Task:** rate-limit-headers
-- **Signed by:** charlton.ho@acme.com
+- **Signed by:** juan.delacruz@acme.com
 - **Signed at:** 2026-04-18T14:32:10Z
 - **Work-item reference:** https://linear.app/acme/issue/PROJ-1234
 
@@ -293,7 +293,7 @@ For `/deploy` and `/fix-fast`, you open the file in your editor and fill the sig
 
 - **Phase:** deploy
 - **Task:** rate-limit-headers
-- **Signed by:** charlton.ho@acme.com
+- **Signed by:** juan.delacruz@acme.com
 - **Signed at:** 2026-04-18T16:05:44Z
 - **Work-item reference:** https://linear.app/acme/issue/PROJ-1234
 
