@@ -72,6 +72,40 @@ From inside a repo that has this plugin installed:
 
 Each command refuses to run until the prior phase's gate file exists and is signed.
 
+## What the plugin generates
+
+To be clear about what Claude actually produces as you move through the phases — **this plugin generates code and tests, not just documentation**:
+
+| Artifact | Phase | Produced by | Where it lands |
+|---|---|---|---|
+| **Plan** (classification, scope, estimate, tech stack) | 1 Plan | [`plan`](skills/plan/SKILL.md) skill | `.claude/sdlc/plans/<slug>.md` |
+| **Requirements** with stable REQ IDs | 2 Analyze | [`analyze`](skills/analyze/SKILL.md) skill | `.claude/sdlc/requirements/<slug>.md` |
+| **Architecture** (app / data / platform / infra / security / test) | 3 Design | [`design`](skills/design/SKILL.md) skill (+ [`architect`](agents/architect.md) agent) | `.claude/sdlc/architecture/` |
+| **Tech specs** (API contracts, module responsibilities) | 3 Design | [`design`](skills/design/SKILL.md) skill | `.claude/sdlc/tech-specs/` |
+| **Test cases** (preconditions, steps, expected outcome, test type — tied to REQ IDs) | 3 Design | [`test-designer`](agents/test-designer.md) agent | `.claude/sdlc/test-cases/` |
+| **Production code** (the actual feature / fix implementation) | 4 Build | [`build`](skills/build/SKILL.md) skill | The repo's source tree (surgically scoped to plan-listed files) |
+| **Unit test scripts** (executable, for functions actually modified) | 4 Build | [`build`](skills/build/SKILL.md) skill | `.claude/sdlc/test-scripts/` (mirrors source tree) |
+| **Functional / integration / e2e scripts** (when design calls for them) | 4 Build | [`build`](skills/build/SKILL.md) skill | `.claude/sdlc/test-scripts/` |
+| **Test execution report** (pass/fail, coverage, defects) | 5 Test | [`test`](skills/test/SKILL.md) skill | `.claude/sdlc/test/<slug>-report.md` |
+| **Defect records** | 5 Test | [`test`](skills/test/SKILL.md) skill | Git Issues if available, else `.claude/sdlc/defects/` |
+| **Deployment record** | 6 Deploy | [`deploy`](skills/deploy/SKILL.md) skill | Ticket system or `.claude/sdlc/deployments/` |
+| **Observability config** (alerts, dashboards, runbooks) | 7 Support | [`observability`](agents/observability.md) agent | `.claude/sdlc/monitoring/` |
+| **Docs + traceability matrix + changelog** | 8 Docs | [`docs`](skills/docs/SKILL.md) skill | `.claude/sdlc/docs/`, `CHANGELOG.md` |
+
+**Key guarantees Claude follows when generating:**
+
+- **Production code is surgically scoped** — only files and functions listed in the plan are touched. Adjacent-function edits are flagged.
+- **Unit tests cover modified code only** — no coverage-padding by testing untouched code. The `modified-code-test-gate.sh` hook enforces this.
+- **Every test case traces to a REQ ID.** Every defect traces to a test case and a REQ ID.
+- **Coverage threshold** is configurable (`config/tools.json` → `coverage.threshold_percent`, default 80%) and checked in Phase 5.
+- **The plugin never deploys on its own.** `/deploy` produces a proposal; the human triggers execution.
+
+**What's not auto-generated** (still human-authored or plugin-scaffolded on request):
+
+- Load / performance test scripts beyond what the test architecture explicitly calls for
+- Test fixtures and synthetic test data (design-phase decision)
+- Richer framework scaffolding (Playwright / Cypress / k6 via a dedicated skill) — a future addition
+
 ## Providing input
 
 You can supply plans, requirements, tech specs, and other artifacts in whichever way fits your workflow. All four routes funnel into the same template shape so downstream hooks can parse them consistently.
