@@ -72,6 +72,58 @@ From inside a repo that has this plugin installed:
 
 Each command refuses to run until the prior phase's gate file exists and is signed.
 
+## Providing input
+
+You can supply plans, requirements, tech specs, and other artifacts in whichever way fits your workflow. All four routes funnel into the same template shape so downstream hooks can parse them consistently.
+
+### 1. Slash-command prompt
+
+```bash
+/plan "Add rate-limit headers to the public API"
+```
+
+The phase skill drafts the artifact at `.claude/sdlc/<folder>/<slug>.md` from your prompt. You open the file, edit in place, and sign the gate at the bottom. Fastest path for well-understood work.
+
+### 2. Conversation, then artifact
+
+Describe the work in chat — "we need to add rate-limit headers, probably on the gateway layer, concerned about cache poisoning." Claude runs the skill, drafts the artifact, and shows it back. You redirect ("scope should exclude the admin API") until it's right, then Claude writes the file. Best when the shape of the work isn't obvious yet.
+
+### 3. Pre-written artifact
+
+Drop your own artifact into the target folder before running the command:
+
+```
+.claude/sdlc/plans/rate-limit-headers.md
+.claude/sdlc/requirements/rate-limit-headers.md
+.claude/sdlc/tech-specs/rate-limit-headers.md
+```
+
+Use the shape defined in [`templates/`](templates/). The skill detects the existing file, validates its required fields, and asks about gaps rather than starting fresh. Good when your team already authors plans or RFCs in Confluence/Notion/Google Docs and wants to paste them in.
+
+### 4. Reference an external source
+
+Point Claude at a file, URL, or ticket as input:
+
+```
+/plan "use the RFC at docs/rfcs/rate-limits.md as the design input"
+/analyze "pull requirements from JIRA PROJ-123"
+```
+
+The skill reads the source, then writes the artifact in the plugin's template shape. Preserves traceability back to the original document.
+
+### The irrevocable step
+
+In every route, the **human signature on the gate file** is what advances the phase. Claude drafts; only you sign. The gate files live at `.claude/sdlc/gates/<phase>-<slug>.md` and look like this:
+
+```markdown
+## Sign-off
+- [x] Reviewed by: <your name>
+- [x] Date: 2026-04-18
+- [x] Approved to proceed to <next phase>
+```
+
+No checkmark, no next phase.
+
 ## The 8 phases
 
 | # | Phase   | Command    | Gate file                             | Produces |
