@@ -1,8 +1,5 @@
 # SDLC Plugin for Claude Code
-
-A Claude Code plugin that enforces an 8-phase SDLC workflow — **Plan → Analyze → Design → Build → Test → Deploy → Support → Docs** — with the human always in the lead.
-
-Subagents, hooks, and MCP connectors *propose*. Humans *approve*. Every phase ends at a signed gate file.
+An 8-phase SDLC gatekeeper that forces Claude Code to ask for your signature before writing a single line. Stop unprompted refactors and enforce traceablity.
 
 ## Why this exists
 
