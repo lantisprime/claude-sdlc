@@ -78,11 +78,11 @@ Per the *graceful degradation* principle, the plugin never silently skips a chec
 | **Issue tracker** | Local markdown ticket under `.claude/sdlc/tickets/`. Gate sign-off accepts `no ticket REQ-<n>` as the degraded form. |
 | **CI** | Zero impact — the plugin never triggers pipelines, only sniffs which ones exist. `ci: null` just means no reference links in artifacts. |
 | **Observability** | Platform-neutral markdown/JSON under `.claude/sdlc/monitoring/` — logging deltas, alert configs, dashboard stubs, runbook. |
-| **UX tooling** | **Hard halt for frontend tasks.** `analyze` refuses to proceed until a UX artifact is linked or written at `.claude/sdlc/architecture/ux/<task-slug>.md`. Backend-only tasks are unaffected. |
+| **UX tooling** | **Halts frontend tasks until *some* UX artifact exists** at `.claude/sdlc/architecture/ux/<task-slug>.md`. Any form works: Figma link, PDF mockups, screenshots, hand-drawn wireframes, or a written description in the markdown file itself. Backend-only tasks are unaffected. |
 | **Development-time APIs** | `api-integration` warns and offers to scaffold a mock (MSW / Prism / WireMock / typed fixture) — never silently stubs. |
 | **MCP servers (none wired)** | Each MCP-routed system falls to its next tier — Jira → local ticket, Grafana → local markdown, Figma → human-provided link or local UX artifact. |
 
-> **Sharp edge:** Figma is the only integration whose absence can block progress, and only for frontend work. Everything else degrades to local files.
+> **Sharp edge:** Frontend tasks halt until a UX artifact exists — but any form works (Figma, PDF, screenshots, wireframes, or a written description). This is the only place the plugin blocks on missing external inputs. Everything else degrades to local files.
 
 ## Quick start
 
