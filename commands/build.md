@@ -14,4 +14,6 @@ The skill coordinates with `surgical-edit`, `minimal-code`, and `security-review
 - `format-on-write` — formatter runs on every changed file
 - `secret-scan` — blocks secrets committed to the diff
 
-Produces: code + unit tests + deployment/pipeline deltas, and a Build gate file.
+Produces: code + unit tests + deployment/pipeline deltas.
+
+On completion, invoke the `gate-signoff` skill to capture the human sign-off via chat and write `.claude/sdlc/gates/build-<task-slug>.md`.

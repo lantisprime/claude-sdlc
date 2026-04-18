@@ -113,16 +113,21 @@ The skill reads the source, then writes the artifact in the plugin's template sh
 
 ### The irrevocable step
 
-In every route, the **human signature on the gate file** is what advances the phase. Claude drafts; only you sign. The gate files live at `.claude/sdlc/gates/<phase>-<slug>.md` and look like this:
+In every route, a **fresh human sign-off** is what advances the phase. Claude drafts; only you sign. There are two sign-off modes:
 
-```markdown
-## Sign-off
-- [x] Reviewed by: <your name>
-- [x] Date: 2026-04-18
-- [x] Approved to proceed to <next phase>
+**Chat sign-off** — the default for `/plan`, `/analyze`, `/design`, `/build`, `/test`, `/support`. At the end of the phase, Claude invokes the [`gate-signoff`](skills/gate-signoff/SKILL.md) skill, which prompts:
+
+```
+Phase artifact: .claude/sdlc/plans/rate-limit-headers.md — please review.
+Paste the URL of the REQ / ticket / CR you're approving against, or
+type `no ticket REQ-<n>, …` for degraded mode.
 ```
 
-No checkmark, no next phase.
+You paste e.g. `https://linear.app/acme/issue/PROJ-1234`. Claude writes the gate file with your raw acknowledgment quoted verbatim, plus an ISO-8601 timestamp. A bare `yes` / `ok` / `lgtm` is rejected — the URL (or REQ-ID list) is the non-trivial acknowledgment that makes the signature auditable.
+
+**Manual sign-off** — required for `/deploy` and `/fix-fast`. Deploy has blast radius; fix-fast bundles three phases into one mini-gate. Both cases force you to open the gate file and edit it yourself — Claude will not capture the signature via chat.
+
+No sign-off, no next phase.
 
 ## The 8 phases
 
@@ -201,7 +206,7 @@ Details in [`docs/SDLC.md`](docs/SDLC.md).
 
 ## Capabilities reference
 
-### Skills (13)
+### Skills (14)
 
 Phase skills — one per checkpoint:
 
@@ -225,6 +230,7 @@ Cross-cutting skills — triggered by context across phases:
 | [minimal-code](skills/minimal-code/SKILL.md) | Discourages speculative abstractions, unused branches, and feature creep |
 | [security-review](skills/security-review/SKILL.md) | Reviews the current diff for OWASP-class issues; runs as part of `/review` |
 | [api-integration](skills/api-integration/SKILL.md) | Verifies API spec + endpoint reachability; offers a mock if unreachable |
+| [gate-signoff](skills/gate-signoff/SKILL.md) | Captures phase sign-off via chat with a work-item URL as non-trivial acknowledgment |
 
 ### Commands (10)
 
@@ -293,7 +299,7 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 ├── .claude-plugin/plugin.json   # manifest
 ├── config/tools.example.json    # copy to tools.json and fill in
 ├── docs/SDLC.md                 # full phase reference
-├── skills/          (13)        # 8 phase skills + 5 cross-cutting
+├── skills/          (14)        # 8 phase skills + 6 cross-cutting
 ├── commands/        (10)        # one per checkpoint + /review + /fix-fast
 ├── agents/          (4)         # bounded subagents
 ├── hooks/                       # hooks.json + 9 shell scripts

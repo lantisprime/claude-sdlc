@@ -8,4 +8,6 @@ If architecture artifacts exist under `.claude/sdlc/architecture/`, the skill va
 
 When the `architect` and `test-designer` subagents are available, delegate validation and test-case generation to them in parallel.
 
-Produces: architecture bundle, tech specs, test cases tied to REQ IDs, DevOps pipeline design, and a Design gate file.
+Produces: architecture bundle, tech specs, test cases tied to REQ IDs, DevOps pipeline design.
+
+On completion, invoke the `gate-signoff` skill to capture the human sign-off via chat and write `.claude/sdlc/gates/design-<task-slug>.md`.

@@ -6,4 +6,6 @@ Invoke the `analyze` skill. Prerequisite: `.claude/sdlc/gates/plan-<task-slug>.m
 
 If the task touches a frontend surface and no UX artifact exists at `.claude/sdlc/architecture/ux/`, the skill will halt and ask for UX designs and brand guidelines before producing requirements.
 
-Produces: `.claude/sdlc/requirements/<task-slug>.md` with REQ-<n> IDs, a scope-coverage table, and an Analyze gate file.
+Produces: `.claude/sdlc/requirements/<task-slug>.md` with REQ-<n> IDs and a scope-coverage table.
+
+On completion, invoke the `gate-signoff` skill to capture the human sign-off via chat and write `.claude/sdlc/gates/analyze-<task-slug>.md`.

@@ -8,4 +8,6 @@ Defects route to Git Issues when detected; otherwise markdown (or JSON, per `con
 
 Coverage threshold defaults to 80% on modified code (configurable). UX conformance runs for frontend changes.
 
-Produces: test execution report, defect records, and a Test gate file.
+Produces: test execution report, defect records.
+
+On completion, invoke the `gate-signoff` skill to capture the human sign-off via chat and write `.claude/sdlc/gates/test-<task-slug>.md`.
