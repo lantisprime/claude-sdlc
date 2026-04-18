@@ -154,7 +154,7 @@ Details in [`docs/SDLC.md`](docs/SDLC.md).
 ├── .claude-plugin/plugin.json   # manifest
 ├── config/tools.example.json    # copy to tools.json and fill in
 ├── docs/SDLC.md                 # full phase reference
-├── skills/          (12)        # 8 phase skills + 4 cross-cutting
+├── skills/          (13)        # 8 phase skills + 5 cross-cutting
 ├── commands/        (10)        # one per checkpoint + /review + /fix-fast
 ├── agents/          (4)         # bounded subagents
 ├── hooks/                       # hooks.json + 9 shell scripts
