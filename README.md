@@ -147,6 +147,93 @@ When iterating on the plugin (or your own tuning of it), measure against these t
 
 Details in [`docs/SDLC.md`](docs/SDLC.md).
 
+## Capabilities reference
+
+### Skills (13)
+
+Phase skills — one per checkpoint:
+
+| Skill | What it does |
+|---|---|
+| [plan](skills/plan/SKILL.md) | Classifies the task, validates scope, estimates effort, locks tech stack |
+| [analyze](skills/analyze/SKILL.md) | Turns the plan into requirements with stable REQ IDs; captures UX ask for frontend work |
+| [design](skills/design/SKILL.md) | Produces architecture bundle, test architecture, and per-component tech specs |
+| [build](skills/build/SKILL.md) | Writes code + unit tests for modified code only; coordinates surgical-edit, minimal-code, security-review |
+| [test](skills/test/SKILL.md) | Runs tests, records defects, checks UX conformance |
+| [deploy](skills/deploy/SKILL.md) | Produces a deployment record; hands off to the configured deploy mechanism |
+| [support](skills/support/SKILL.md) | Wires observability — monitoring, logging, alerts, dashboards, runbooks |
+| [docs](skills/docs/SKILL.md) | Updates SDLC docs, traceability matrix, and changelog |
+
+Cross-cutting skills — triggered by context across phases:
+
+| Skill | What it does |
+|---|---|
+| [scoping](skills/scoping/SKILL.md) | Validates scope boundaries on plans and change requests |
+| [surgical-edit](skills/surgical-edit/SKILL.md) | Enforces "only touch what the plan lists"; no adjacent-function edits |
+| [minimal-code](skills/minimal-code/SKILL.md) | Discourages speculative abstractions, unused branches, and feature creep |
+| [security-review](skills/security-review/SKILL.md) | Reviews the current diff for OWASP-class issues; runs as part of `/review` |
+| [api-integration](skills/api-integration/SKILL.md) | Verifies API spec + endpoint reachability; offers a mock if unreachable |
+
+### Commands (10)
+
+| Command | Purpose |
+|---|---|
+| [/plan](commands/plan.md) | Phase 1 — scope, classify, estimate |
+| [/analyze](commands/analyze.md) | Phase 2 — requirements with REQ IDs |
+| [/design](commands/design.md) | Phase 3 — architecture + tech specs |
+| [/build](commands/build.md) | Phase 4 — code + unit tests (scoped) |
+| [/test](commands/test.md) | Phase 5 — test execution + defects |
+| [/deploy](commands/deploy.md) | Phase 6 — deployment record |
+| [/support](commands/support.md) | Phase 7 — observability wiring |
+| [/docs](commands/docs.md) | Phase 8 — SDLC docs + traceability |
+| [/review](commands/review.md) | Cross-cutting diff review (correctness + security) |
+| [/fix-fast](commands/fix-fast.md) | Compressed path for small bug fixes only (≤2 files, ≤50 LOC) |
+
+### Agents (4)
+
+Bounded subagents with narrow write scope — they propose; humans approve.
+
+| Agent | Role | Write scope |
+|---|---|---|
+| [architect](agents/architect.md) | Validates architecture against requirements; proposes updates | `.claude/sdlc/architecture/` only |
+| [test-designer](agents/test-designer.md) | Generates test cases from approved REQs | `.claude/sdlc/test-cases/` only |
+| [security-reviewer](agents/security-reviewer.md) | Audits the diff against the security checklist | Read-only (proposes remediations) |
+| [observability](agents/observability.md) | Produces monitoring / alerts / runbooks | `.claude/sdlc/monitoring/` only |
+
+### Hooks (9)
+
+Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy documented above.
+
+| Hook | Event | Severity | What it does |
+|---|---|---|---|
+| [plan-gate.sh](hooks/plan-gate.sh) | PreToolUse (Edit/Write) | **Block** | Refuses edits when no plan exists for the task |
+| [work-item-validation.sh](hooks/work-item-validation.sh) | PreToolUse | **Block** | Requires a valid REQ ID, ticket, or signed CR |
+| [secret-scan.sh](hooks/secret-scan.sh) | PreToolUse | **Block** | Blocks writes containing confirmed secrets |
+| [phase-gate.sh](hooks/phase-gate.sh) | PreToolUse (commands) | **Block** | Refuses a phase command until the prior gate is signed |
+| [diff-scope-check.sh](hooks/diff-scope-check.sh) | PostToolUse | Warn | Flags edits to files outside the plan |
+| [adjacent-function-detector.sh](hooks/adjacent-function-detector.sh) | PostToolUse | Warn | Flags edits to functions adjacent to in-scope ones |
+| [modified-code-test-gate.sh](hooks/modified-code-test-gate.sh) | Stop | Warn | Flags modified code without corresponding tests |
+| [bash-safety.sh](hooks/bash-safety.sh) | PreToolUse (Bash) | Warn | Flags risky shell patterns |
+| [format-on-write.sh](hooks/format-on-write.sh) | PostToolUse | — | Runs the configured formatter on written files |
+| [env-detect.sh](hooks/env-detect.sh) | SessionStart | — | Writes `.claude/sdlc/env.json` with detected integrations |
+
+### Templates (10)
+
+Shape of the artifacts the plugin produces. Headings and fields are parsed by hooks — don't rename them without checking downstream consumers.
+
+| Template | Artifact |
+|---|---|
+| [plan.md](templates/plan.md) | Plan file under `.claude/sdlc/plans/` |
+| [requirements.md](templates/requirements.md) | Requirements with stable REQ IDs |
+| [tech-spec.md](templates/tech-spec.md) | Per-component tech spec |
+| [test-case.md](templates/test-case.md) | Test case traced to REQ IDs |
+| [ticket.md](templates/ticket.md) | Issue ticket (fallback when no ticket system detected) |
+| [change-request.md](templates/change-request.md) | Scope change with sign-off |
+| [sign-off.md](templates/sign-off.md) | Reusable sign-off block |
+| [gate.md](templates/gate.md) | Phase gate file |
+| [deployment.md](templates/deployment.md) | Deployment record |
+| [defect.md](templates/defect.md) | Defect report |
+
 ## Repo layout
 
 ```
