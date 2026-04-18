@@ -14,16 +14,6 @@ If any of that sounds like friction you don't want — this plugin is not for yo
 
 ## Core principles
 
-graph TD
-    A[User Request] --> B(Plan Phase)
-    B --> C{plan-gate.sh}
-    C -- No Plan/Signature --> D[Block: exit 2]
-    C -- Signed --> E(Analyze & Design)
-    E --> F{Human Gate: REQ ID / CR}
-    F -- Approved --> G(Build & Test)
-    G --> H[Surgical Edits Only]
-
-
 These are load-bearing. The plugin is built around them; changes that violate them usually feel like simplifications but aren't.
 
 1. **Human in the lead, always.** Subagents and hooks never advance a phase on their own.
