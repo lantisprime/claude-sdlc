@@ -13,16 +13,17 @@ For the concise overview, read [README.md](../README.md). For the authoritative 
 3. [Per-task prerequisites](#3-per-task-prerequisites)
 4. [The four input routes (how to feed the plugin)](#4-the-four-input-routes)
 5. [Sign-off: the irrevocable step](#5-sign-off-the-irrevocable-step)
-6. [Scenarios](#6-scenarios)
-    - [6.1 Greenfield feature (full 8 phases)](#61-scenario-a--greenfield-feature-full-8-phases)
-    - [6.2 Small bug fix (`/fix-fast`)](#62-scenario-b--small-bug-fix-fix-fast)
-    - [6.3 Frontend feature (UX artifact required)](#63-scenario-c--frontend-feature-ux-artifact-required)
-    - [6.4 Degraded mode (no Git, no tracker)](#64-scenario-d--degraded-mode-no-git-no-tracker)
-    - [6.5 Mid-build scope change (CR flow)](#65-scenario-e--mid-build-scope-change-cr-flow)
-    - [6.6 External API integration (mock fallback)](#66-scenario-f--external-api-integration-mock-fallback)
-    - [6.7 Pre-written plan / RFC intake](#67-scenario-g--pre-written-plan--rfc-intake)
-7. [Hook behavior reference](#7-hook-behavior-reference)
-8. [Troubleshooting](#8-troubleshooting)
+6. [Gate file anatomy](#6-gate-file-anatomy)
+7. [Scenarios](#7-scenarios)
+    - [7.1 Greenfield feature (full 8 phases)](#71-scenario-a--greenfield-feature-full-8-phases)
+    - [7.2 Small bug fix (`/fix-fast`)](#72-scenario-b--small-bug-fix-fix-fast)
+    - [7.3 Frontend feature (UX artifact required)](#73-scenario-c--frontend-feature-ux-artifact-required)
+    - [7.4 Degraded mode (no Git, no tracker)](#74-scenario-d--degraded-mode-no-git-no-tracker)
+    - [7.5 Mid-build scope change (CR flow)](#75-scenario-e--mid-build-scope-change-cr-flow)
+    - [7.6 External API integration (mock fallback)](#76-scenario-f--external-api-integration-mock-fallback)
+    - [7.7 Pre-written plan / RFC intake](#77-scenario-g--pre-written-plan--rfc-intake)
+8. [Hook behavior reference](#8-hook-behavior-reference)
+9. [Troubleshooting](#9-troubleshooting)
 
 ---
 
@@ -222,11 +223,147 @@ You open the gate file yourself and edit it. Claude will not capture the signatu
 
 ---
 
-## 6. Scenarios
+## 6. Gate file anatomy
+
+Every gate lands at `.claude/sdlc/gates/<phase>-<task-slug>.md` and follows [templates/gate.md](../templates/gate.md). Understanding the fields helps you read someone else's gate later, and explains why some validation steps exist.
+
+### Fields and where values come from
+
+| Field | Source | Who fills it |
+|---|---|---|
+| `Phase` | The command that ran (`plan`, `analyze`, …) | Plugin |
+| `Task` | Task slug derived from the plan filename | Plugin |
+| `Signed by` | User's session identity (email from Claude Code session). If unknown, the skill asks. | Plugin captures; user may supply on prompt |
+| `Signed at` | ISO-8601 UTC timestamp generated **at write time** | Plugin — **never** from user input |
+| `Work-item reference` | The URL (or `no ticket REQ-<n>, …`), **verbatim** | User's raw input |
+| `Phase summary` | One paragraph: what was done, artifacts produced, open items | Plugin drafts |
+| `Artifacts produced or updated` | File paths touched this phase | Plugin |
+| `Open items carried to next phase` | Unresolved questions, deferred work | Plugin drafts; user edits |
+| `Explicit waivers` | Any rule you chose to waive (e.g. coverage below threshold) | User — requires justification and name |
+| `Acknowledgment` | User's raw sign-off message, **quoted verbatim** | User |
+| `Confirmation` | The boilerplate line "I have reviewed…" | Template constant |
+
+Verbatim capture matters: an auditor reading the gate later should see exactly what the human said, not a paraphrase.
+
+### What a signed gate looks like (chat sign-off)
+
+```markdown
+# Phase Gate: plan-rate-limit-headers
+
+- **Phase:** plan
+- **Task:** rate-limit-headers
+- **Signed by:** charlton.ho@acme.com
+- **Signed at:** 2026-04-18T14:32:10Z
+- **Work-item reference:** https://linear.app/acme/issue/PROJ-1234
+
+## Phase summary
+
+Plan drafted for adding X-RateLimit-* response headers to the public API
+gateway. In-scope: gateway/middleware/ratelimit.go and its test file.
+Classification: feature. Estimate 120 LOC, 2 files.
+
+## Artifacts produced or updated
+
+- .claude/sdlc/plans/rate-limit-headers.md
+
+## Open items carried to next phase
+
+- Decide whether admin API gets the same headers (out-of-scope for now;
+  revisit in Analyze)
+
+## Explicit waivers (if any)
+
+- (none)
+
+## Acknowledgment
+
+> https://linear.app/acme/issue/PROJ-1234
+
+## Confirmation
+
+I have reviewed the phase outputs and approve advancing to the next phase.
+```
+
+### What a manually-signed gate looks like (deploy)
+
+For `/deploy` and `/fix-fast`, you open the file in your editor and fill the sign-off fields yourself. A well-formed deploy gate:
+
+```markdown
+# Phase Gate: deploy-rate-limit-headers
+
+- **Phase:** deploy
+- **Task:** rate-limit-headers
+- **Signed by:** charlton.ho@acme.com
+- **Signed at:** 2026-04-18T16:05:44Z
+- **Work-item reference:** https://linear.app/acme/issue/PROJ-1234
+
+## Phase summary
+
+Rolling out rate-limit headers to prod behind the
+`api.ratelimit_headers_enabled` flag, default off. Canary for 24h at
+10% traffic before full enablement.
+
+## Artifacts produced or updated
+
+- .claude/sdlc/deployments/2026-04-18-rate-limit-headers.md
+
+## Open items carried to next phase
+
+- Monitor 429 rate on the canary — dashboard link in the runbook
+
+## Explicit waivers (if any)
+
+- (none)
+
+## Acknowledgment
+
+> I have reviewed the deployment proposal, including the feature-flag
+> default-off rollback plan and the 24h canary window. Approving the
+> staging → prod push.
+
+## Confirmation
+
+I have reviewed the phase outputs and approve advancing to the next phase.
+```
+
+### Validation the plugin runs before writing
+
+Chat sign-off is not a blind write. Before the gate file is saved, the `gate-signoff` skill validates the user's input:
+
+1. **URL form.** If input looks like a URL, it must parse (scheme + host + path). Malformed URLs are rejected.
+2. **Host match (warn).** If `config/tools.json → ticket_system.host` is set, the URL's host must match. Mismatch surfaces a warning but does not block — you might be pointing at a secondary system on purpose.
+3. **Degraded form.** `no ticket REQ-<n>, …` requires at least one REQ ID, and each REQ-ID must already exist in the task's requirements artifact. A REQ ID that was never filed is rejected.
+4. **Task-slug echo.** The gate path is computed by the skill from the task slug, not from anything the user pastes — you can't redirect the file location via the acknowledgment text.
+5. **Rubber-stamp filter.** Bare `yes`, `ok`, `lgtm`, `approved`, or emoji are rejected outright.
+
+**Retry behavior:** if a check fails, the skill re-asks once with the same prompt. After a second failure, it stops and asks the human what to do — it does not guess or loosen the rule.
+
+### Downstream enforcement (why gates can't be forged)
+
+Writing a gate file is not the whole story — two hooks double-check independently, so a malformed or missing sign-off fails twice:
+
+| Hook | When | What it checks |
+|---|---|---|
+| [phase-gate.sh](../hooks/phase-gate.sh) | PreToolUse on phase commands (`/build`, `/test`, …) | Refuses the command if the prior phase's gate file is missing or malformed |
+| [work-item-validation.sh](../hooks/work-item-validation.sh) | PreToolUse on Edit/Write during Build | Refuses the edit if no valid REQ / ticket / signed CR references the file |
+
+This means even if someone hand-writes a broken gate, the next phase's first Edit still blocks. The gate is a contract, not a mere note.
+
+### Graceful degradation
+
+| Situation | Behavior |
+|---|---|
+| No `config/tools.json` or no `ticket_system` key | Skip host validation; accept any well-formed URL or `no ticket REQ-…` form |
+| User identity unknown (no session email) | Skill asks for name or email at sign-off time; records whatever is provided, verbatim |
+| Gate file write fails (permissions, disk) | Surface the error; **do not** retry silently. The human decides whether to fix the environment or record the sign-off elsewhere |
+
+---
+
+## 7. Scenarios
 
 Each scenario shows: the initial user input → what the plugin does → what it asks for → final state.
 
-### 6.1 Scenario A — Greenfield feature (full 8 phases)
+### 7.1 Scenario A — Greenfield feature (full 8 phases)
 
 **Task:** add rate-limit headers to the public API.
 
@@ -390,7 +527,7 @@ https://linear.app/acme/issue/API-4421
 
 ---
 
-### 6.2 Scenario B — Small bug fix (`/fix-fast`)
+### 7.2 Scenario B — Small bug fix (`/fix-fast`)
 
 **Task:** fix an off-by-one in pagination.
 
@@ -422,7 +559,7 @@ If any box is unchecked, run the full phases instead. The plugin does **not** wi
 
 ---
 
-### 6.3 Scenario C — Frontend feature (UX artifact required)
+### 7.3 Scenario C — Frontend feature (UX artifact required)
 
 **Task:** add a saved-searches dropdown to the header.
 
@@ -469,7 +606,7 @@ Create the file, then re-run /analyze.
 
 ---
 
-### 6.4 Scenario D — Degraded mode (no Git, no tracker)
+### 7.4 Scenario D — Degraded mode (no Git, no tracker)
 
 **Situation:** you dropped the plugin into a non-git directory (a prototype, a scratchpad) and there's no issue tracker.
 
@@ -502,7 +639,7 @@ no ticket REQ-1
 
 ---
 
-### 6.5 Scenario E — Mid-build scope change (CR flow)
+### 7.5 Scenario E — Mid-build scope change (CR flow)
 
 **Situation:** you're in Phase 4 (Build) for the rate-limit headers task. You realize the admin API also needs headers — but the admin API was explicitly **out-of-scope** in the plan.
 
@@ -531,7 +668,7 @@ Risk: moderate — admin ops may see 429s sooner
 
 ---
 
-### 6.6 Scenario F — External API integration (mock fallback)
+### 7.6 Scenario F — External API integration (mock fallback)
 
 **Task:** integrate with the payments provider's refund endpoint.
 
@@ -569,7 +706,7 @@ Pick a number, or paste a different mock command.
 
 ---
 
-### 6.7 Scenario G — Pre-written plan / RFC intake
+### 7.7 Scenario G — Pre-written plan / RFC intake
 
 **Situation:** your team already writes RFCs in Notion. You have one for the rate-limit work.
 
@@ -590,7 +727,7 @@ Same pattern works for `/analyze "pull requirements from JIRA PROJ-123"` — the
 
 ---
 
-## 7. Hook behavior reference
+## 8. Hook behavior reference
 
 You'll interact with hooks implicitly — they fire on Claude's tool calls, not yours. This table explains what to expect when something "just stops":
 
@@ -612,7 +749,7 @@ You'll interact with hooks implicitly — they fire on Claude's tool calls, not 
 
 ---
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 ### "`plan-gate.sh` keeps blocking my edits"
 
@@ -642,7 +779,7 @@ Intentional. The signature must be non-trivial — a URL, a REQ ID, or `no ticke
 
 ### "My scope keeps drifting"
 
-If `diff-scope-check.sh` fires often, your plans are too narrow. Expand the `In-scope files` list in the plan *before* the Build phase, or raise a CR if you're already mid-Build. See [Scenario E](#65-scenario-e--mid-build-scope-change-cr-flow).
+If `diff-scope-check.sh` fires often, your plans are too narrow. Expand the `In-scope files` list in the plan *before* the Build phase, or raise a CR if you're already mid-Build. See [Scenario E](#75-scenario-e--mid-build-scope-change-cr-flow).
 
 ### "I want to see token usage per phase"
 
