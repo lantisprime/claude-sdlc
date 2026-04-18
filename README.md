@@ -60,15 +60,29 @@ The plugin talks to outside systems through four channels. Availability is auto-
 | | GitHub, GitLab, Bitbucket | Detected via `git remote`; operations use the host's CLI (e.g. `gh`) or native APIs |
 | **Issue tracker** | GitHub / GitLab / Bitbucket Issues | Same transport as VCS |
 | | Jira, Linear | **MCP** (user-provided server) |
-| | *None configured* | Local markdown ticket under `.claude/sdlc/tickets/` |
 | **CI** | GitHub Actions, GitLab CI, CircleCI, Jenkins | Filesystem sniffing only; the plugin never triggers pipelines |
 | **Observability** | Grafana, Datadog | **MCP** (user-provided server) |
 | | CloudWatch | Infrastructure-as-code proposals — no direct API calls |
-| | *None configured* | Platform-neutral markdown/JSON under `.claude/sdlc/monitoring/` |
 | **UX tooling** | Figma | **MCP** (user-provided server) |
 | **Development-time APIs** | OpenAPI / GraphQL / gRPC endpoints under integration | Direct HTTP probe via the tool configured in `config/tools.json` (see [`api-integration`](skills/api-integration/SKILL.md)) |
 
 **Is MCP required?** No. MCP is used selectively for SaaS platforms without a ubiquitous CLI — Jira/Linear, Grafana/Datadog, Figma. The plugin references these connectors but does not ship or configure MCP servers; you wire those up externally in your Claude Code install. Every MCP-mediated state change is **propose-only** — no MCP tool can advance a phase or auto-apply a production change.
+
+### What happens without it
+
+Per the *graceful degradation* principle, the plugin never silently skips a check when a system is absent — it falls back to local artifacts and surfaces the gap in the phase summary.
+
+| Category | Fallback when nothing is configured or reachable |
+|---|---|
+| **VCS** | Plugin still runs. `env.json` records `vcs: null`; artifacts land locally under `.claude/sdlc/`. Work-item traceability falls back to REQ IDs or local CR files. |
+| **Issue tracker** | Local markdown ticket under `.claude/sdlc/tickets/`. Gate sign-off accepts `no ticket REQ-<n>` as the degraded form. |
+| **CI** | Zero impact — the plugin never triggers pipelines, only sniffs which ones exist. `ci: null` just means no reference links in artifacts. |
+| **Observability** | Platform-neutral markdown/JSON under `.claude/sdlc/monitoring/` — logging deltas, alert configs, dashboard stubs, runbook. |
+| **UX tooling** | **Hard halt for frontend tasks.** `analyze` refuses to proceed until a UX artifact is linked or written at `.claude/sdlc/architecture/ux/<task-slug>.md`. Backend-only tasks are unaffected. |
+| **Development-time APIs** | `api-integration` warns and offers to scaffold a mock (MSW / Prism / WireMock / typed fixture) — never silently stubs. |
+| **MCP servers (none wired)** | Each MCP-routed system falls to its next tier — Jira → local ticket, Grafana → local markdown, Figma → human-provided link or local UX artifact. |
+
+> **Sharp edge:** Figma is the only integration whose absence can block progress, and only for frontend work. Everything else degrades to local files.
 
 ## Quick start
 
