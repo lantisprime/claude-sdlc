@@ -43,5 +43,9 @@
     "_auto_values": "git | github | gitlab | bitbucket | jira | linear | null"
   },
   "artifact_format_fallback": "markdown",
-  "_artifact_format_options": "markdown | json"
+  "_artifact_format_options": "markdown | json",
+  "token_tracking": {
+    "enabled": false,
+    "_comment": "When true, the Stop hook parses the session transcript and writes raw per-phase token counts to .claude/sdlc/token-log.json and token-history.jsonl. Records input/output/cache_creation/cache_read only — no cost calculation."
+  }
 }

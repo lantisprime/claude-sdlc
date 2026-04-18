@@ -31,7 +31,8 @@
       {
         "hooks": [
           { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/modified-code-test-gate.sh" },
-          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/phase-gate.sh" }
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/phase-gate.sh" },
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/token-tracker.sh" }
         ]
       }
     ],

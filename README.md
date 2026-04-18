@@ -51,6 +51,7 @@ Every hook and skill reads from `config/tools.json`. Leave a value as `null` to 
 - `coverage.threshold_percent`
 - `artifact_format_fallback` — `markdown` or `json` when rich integrations are missing
 - `adjacent_function_detection` — `git-hunk-headers` (default) or `tree-sitter`
+- `token_tracking.enabled` — when `true`, the `Stop` hook writes per-phase raw token counts to `.claude/sdlc/token-log.json` and `token-history.jsonl` for optimizing skill/prompt cost (default `false`)
 
 ## Quick start
 
@@ -221,7 +222,9 @@ The plugin writes to `.claude/sdlc/` in the repo that *uses* the plugin — not 
 ├── defects/
 ├── deployments/
 ├── monitoring/
-└── docs/
+├── docs/
+├── token-log.json          # last-run token snapshot (when token_tracking enabled)
+└── token-history.jsonl     # rolling per-session token log
 ```
 
 ## Validation metrics
@@ -266,7 +269,7 @@ Cross-cutting skills — triggered by context across phases:
 | [api-integration](skills/api-integration/SKILL.md) | Verifies API spec + endpoint reachability; offers a mock if unreachable |
 | [gate-signoff](skills/gate-signoff/SKILL.md) | Captures phase sign-off via chat with a work-item URL as non-trivial acknowledgment |
 
-### Commands (10)
+### Commands (11)
 
 | Command | Purpose |
 |---|---|
@@ -280,6 +283,7 @@ Cross-cutting skills — triggered by context across phases:
 | [/docs](commands/docs.md) | Phase 8 — SDLC docs + traceability |
 | [/review](commands/review.md) | Cross-cutting diff review (correctness + security) |
 | [/fix-fast](commands/fix-fast.md) | Compressed path for small bug fixes only (≤2 files, ≤50 LOC) |
+| [/token-review](commands/token-review.md) | Analyze per-phase token usage from the tracking log; surface optimization candidates |
 
 ### Agents (4)
 
@@ -292,7 +296,7 @@ Bounded subagents with narrow write scope — they propose; humans approve.
 | [security-reviewer](agents/security-reviewer.md) | Audits the diff against the security checklist | Read-only (proposes remediations) |
 | [observability](agents/observability.md) | Produces monitoring / alerts / runbooks | `.claude/sdlc/monitoring/` only |
 
-### Hooks (9)
+### Hooks (10)
 
 Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy documented above.
 
@@ -308,6 +312,7 @@ Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy do
 | [bash-safety.sh](hooks/bash-safety.sh) | PreToolUse (Bash) | Warn | Flags risky shell patterns |
 | [format-on-write.sh](hooks/format-on-write.sh) | PostToolUse | — | Runs the configured formatter on written files |
 | [env-detect.sh](hooks/env-detect.sh) | SessionStart | — | Writes `.claude/sdlc/env.json` with detected integrations |
+| [token-tracker.sh](hooks/token-tracker.sh) | Stop | — | Parses the session transcript; writes raw per-phase token counts to `token-log.json` / `token-history.jsonl`. Off by default; enabled via `config/tools.json` |
 
 ### Templates (10)
 
@@ -334,9 +339,9 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 ├── config/tools.example.json    # copy to tools.json and fill in
 ├── docs/SDLC.md                 # full phase reference
 ├── skills/          (14)        # 8 phase skills + 6 cross-cutting
-├── commands/        (10)        # one per checkpoint + /review + /fix-fast
+├── commands/        (11)        # one per checkpoint + /review + /fix-fast + /token-review
 ├── agents/          (4)         # bounded subagents
-├── hooks/                       # hooks.json + 9 shell scripts
+├── hooks/                       # hooks.json + 10 shell scripts
 └── templates/       (10)        # artifact templates
 ```
 
