@@ -143,7 +143,7 @@ Before you start a *task*, the plugin assumes:
 |---|---|---|
 | **A rough task description** | Always | 1–2 sentences — the `/plan` prompt |
 | **A work item reference** (REQ ID, ticket URL, or signed CR path) | Build phase and beyond | Pasted at gate sign-off; degraded mode accepts `no ticket REQ-<n>` |
-| **A UX artifact** | Frontend work only, Phase 2 onward | File at `.claude/sdlc/architecture/ux/<task-slug>.md` — a Figma link, screenshot, or written description |
+| **A UX intent file** | Frontend work only, Phase 2 onward | **A plain-text description is enough** — create `.claude/sdlc/architecture/ux/<task-slug>.md` and write what the UI should do (e.g. `Make the submit button red on hover`). Formal mockups (Figma link, screenshot, wireframe) also work but are not required. Even a tiny CSS-only task needs this file — but creating it takes 30 seconds. |
 | **API spec + reachable endpoint** *(or acknowledgment to use a mock)* | Only if the task integrates with an external API | Spec file path + base URL. If unreachable, the `api-integration` skill asks you to choose a mock runner (MSW / Prism / WireMock) |
 
 **Your commitment per task:** review the artifact at each of the 8 gates. The plugin will ask for a fresh sign-off every time. Rubber-stamping defeats the point.
@@ -400,6 +400,8 @@ This means even if someone hand-writes a broken gate, the next phase's first Edi
 
 Each scenario shows: the initial user input → what the plugin does → what it asks for → final state.
 
+> **Every scenario assumes the drafted artifact is correct before you sign.** If the plan, requirements, design, or any other artifact comes back wrong — which it will sometimes — do **not** sign it as-is. See [section 5 → Before you sign: correcting an artifact](#before-you-sign-correcting-an-artifact) for the three correction paths (ask Claude to redraft, edit the file yourself, or abort the phase). This loop is available at every `Plugin writes …` → `You sign` step below; it is omitted from the scenario walkthroughs only to keep them short.
+
 ### 7.1 Scenario A — Greenfield feature (full 8 phases)
 
 **Task:** add rate-limit headers to the public API.
@@ -577,6 +579,8 @@ https://linear.app/acme/issue/API-4421
 - [x] No schema / API / security / UX changes
 
 If any box is unchecked, run the full phases instead. The plugin does **not** widen eligibility.
+
+> **How is this enforced?** **You declare it, hooks watch for drift, there is no automatic LOC counter.** If the diff grows past 50 LOC or touches a third file, no hook blocks the commit — `diff-scope-check.sh` warns on each out-of-scope Edit, and the correct response is to abort the mini-gate and run full phases. Full mechanism in ["How the eligibility limits are actually enforced"](#how-the-eligibility-limits-are-actually-enforced) below.
 
 ---
 
