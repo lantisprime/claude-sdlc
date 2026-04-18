@@ -49,7 +49,7 @@ For the concise overview, read [README.md](../README.md). For the authoritative 
 | Issue tracker (GitHub Issues, Jira, Linear) | Local markdown tickets under `.claude/sdlc/tickets/`; gate accepts `no ticket REQ-<n>` as degraded signature |
 | CI config (GitHub Actions, GitLab CI, CircleCI, Jenkins) | Zero impact — plugin never triggers pipelines, just links them in artifacts when detected |
 | Observability platform (Grafana, Datadog, CloudWatch) | Phase 7 produces platform-neutral markdown under `.claude/sdlc/monitoring/` |
-| UX tool (Figma) **for frontend tasks only** | **Frontend tasks:** Phase 2 halts until `.claude/sdlc/architecture/ux/<task-slug>.md` exists (any form: Figma link, PDF, screenshot, written description). **Backend-only tasks:** UX track is skipped — no Phase 2 halt, no Phase 5 UX conformance. |
+| UX intent file **for frontend tasks only** | **Frontend tasks:** Phase 2 halts until `.claude/sdlc/architecture/ux/<task-slug>.md` exists. **You do not need Figma or a designer** — a plain-text description of the UI intent (a few bullet points is enough) counts as a valid artifact. Formal mockups (Figma link, PDF, screenshot, wireframe) also work but are optional. **Backend-only tasks:** UX track is skipped — no Phase 2 halt, no Phase 5 UX conformance. |
 | MCP servers for Jira/Linear/Grafana/Datadog/Figma | Degrades to the next tier — local markdown, provided links, or asking you directly |
 
 ### Tool commands you should fill into `config/tools.json`
@@ -154,6 +154,8 @@ Before you start a *task*, the plugin assumes:
 
 All routes produce the same artifact shape under `.claude/sdlc/`. Pick whichever fits the task.
 
+> For a visual map of how commands, skills, subagents, hooks, and artifacts connect, see the two mermaid diagrams in [README.md § At a glance](../README.md#at-a-glance).
+
 ### Route 1 — Slash-command prompt (fastest)
 
 ```
@@ -193,7 +195,42 @@ Plugin reads the source, produces an artifact in its own template shape, and pre
 
 ## 5. Sign-off: the irrevocable step
 
-Every phase ends at a gate file at `.claude/sdlc/gates/<phase>-<task-slug>.md`. **Claude drafts; only you sign.** There are two modes:
+Every phase ends at a gate file at `.claude/sdlc/gates/<phase>-<task-slug>.md`. **Claude drafts; only you sign.**
+
+### Before you sign: correcting an artifact
+
+Signing is irrevocable — downstream phases parse the gate, and reopening it means reopening the phase. If the phase artifact is wrong, fix it *first*, then sign. You have three correction paths, in order of preference:
+
+1. **Ask Claude to regenerate or refine it in chat.** This is the default — Claude drafted it, Claude can redraft it.
+
+   ```
+   You: the estimate is way off — the gateway has retry logic that
+        doubles the scope. Please rewrite with that in mind.
+
+   Claude: <updates .claude/sdlc/plans/rate-limit-headers.md,
+            shows the diff, re-prompts for sign-off>
+   ```
+
+   This works well for coarse corrections ("scope is wrong", "add NFRs", "drop the admin API").
+
+2. **Open the file and edit it yourself.** Artifacts are plain markdown — no special tooling. Good for fine corrections ("this one field is wrong", "reorder these REQs") where typing is faster than explaining. After you save, tell Claude:
+
+   ```
+   You: I edited the plan directly — re-read it and continue to sign-off.
+   ```
+
+3. **Abort the phase.** If the whole artifact is wrong-shaped (e.g. `/plan` misclassified the task as a feature when it's a fix), delete the draft file and start over:
+
+   ```bash
+   rm .claude/sdlc/plans/rate-limit-headers.md
+   ```
+   Then re-run the phase command with a more precise prompt.
+
+**What NOT to do:** do not sign a wrong artifact "just to move on." The gate captures your signature verbatim against that artifact — a signed-but-wrong gate is harder to unwind than an unsigned draft.
+
+### Two sign-off modes
+
+Once the artifact is correct:
 
 ### Chat sign-off (default)
 
@@ -558,6 +595,19 @@ If any box is unchecked, run the full phases instead. The plugin does **not** wi
 **You:** **manual sign-off** — you edit the mini-gate file at `.claude/sdlc/gates/plan-pagination-off-by-one.md` yourself. Chat sign-off is rejected here.
 
 **Then Phases 4–8 run normally** — Build, Test, Deploy, Support, Docs are **not** compressed.
+
+#### How the eligibility limits are actually enforced
+
+The `≤ 2 files` and `≤ 50 LOC` limits are **human-declared at planning time, not pre-computed by the plugin.** There is no LOC estimator that runs before `/fix-fast`. The enforcement is layered:
+
+| Layer | Mechanism | Severity |
+|---|---|---|
+| **Planning** | You declare classification = `fix` and estimate ≤ 2 files / 50 LOC in the mini-plan | Self-enforced — the skill asks you to confirm |
+| **Edit-time** | Standard hooks fire on every Edit/Write — `diff-scope-check.sh`, `adjacent-function-detector.sh`, `secret-scan.sh`, `work-item-validation.sh` | Warn or block, same as full phases |
+| **Drift detection** | If the diff exceeds your plan (files outside the in-scope list), `diff-scope-check.sh` warns on each Edit | Warn — you decide whether to continue |
+| **Fallback** | Per [commands/fix-fast.md](../commands/fix-fast.md): *"If eligibility is violated at any point, fall back to the full 8-phase flow"* | Human decision — you revert the mini-gate and run `/plan` → `/analyze` → `/design` normally |
+
+**There is no post-hoc LOC check that blocks the commit, and no "waiver" mechanism.** If you realize at Build time the fix is actually 150 LOC across 5 files, the correct response is to stop, throw away the fix-fast mini-gate, and run the full phases. Don't try to stretch the mini-gate to cover a larger diff — downstream traceability (Test, Docs) assumes the mini-gate's scope is representative of what shipped.
 
 ---
 
