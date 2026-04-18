@@ -1,0 +1,21 @@
+# Local config (users copy tools.example.json → tools.json)
+config/tools.json
+
+# Editor / OS junk
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+
+# Node / Python leftovers if contributors add tooling
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+
+# The plugin WRITES to .claude/sdlc/ in the *consuming* repo, not this one.
+# Consuming repos should add .claude/sdlc/gates/ and .claude/sdlc/defects/
+# to their own .gitignore if they don't want those tracked.

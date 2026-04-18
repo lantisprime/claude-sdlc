@@ -1,0 +1,47 @@
+{
+  "_comment": "Copy to config/tools.json and fill in for your stack. Set any value to null to skip that check.",
+  "formatter": {
+    "command": null,
+    "example": "ruff format  |  prettier --write  |  gofmt -w  |  black"
+  },
+  "linter": {
+    "command": null,
+    "example": "ruff check  |  eslint  |  golangci-lint run"
+  },
+  "test_runner": {
+    "command": null,
+    "example": "pytest  |  vitest run  |  go test ./..."
+  },
+  "coverage": {
+    "command": null,
+    "threshold_percent": 80,
+    "example": "pytest --cov  |  vitest run --coverage"
+  },
+  "secret_scanner": {
+    "command": null,
+    "example": "gitleaks detect --no-git  |  trufflehog filesystem ."
+  },
+  "dependency_scanner": {
+    "command": null,
+    "example": "pip-audit  |  npm audit  |  trivy fs ."
+  },
+  "sast": {
+    "command": null,
+    "example": "semgrep --config=auto"
+  },
+  "adjacent_function_detection": {
+    "method": "git-hunk-headers",
+    "_options": "git-hunk-headers | tree-sitter",
+    "tree_sitter_language": null
+  },
+  "integrations": {
+    "vcs": "auto",
+    "issue_tracker": "auto",
+    "ci": "auto",
+    "observability": null,
+    "ux_tool": null,
+    "_auto_values": "git | github | gitlab | bitbucket | jira | linear | null"
+  },
+  "artifact_format_fallback": "markdown",
+  "_artifact_format_options": "markdown | json"
+}

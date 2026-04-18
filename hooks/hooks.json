@@ -1,0 +1,46 @@
+{
+  "_comment": "Hook registration for Claude Code. Scripts are referenced relative to the plugin root. Adjust matchers if your tool names differ.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/plan-gate.sh" },
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/work-item-validation.sh" }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/bash-safety.sh" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/diff-scope-check.sh" },
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/adjacent-function-detector.sh" },
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/format-on-write.sh" },
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/secret-scan.sh" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/modified-code-test-gate.sh" },
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/phase-gate.sh" }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/env-detect.sh" }
+        ]
+      }
+    ]
+  }
+}
