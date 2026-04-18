@@ -50,6 +50,26 @@ Every hook and skill reads from `config/tools.json`. Leave a value as `null` to 
 - `adjacent_function_detection` — `git-hunk-headers` (default) or `tree-sitter`
 - `token_tracking.enabled` — when `true`, the `Stop` hook writes per-phase raw token counts to `.claude/sdlc/token-log.json` and `token-history.jsonl` for optimizing skill/prompt cost (default `false`)
 
+## External connectivity
+
+The plugin talks to outside systems through four channels. Availability is auto-detected by [`env-detect.sh`](hooks/env-detect.sh) on `SessionStart` and written to `.claude/sdlc/env.json`; the `integrations` block in [`config/tools.json`](config/tools.example.json) lets you override the choices.
+
+| Category | System | Transport |
+|---|---|---|
+| **VCS** | Git | Local `git` CLI |
+| | GitHub, GitLab, Bitbucket | Detected via `git remote`; operations use the host's CLI (e.g. `gh`) or native APIs |
+| **Issue tracker** | GitHub / GitLab / Bitbucket Issues | Same transport as VCS |
+| | Jira, Linear | **MCP** (user-provided server) |
+| | *None configured* | Local markdown ticket under `.claude/sdlc/tickets/` |
+| **CI** | GitHub Actions, GitLab CI, CircleCI, Jenkins | Filesystem sniffing only; the plugin never triggers pipelines |
+| **Observability** | Grafana, Datadog | **MCP** (user-provided server) |
+| | CloudWatch | Infrastructure-as-code proposals — no direct API calls |
+| | *None configured* | Platform-neutral markdown/JSON under `.claude/sdlc/monitoring/` |
+| **UX tooling** | Figma | **MCP** (user-provided server) |
+| **Development-time APIs** | OpenAPI / GraphQL / gRPC endpoints under integration | Direct HTTP probe via the tool configured in `config/tools.json` (see [`api-integration`](skills/api-integration/SKILL.md)) |
+
+**Is MCP required?** No. MCP is used selectively for SaaS platforms without a ubiquitous CLI — Jira/Linear, Grafana/Datadog, Figma. The plugin references these connectors but does not ship or configure MCP servers; you wire those up externally in your Claude Code install. Every MCP-mediated state change is **propose-only** — no MCP tool can advance a phase or auto-apply a production change.
+
 ## Quick start
 
 From inside a repo that has this plugin installed:

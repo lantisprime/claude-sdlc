@@ -35,12 +35,15 @@
     "tree_sitter_language": null
   },
   "integrations": {
+    "_comment": "Transport per system: git/github/gitlab/bitbucket use local CLI (git, gh) or native APIs. jira, linear, grafana, datadog, figma require a user-provided MCP server — the plugin does not ship one. cloudwatch is emitted as IaC proposals, not direct API calls. CI values are detection-only; the plugin never triggers pipelines.",
     "vcs": "auto",
     "issue_tracker": "auto",
     "ci": "auto",
     "observability": null,
     "ux_tool": null,
-    "_auto_values": "git | github | gitlab | bitbucket | jira | linear | null"
+    "_auto_values": "git | github | gitlab | bitbucket | jira | linear | null",
+    "_observability_values": "grafana | datadog | cloudwatch | null",
+    "_ux_tool_values": "figma | null"
   },
   "artifact_format_fallback": "markdown",
   "_artifact_format_options": "markdown | json",

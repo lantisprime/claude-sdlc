@@ -184,7 +184,16 @@ Subagents in this plugin are **bounded**:
 - `security-reviewer` — read only, write only findings to `test/security-review-*.md`
 - `observability` — read architecture, write only to `monitoring/`
 
-MCP connectors (GitHub/GitLab, Jira/Linear, Figma, Grafana/Datadog) are propose-only for state-changing operations. Every cross-phase handoff ends at a human gate. No subagent and no MCP tool can advance a phase on its own.
+### External connectivity
+
+The plugin integrates with external systems through four transports, chosen per category:
+
+- **Local CLI / filesystem** — Git (VCS); GitHub/GitLab/Bitbucket detected via `git remote`; CI systems (GitHub Actions, GitLab CI, CircleCI, Jenkins) detected by sniffing workflow files. The plugin never triggers pipelines.
+- **MCP (user-provided servers)** — Jira and Linear (issues), Grafana and Datadog (observability), Figma (UX).
+- **Infrastructure-as-code proposals** — CloudWatch and similar cloud-native observability; proposed as IaC diffs rather than direct API calls.
+- **Direct HTTP probes** — the `api-integration` skill probes development-time API endpoints (OpenAPI/GraphQL/gRPC) via the tool configured in `config/tools.json`.
+
+Every MCP connector is **propose-only** for state-changing operations. Every cross-phase handoff ends at a human gate. No subagent and no MCP tool can advance a phase on its own. The plugin does not ship or configure MCP servers — users wire their own. See the README's *External connectivity* section for the full matrix.
 
 ## Iterating on this plugin
 
