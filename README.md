@@ -198,6 +198,20 @@ The plugin distinguishes two severities deliberately:
 
 Warnings are *warnings*. They're not auto-blockers-in-waiting. The adjacent-function detector in particular uses git hunk headers, which are imperfect — an aggressive block there would halt legitimate work.
 
+## Review processes
+
+Three artifacts get first-class review treatment: **code**, **test cases**, and **test scripts**. All three share the same shape — scoped to the `git diff`, traced to a REQ ID, and human-signed at a gate.
+
+| Artifact | When reviewed | Primary checks | Blocks on |
+|---|---|---|---|
+| **Code** | PostToolUse (format), `/review`, Build Step 3, Build gate | Formatting, in-scope files/functions, work-item traceability, secrets, quality (naming, complexity, error handling), spec conformance (API signatures, error modes, NFRs), security (10 categories) | Missing plan, missing work item, confirmed secret, critical / high security finding |
+| **Test cases** | Phase 3 Design | Every REQ has ≥1 test case; every test case traces to a REQ ID; required fields (type, priority, preconditions, steps, expected outcome, data needs) | Orphan test cases (no REQ ID) |
+| **Test scripts** | Phase 4 Build (authoring), Phase 5 Test (execution) | Tests added only for *modified* functions; tests reference test cases → REQ IDs; coverage on modified code vs. configured threshold; defects logged with REQ + TC refs; UX conformance for frontend | Coverage below threshold (unless human-signed waiver) |
+
+**Logic concerns (retry, timeout, idempotency):** there is no dedicated logic linter. Resilience behavior is specified in the [tech spec](templates/tech-spec.md) `Error modes` / `NFRs` sections and enforced by Build's Step 3 spec-conformance pass. `security-review` §8 adds the only hard rule: retries must be bounded with backoff.
+
+Full process detail in [`docs/review-processes.md`](docs/review-processes.md).
+
 ## Artifact tree (in the consuming repo)
 
 The plugin writes to `.claude/sdlc/` in the repo that *uses* the plugin — not in this one:
