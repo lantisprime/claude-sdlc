@@ -43,7 +43,7 @@ The plugin does **not** have a dedicated linter for resilience logic. Retry/back
 
 - **Design phase:** if retries matter, they get specified in the [tech-spec `Error modes` and `NFRs` sections](../templates/tech-spec.md).
 - **Build phase Step 3:** code is validated against that spec — missing retry behavior surfaces as a spec deviation.
-- **Security-review §8:** retries must be bounded with backoff ([`skills/security-review/SKILL.md`](../skills/security-review/SKILL.md)) — the only hard rule on retry shape, framed as an abuse-amplification concern.
+- **Security-review 8:** retries must be bounded with backoff ([`skills/security-review/SKILL.md`](../skills/security-review/SKILL.md)) — the only hard rule on retry shape, framed as an abuse-amplification concern.
 - **Support phase:** external calls require timeout / failure / retry counters for observability ([`skills/support/SKILL.md`](../skills/support/SKILL.md)).
 
 To enforce stricter logic rules, add them to the tech-spec template so Build's conformance pass can catch deviations.
@@ -77,7 +77,7 @@ Code (Phase 4) — validated against the tech spec in Build Step 3
 | Trigger | Mechanism |
 |---|---|
 | Phase 3 Design — architecture authoring & drift detection | [`architect`](../agents/architect.md) subagent (read-only over code, write-only into `architecture/`) |
-| Phase 3 Design — per-module tech spec authored | [`skills/design/SKILL.md`](../skills/design/SKILL.md) §"Tech spec rule" |
+| Phase 3 Design — per-module tech spec authored | [`skills/design/SKILL.md`](../skills/design/SKILL.md) "Tech spec rule" |
 | Phase 4 Build — Step 3 conformance pass | [`skills/build/SKILL.md`](../skills/build/SKILL.md) — code shape vs. tech spec |
 | Phase 4 Build — UX conformance (frontend only) | Build Step 3 vs. `.claude/sdlc/architecture/ux/<task-slug>.md` |
 | Phase 5 Test — NFR test cases | Measures architecture commitments (latency, throughput, availability) |
@@ -87,7 +87,7 @@ Code (Phase 4) — validated against the tech spec in Build Step 3
 
 Reference: [`skills/build/SKILL.md`](../skills/build/SKILL.md) Step 3.
 
-- **API signatures** match the tech spec's public interface ([`templates/tech-spec.md`](../templates/tech-spec.md) §"Public interface").
+- **API signatures** match the tech spec's public interface ([`templates/tech-spec.md`](../templates/tech-spec.md) "Public interface").
 - **Error modes** match the spec — exceptions raised, error codes returned, failure semantics.
 - **Side effects** match the spec — what the function writes, publishes, or mutates.
 - **NFR commitments** addressed (latency, throughput, availability targets) — or explicitly deferred with justification.
@@ -182,7 +182,7 @@ Every defect references **at least one REQ ID and at least one test case** ([`sk
 - No hook flags a REQ with zero test cases at author time. The coverage tables and traceability matrix make the gap *visible*; the human is responsible for closing it at the Design or Docs gate.
 - No hook validates that a TC's cited REQ ID actually exists in the requirements file.
 
-The REQ ID convention (`REQ-<n>`, stable across edits) is the load-bearing contract — see [CLAUDE.md](../CLAUDE.md) §"Things NOT to change". Traceability across Analyze → Design → Build → Test → Docs depends on its stability.
+The REQ ID convention (`REQ-<n>`, stable across edits) is the load-bearing contract — see [CLAUDE.md](../CLAUDE.md) "Things NOT to change". Traceability across Analyze → Design → Build → Test → Docs depends on its stability.
 
 ---
 

@@ -52,4 +52,4 @@ If the change affects user-facing APIs, CLI flags, config keys, or UI flows, upd
 
 ## References
 
-- `docs/SDLC.md` §Docs
+- `docs/SDLC.md` Docs

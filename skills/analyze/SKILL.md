@@ -47,7 +47,7 @@ Produce a coverage table in the requirements file:
 
 | REQ ID  | Scope section  | Status         |
 |---------|----------------|----------------|
-| REQ-001 | §2.1 Checkout  | ✓ mapped       |
+| REQ-001 | 2.1 Checkout   | ✓ mapped       |
 | REQ-002 | —              | ? unmapped     |
 
 ## Step 4 — Human gate
@@ -64,4 +64,4 @@ Summarize: total REQs, mapped vs. unmapped, frontend yes/no, UX artifact status.
 
 - `templates/requirements.md`
 - `templates/gate.md`
-- `docs/SDLC.md` §Analyze
+- `docs/SDLC.md` Analyze

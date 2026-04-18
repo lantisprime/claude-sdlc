@@ -7,7 +7,7 @@
 
 | REQ ID  | Scope section            | Status      |
 |---------|--------------------------|-------------|
-| REQ-001 | §2.1 Checkout            | ✓ mapped    |
+| REQ-001 | 2.1 Checkout             | ✓ mapped    |
 | REQ-002 | —                        | ? unmapped  |
 
 ## REQ-001 — <short title>

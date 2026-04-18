@@ -13,7 +13,7 @@
 
 ## Scope statement alignment
 
-- Section of `.claude/sdlc/scope.md`: <§x.y>
+- Section of `.claude/sdlc/scope.md`: <x.y>
 - In-scope? yes | no (if no, this is a scope-delta → human decision required)
 
 ## In-scope files

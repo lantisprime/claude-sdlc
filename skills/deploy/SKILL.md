@@ -65,4 +65,4 @@ Run the smoke-test subset of the test suite against the deployed environment. If
 
 - `templates/deployment.md`
 - `templates/gate.md`
-- `docs/SDLC.md` §Deploy
+- `docs/SDLC.md` Deploy

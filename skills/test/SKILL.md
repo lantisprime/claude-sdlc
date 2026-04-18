@@ -61,4 +61,4 @@ Summarize: tests run, pass/fail, coverage on modified code, defects logged, UX s
 
 - `templates/defect.md`
 - `templates/gate.md`
-- `docs/SDLC.md` §Test
+- `docs/SDLC.md` Test

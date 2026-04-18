@@ -58,4 +58,4 @@ Summarize: what's now being watched, what's alerted, runbook status. Sign-off â†
 
 ## References
 
-- `docs/SDLC.md` Â§Support
+- `docs/SDLC.md` Support

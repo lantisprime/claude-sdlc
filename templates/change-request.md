@@ -2,7 +2,7 @@
 
 - **Requester:** <name>
 - **Created:** <YYYY-MM-DD>
-- **Original scope section:** `.claude/sdlc/scope.md` §<x.y>
+- **Original scope section:** `.claude/sdlc/scope.md` <x.y>
 - **Status:** proposed | signed-off | rejected | deferred
 
 ## Problem / opportunity

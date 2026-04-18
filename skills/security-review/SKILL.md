@@ -85,5 +85,5 @@ Critical or high findings block the phase until resolved or waived (with human s
 
 ## References
 
-- `docs/SDLC.md` §Security
+- `docs/SDLC.md` Security
 - `hooks/secret-scan.sh`
