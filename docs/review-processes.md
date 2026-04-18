@@ -1,8 +1,8 @@
 # Review Processes
 
-How the SDLC plugin reviews the three artifacts that most directly determine whether a change is safe to ship: **production code**, **test cases**, and **test scripts**.
+How the SDLC plugin reviews the artifacts that most directly determine whether a change is safe to ship: **production code**, **architecture conformance**, **test cases**, and **test scripts**.
 
-All three share a common shape:
+They share a common shape:
 
 - Reviews are scoped to the current `git diff` — never the whole repo.
 - Humans sign every gate; subagents *propose*, never approve.
@@ -56,7 +56,64 @@ To enforce stricter logic rules, add them to the tech-spec template so Build's c
 
 ---
 
-## 2. Test-case review
+## 2. Architecture conformance (via tech specs)
+
+Architecture is never compared directly to code. The **tech spec** is the intermediary contract — architecture decisions (API shape, data contracts, NFRs, security controls) are captured in a per-module tech spec during Design, and Build validates the code against that spec.
+
+### The validation chain
+
+```
+Requirements (Phase 2)
+   ↓
+Architecture (Phase 3) — app / data / platform / infra / security / test / UX
+   ↓
+Tech spec (Phase 3) — per-module contract derived from architecture
+   ↓
+Code (Phase 4) — validated against the tech spec in Build Step 3
+```
+
+### When it runs
+
+| Trigger | Mechanism |
+|---|---|
+| Phase 3 Design — architecture authoring & drift detection | [`architect`](../agents/architect.md) subagent (read-only over code, write-only into `architecture/`) |
+| Phase 3 Design — per-module tech spec authored | [`skills/design/SKILL.md`](../skills/design/SKILL.md) §"Tech spec rule" |
+| Phase 4 Build — Step 3 conformance pass | [`skills/build/SKILL.md`](../skills/build/SKILL.md) — code shape vs. tech spec |
+| Phase 4 Build — UX conformance (frontend only) | Build Step 3 vs. `.claude/sdlc/architecture/ux/<task-slug>.md` |
+| Phase 5 Test — NFR test cases | Measures architecture commitments (latency, throughput, availability) |
+| Phase 7 Support — observability loopback | [`skills/support/SKILL.md`](../skills/support/SKILL.md) wires alerts per architecture's security / NFR sections |
+
+### What gets checked (Build Step 3)
+
+Reference: [`skills/build/SKILL.md`](../skills/build/SKILL.md) Step 3.
+
+- **API signatures** match the tech spec's public interface ([`templates/tech-spec.md`](../templates/tech-spec.md) §"Public interface").
+- **Error modes** match the spec — exceptions raised, error codes returned, failure semantics.
+- **Side effects** match the spec — what the function writes, publishes, or mutates.
+- **NFR commitments** addressed (latency, throughput, availability targets) — or explicitly deferred with justification.
+- **Security controls** from the security architecture are in place for the modified surface (authN/Z, input validation, output encoding, etc.).
+
+### Architecture drift detection
+
+[`agents/architect.md`](../agents/architect.md) — the architect subagent runs in Phase 3 Design and produces a **validation report** comparing existing architecture against the current requirements set. Deltas (new NFRs, new entities, new integrations, new controls) surface for human decision. This catches drift that has accumulated between tasks — e.g., when code has evolved beyond what the architecture document reflects.
+
+### Enforcement
+
+- **No hook** runs an automated architecture check. Conformance is a **skill-level judgment pass** performed by `build` in Step 3.
+- **Human gate:** sign-off recorded in `.claude/sdlc/gates/build-<task-slug>.md` includes conformance status.
+- Deviations must be either fixed or recorded as explicit deferrals with justification.
+
+### What's NOT automated
+
+- No ArchUnit-style dependency rules (e.g., "controllers must not call repositories directly"). Those concerns are encoded as API signatures in the tech spec, not as layer-enforcement rules.
+- No NFR measurement at Build time — actual latency / throughput / availability are measured by NFR test cases in Phase 5 Test.
+- No hook that fails the build when the tech spec and code diverge.
+
+To tighten enforcement, add the concern to [`templates/tech-spec.md`](../templates/tech-spec.md) so Build Step 3 catches deviations.
+
+---
+
+## 3. Test-case review
 
 ### When it runs
 
@@ -90,9 +147,46 @@ To enforce stricter logic rules, add them to the tech-spec template so Build's c
 - The [`test-designer`](../agents/test-designer.md) subagent may draft test cases (write scope: `.claude/sdlc/test-cases/` only).
 - The human approves at the Design gate (`.claude/sdlc/gates/design-<task-slug>.md`).
 
+### Requirements traceability
+
+Test cases are validated against requirements through **bidirectional coverage** — every REQ must map to at least one TC, and every TC must cite at least one REQ. The mapping is visible in three places, and surfaced for human review rather than enforced by a hook.
+
+**Bidirectional coverage rule:**
+
+- **REQ → TC:** each requirement has **at least one** test case ([`skills/design/SKILL.md`](../skills/design/SKILL.md), [`agents/test-designer.md`](../agents/test-designer.md) step 4).
+- **TC → REQ:** each test case cites **at least one** REQ ID. Orphan test cases are rejected — "Do not invent requirements" ([`agents/test-designer.md`](../agents/test-designer.md)).
+
+**Coverage tables (visibility during Design):**
+
+| Artifact | Table | Produced by |
+|---|---|---|
+| `.claude/sdlc/requirements/<task-slug>.md` | Scope-coverage table listing REQs | [`skills/analyze/SKILL.md`](../skills/analyze/SKILL.md) |
+| Test-case index at top of `.claude/sdlc/test-cases/` | REQ → TC coverage table | [`agents/test-designer.md`](../agents/test-designer.md) step 5 |
+
+**Traceability matrix (ongoing visibility, Phase 8 Docs):**
+
+[`skills/docs/SKILL.md`](../skills/docs/SKILL.md) Step 2 refreshes `.claude/sdlc/docs/traceability.md`:
+
+| REQ ID  | Tech Spec        | Test Case(s) | Code (files/fns)  | Test Run | Deploy |
+|---------|------------------|--------------|-------------------|----------|--------|
+| REQ-001 | specs/order.md   | TC-001, 002  | order.py::submit  | 2026-... | prod   |
+
+**Any empty cell is a visible gap.** The human decides whether to fill or waive — the plugin does not paper over missing coverage. This is the end-to-end closure: REQ → tech spec → test case → code → test run → deploy.
+
+**Defect-level traceability (Phase 5 Test):**
+
+Every defect references **at least one REQ ID and at least one test case** ([`skills/test/SKILL.md`](../skills/test/SKILL.md)). Runtime failures trace back to the same REQ chain as authoring-time test cases.
+
+**What's NOT automated:**
+
+- No hook flags a REQ with zero test cases at author time. The coverage tables and traceability matrix make the gap *visible*; the human is responsible for closing it at the Design or Docs gate.
+- No hook validates that a TC's cited REQ ID actually exists in the requirements file.
+
+The REQ ID convention (`REQ-<n>`, stable across edits) is the load-bearing contract — see [CLAUDE.md](../CLAUDE.md) §"Things NOT to change". Traceability across Analyze → Design → Build → Test → Docs depends on its stability.
+
 ---
 
-## 3. Test-script review
+## 4. Test-script review
 
 Split across two phases — **authoring and review in Build**, **execution and review in Test**.
 
@@ -133,5 +227,6 @@ Reference: [`skills/test/SKILL.md`](../skills/test/SKILL.md).
 | Process | Primary skill | Primary hook(s) | Gate file |
 |---|---|---|---|
 | Code | [`build`](../skills/build/SKILL.md), [`security-review`](../skills/security-review/SKILL.md) | `plan-gate`, `work-item-validation`, `secret-scan`, `diff-scope-check`, `adjacent-function-detector`, `format-on-write` | `build-<slug>.md` |
+| Architecture conformance | [`design`](../skills/design/SKILL.md) (+ [`architect`](../agents/architect.md) agent), [`build`](../skills/build/SKILL.md) Step 3 | — (judgment-based, human-gated) | `design-<slug>.md`, then `build-<slug>.md` |
 | Test cases | [`design`](../skills/design/SKILL.md) (+ [`test-designer`](../agents/test-designer.md) agent) | — (judgment-based, human-gated) | `design-<slug>.md` |
 | Test scripts | [`build`](../skills/build/SKILL.md) (authoring), [`test`](../skills/test/SKILL.md) (execution) | `modified-code-test-gate` | `build-<slug>.md`, then `test-<slug>.md` |

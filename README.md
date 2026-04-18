@@ -210,6 +210,8 @@ Three artifacts get first-class review treatment: **code**, **test cases**, and 
 
 **Logic concerns (retry, timeout, idempotency):** there is no dedicated logic linter. Resilience behavior is specified in the [tech spec](templates/tech-spec.md) `Error modes` / `NFRs` sections and enforced by Build's Step 3 spec-conformance pass. `security-review` §8 adds the only hard rule: retries must be bounded with backoff.
 
+**Architecture conformance:** architecture is never compared directly to code. The [tech spec](templates/tech-spec.md) is the intermediary contract — architecture decisions are captured per-module in Design (Phase 3), and Build Step 3 validates the code against that spec (API signatures, error modes, side effects, NFRs, security controls). The [`architect`](agents/architect.md) agent produces a drift report during Design when existing architecture has fallen out of sync with the requirements.
+
 Full process detail in [`docs/review-processes.md`](docs/review-processes.md).
 
 ## Artifact tree (in the consuming repo)
