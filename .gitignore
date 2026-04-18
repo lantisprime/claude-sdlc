@@ -10,6 +10,13 @@ config/tools.json
 # Logs
 *.log
 
+# Excalidraw working files (not published yet)
+*.excalidraw
+
+# Diagram drafts (not published yet)
+docs/diagrams.md
+docs/diagrams-preview.html
+
 # Node / Python leftovers if contributors add tooling
 node_modules/
 __pycache__/

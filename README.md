@@ -23,6 +23,67 @@ These are load-bearing. The plugin is built around them; changes that violate th
 5. **Graceful degradation.** No Git? No ticket system? No observability platform? The plugin writes local markdown/JSON artifacts and surfaces the gap. It never silently skips a check.
 6. **Stack-agnostic.** Formatter, linter, test runner, scanners — all live in `config/tools.json`. Nothing is hardcoded.
 
+## At a glance
+
+The 8-phase workflow:
+
+```mermaid
+flowchart LR
+    WI[Work item<br/>REQ · ticket · CR] --> P1
+    subgraph Discovery
+        P1[1 · Plan<br/>/plan] --> P2[2 · Analyze<br/>/analyze] --> P3[3 · Design<br/>/design]
+    end
+    subgraph Construction
+        P4[4 · Build<br/>/build] --> P5[5 · Test<br/>/test]
+    end
+    subgraph Operations
+        P6[6 · Deploy<br/>/deploy] --> P7[7 · Support<br/>/support]
+    end
+    P3 --> P4
+    P5 --> P6
+    P7 -.-> P8[8 · Docs<br/>cross-cutting]
+    FF([/fix-fast<br/>collapses Plan+Analyze+Design]) -.-> P4
+
+    classDef disc fill:#a5d8ff,stroke:#1e1e1e,color:#1e1e1e
+    classDef cons fill:#b2f2bb,stroke:#1e1e1e,color:#1e1e1e
+    classDef ops fill:#ffd8a8,stroke:#1e1e1e,color:#1e1e1e
+    classDef docs fill:#eebefa,stroke:#1e1e1e,color:#1e1e1e
+    classDef fast fill:#ffc9c9,stroke:#1e1e1e,color:#1e1e1e,stroke-dasharray: 5 5
+    classDef item fill:#fff3bf,stroke:#1e1e1e,color:#1e1e1e
+    class P1,P2,P3 disc
+    class P4,P5 cons
+    class P6,P7 ops
+    class P8 docs
+    class FF fast
+    class WI item
+```
+
+How the pieces connect:
+
+```mermaid
+flowchart TB
+    H((Human — lead)) <-->|prompts · approvals| CC[Claude Code session]
+    CC --> CMD[Slash Commands<br/>/plan /analyze /design /build /test<br/>/deploy /support /docs /review /fix-fast]
+    CMD -->|loads| SK[Skills<br/>8 phase + surgical-edit, minimal-code,<br/>scoping, security-review,<br/>gate-signoff, api-integration]
+    SK -->|delegate| AG[Subagents<br/>architect · test-designer<br/>security-reviewer · observability<br/>propose only — never advance a phase]
+    SK -->|shaped by| TPL[Templates<br/>plan · gate · sign-off · requirements<br/>tech-spec · test-case · ticket<br/>defect · change-request · deployment]
+    SK -->|writes| ART[(Artifacts under .claude/sdlc/<br/>plans · gates · followups<br/>tickets · defects · change-requests)]
+
+    CC -.->|every tool call| HK
+    subgraph HK [Hooks — intercept tool calls · block vs. warn]
+        direction LR
+        PRE[PreToolUse<br/>plan-gate BLOCK<br/>work-item-validation<br/>bash-safety]
+        POST[PostToolUse<br/>diff-scope-check<br/>adjacent-function-detector<br/>format-on-write<br/>secret-scan BLOCK]
+        STOP[Stop<br/>modified-code-test-gate<br/>phase-gate · token-tracker]
+        SESS[SessionStart<br/>env-detect]
+    end
+    HK -.->|parses| ART
+    CFG[config/tools.json<br/>formatter · linter · runner<br/>coverage · scanners] -.->|read by| HK
+    CFG -.->|read by| SK
+```
+
+Commands load skills, skills delegate to bounded subagents and write artifacts shaped by templates. Hooks intercept every tool call — blocking on severe issues, warning otherwise — and parse the artifacts back on later calls. `config/tools.json` keeps the plugin stack-agnostic.
+
 ## Install
 
 Clone the repo and install as a local plugin:
