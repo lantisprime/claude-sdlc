@@ -82,7 +82,7 @@ Per the *graceful degradation* principle, the plugin never silently skips a chec
 | **Development-time APIs** | `api-integration` warns and offers to scaffold a mock (MSW / Prism / WireMock / typed fixture) — never silently stubs. |
 | **MCP servers (none wired)** | Each MCP-routed system falls to its next tier — Jira → local ticket, Grafana → local markdown, Figma → human-provided link or local UX artifact. |
 
-> **Sharp edge:** Frontend tasks halt until a UX artifact exists — but any form works (Figma, PDF, screenshots, wireframes, or a written description). This is the only place the plugin blocks on missing external inputs. Everything else degrades to local files.
+> **Sharp edge:** Frontend tasks halt until a UX artifact exists — but any form works (Figma, PDF, screenshots, wireframes, or a written description). This is the only place the plugin blocks on missing external inputs. Everything else degrades to local files. **Backend-only tasks skip the UX track entirely** — no halt in Phase 2, no UX conformance in Phase 5.
 
 ## Quick start
 
@@ -205,7 +205,7 @@ No sign-off, no next phase.
 | 2 | Analyze | `/analyze` | `gates/analyze-<slug>.md`             | Requirements with stable REQ IDs, UX ask (if frontend) |
 | 3 | Design  | `/design`  | `gates/design-<slug>.md`              | Architecture bundle, test architecture, tech specs |
 | 4 | Build   | `/build`   | `gates/build-<slug>.md`               | Code + unit tests for modified code only |
-| 5 | Test    | `/test`    | `gates/test-<slug>.md`                | Test execution report, defects, UX conformance |
+| 5 | Test    | `/test`    | `gates/test-<slug>.md`                | Test execution report, defects, UX conformance (if frontend) |
 | 6 | Deploy  | `/deploy`  | `gates/deploy-<slug>.md`              | Deployment record (ticket or artifact file) |
 | 7 | Support | `/support` | `gates/support-<slug>.md`             | Observability scripts, alerts, dashboards |
 | 8 | Docs    | `/docs`    | (cross-cutting, no dedicated gate)    | Updated SDLC docs, traceability matrix, changelog |

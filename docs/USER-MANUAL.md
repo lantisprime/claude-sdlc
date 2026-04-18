@@ -49,7 +49,7 @@ For the concise overview, read [README.md](../README.md). For the authoritative 
 | Issue tracker (GitHub Issues, Jira, Linear) | Local markdown tickets under `.claude/sdlc/tickets/`; gate accepts `no ticket REQ-<n>` as degraded signature |
 | CI config (GitHub Actions, GitLab CI, CircleCI, Jenkins) | Zero impact — plugin never triggers pipelines, just links them in artifacts when detected |
 | Observability platform (Grafana, Datadog, CloudWatch) | Phase 7 produces platform-neutral markdown under `.claude/sdlc/monitoring/` |
-| UX tool (Figma) **for frontend tasks only** | **Phase 2 halts** until `.claude/sdlc/architecture/ux/<task-slug>.md` exists (any form: Figma link, PDF, screenshot, written description) |
+| UX tool (Figma) **for frontend tasks only** | **Frontend tasks:** Phase 2 halts until `.claude/sdlc/architecture/ux/<task-slug>.md` exists (any form: Figma link, PDF, screenshot, written description). **Backend-only tasks:** UX track is skipped — no Phase 2 halt, no Phase 5 UX conformance. |
 | MCP servers for Jira/Linear/Grafana/Datadog/Figma | Degrades to the next tier — local markdown, provided links, or asking you directly |
 
 ### Tool commands you should fill into `config/tools.json`
@@ -366,6 +366,8 @@ Each scenario shows: the initial user input → what the plugin does → what it
 ### 7.1 Scenario A — Greenfield feature (full 8 phases)
 
 **Task:** add rate-limit headers to the public API.
+
+**Classification:** backend-only — no UI change, so the UX track is skipped (no Phase 2 halt, no Phase 5 UX conformance).
 
 **Prerequisites checked:** `.claude/sdlc/scope.md` exists; `config/tools.json` has test runner + linter.
 
