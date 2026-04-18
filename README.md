@@ -86,6 +86,8 @@ Per the *graceful degradation* principle, the plugin never silently skips a chec
 
 ## Quick start
 
+> For a detailed walkthrough with scenarios, prerequisites, and exact user inputs at each step, see [docs/USER-MANUAL.md](docs/USER-MANUAL.md).
+
 From inside a repo that has this plugin installed:
 
 ```bash
@@ -208,7 +210,7 @@ No sign-off, no next phase.
 | 7 | Support | `/support` | `gates/support-<slug>.md`             | Observability scripts, alerts, dashboards |
 | 8 | Docs    | `/docs`    | (cross-cutting, no dedicated gate)    | Updated SDLC docs, traceability matrix, changelog |
 
-See [`docs/SDLC.md`](docs/SDLC.md) for the authoritative reference.
+See [`docs/SDLC.md`](docs/SDLC.md) for the authoritative phase reference, and [`docs/USER-MANUAL.md`](docs/USER-MANUAL.md) for scenario-based walkthroughs.
 
 ### `/fix-fast` — the only shortcut
 
@@ -242,7 +244,7 @@ Three artifacts get first-class review treatment: **code**, **test cases**, and 
 | **Test cases** | Phase 3 Design | Every REQ has ≥1 test case; every test case traces to a REQ ID; required fields (type, priority, preconditions, steps, expected outcome, data needs) | Orphan test cases (no REQ ID) |
 | **Test scripts** | Phase 4 Build (authoring), Phase 5 Test (execution) | Tests added only for *modified* functions; tests reference test cases → REQ IDs; coverage on modified code vs. configured threshold; defects logged with REQ + TC refs; UX conformance for frontend | Coverage below threshold (unless human-signed waiver) |
 
-**Logic concerns (retry, timeout, idempotency):** there is no dedicated logic linter. Resilience behavior is specified in the [tech spec](templates/tech-spec.md) `Error modes` / `NFRs` sections and enforced by Build's Step 3 spec-conformance pass. `security-review` §8 adds the only hard rule: retries must be bounded with backoff.
+**Logic concerns (retry, timeout, idempotency):** there is no dedicated logic linter. Resilience behavior is specified in the [tech spec](templates/tech-spec.md) `Error modes` / `NFRs` sections and enforced by Build's Step 3 spec-conformance pass. `security-review` 8 adds the only hard rule: retries must be bounded with backoff.
 
 **Architecture conformance:** architecture is never compared directly to code. The [tech spec](templates/tech-spec.md) is the intermediary contract — architecture decisions are captured per-module in Design (Phase 3), and Build Step 3 validates the code against that spec (API signatures, error modes, side effects, NFRs, security controls). The [`architect`](agents/architect.md) agent produces a drift report during Design when existing architecture has fallen out of sync with the requirements.
 
