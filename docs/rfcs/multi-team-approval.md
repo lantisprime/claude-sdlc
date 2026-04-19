@@ -348,6 +348,16 @@ When accepted, this RFC will be marked **Accepted** and the `Status` line update
 
 ### Sign-off
 
-- **Maintainer:** (pending)
-- **Date:** (pending)
-- **Statement:** (pending)
+- **RFC:** [multi-team-approval.md](./multi-team-approval.md) (this file)
+- **Maintainer:** (pending — name and role)
+- **Date:** (pending — YYYY-MM-DD)
+- **Evidence:** (pending — PR URL, meeting notes, or issue reference)
+
+**Statement**
+
+> I, &lt;maintainer name and role&gt;, approve this RFC for implementation in the sdlc-plugin
+> repository. The answers in §6 reflect the implementation path; the design in §3, the
+> degradation model in §4, and the rollout sequence in §7 define the scope of work.
+> Material deviations during implementation will be recorded here before they land.
+
+**Signature:** (pending — signed commit SHA, cryptographic signature, or external reference)
