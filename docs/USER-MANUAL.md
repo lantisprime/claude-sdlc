@@ -258,6 +258,94 @@ Claude writes the gate file with your exact text quoted and an ISO-8601 timestam
 
 You open the gate file yourself and edit it. Claude will not capture the signature via chat. Deploy has blast radius; fix-fast bundles three phases into one mini-gate — both warrant the extra friction.
 
+#### Worked example — signing a deploy gate by hand
+
+After `/deploy` finishes, the plugin tells you the gate file path and stops. For a task slugged `rate-limit-headers`, the file is:
+
+```
+.claude/sdlc/gates/deploy-rate-limit-headers.md
+```
+
+When the plugin writes it, the five sign-off fields at the top are placeholders. Here is what the file looks like **as drafted by the plugin** (unsigned):
+
+```markdown
+# Phase Gate: deploy-rate-limit-headers
+
+- **Phase:** deploy
+- **Task:** rate-limit-headers
+- **Signed by:** <human name or email>
+- **Signed at:** <YYYY-MM-DDTHH:MM:SSZ>
+- **Work-item reference:** <URL of REQ / ticket / CR>
+
+## Phase summary
+
+Rolling out rate-limit headers to prod behind the
+`api.ratelimit_headers_enabled` flag, default off. Canary for 24h at
+10% traffic before full enablement.
+
+## Artifacts produced or updated
+
+- .claude/sdlc/deployments/2026-04-18-rate-limit-headers.md
+
+## Open items carried to next phase
+
+- Monitor 429 rate on the canary — dashboard link in the runbook
+
+## Explicit waivers (if any)
+
+- (none)
+
+## Acknowledgment
+
+<Write your raw sign-off message here, then save.>
+
+## Confirmation
+
+I have reviewed the phase outputs and approve advancing to the next phase.
+```
+
+**What you edit — exactly five changes:**
+
+```diff
+- - **Signed by:** <human name or email>
++ - **Signed by:** juan.delacruz@acme.com
+
+- - **Signed at:** <YYYY-MM-DDTHH:MM:SSZ>
++ - **Signed at:** 2026-04-18T16:05:44Z
+
+- - **Work-item reference:** <URL of REQ / ticket / CR>
++ - **Work-item reference:** https://linear.app/acme/issue/PROJ-1234
+
+  ## Acknowledgment
+
+- <Write your raw sign-off message here, then save.>
++ > I have reviewed the deployment proposal, including the
++ > feature-flag default-off rollback plan and the 24h canary
++ > window. Approving the staging → prod push.
+```
+
+**Rules for each field:**
+
+| Field | What to write | Do not |
+|---|---|---|
+| `Signed by` | Your email or name as it will appear in audit logs | Leave the `<...>` placeholder |
+| `Signed at` | ISO-8601 UTC timestamp — run `date -u +"%Y-%m-%dT%H:%M:%SZ"` to get one | Back-date or round to the hour |
+| `Work-item reference` | The ticket / REQ / CR URL you are approving against | Paste `yes`, `lgtm`, or a commit SHA |
+| `Acknowledgment` | A sentence (or two) naming the specific things you verified — flag state, rollback plan, canary window | Write `"approved"` or repeat the phase summary verbatim |
+| `Confirmation` | Leave the template line as-is | Delete or reword it |
+
+**After saving**, the next phase command (e.g. `/support`) will run — `phase-gate.sh` parses this file and refuses to advance if any of the five fields still contains a `<...>` placeholder.
+
+#### Same pattern for `/fix-fast`
+
+`/fix-fast` uses the same template; only the filename differs:
+
+```
+.claude/sdlc/gates/plan-<task-slug>.md
+```
+
+(The mini-gate lives under the `plan-` prefix because fix-fast collapses Plan + Analyze + Design into one gate.) Fields to edit are identical to the deploy example above; the `Acknowledgment` should name the fix's scope constraints you verified (≤ 2 files, ≤ 50 LOC, no schema/API/security/UX changes).
+
 ---
 
 ## 6. Gate file anatomy
