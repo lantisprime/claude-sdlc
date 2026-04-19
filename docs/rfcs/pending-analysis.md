@@ -99,7 +99,7 @@ Today, the workaround is either "do the brainstorming outside the plugin and com
 
 ## 3. Multi-team approval across Claude Code sessions
 
-> **Status update (2026-04-19):** This item has moved to a draft RFC — see [multi-team-approval.md](./multi-team-approval.md). The context below is preserved for reference; the recommended direction and open questions now live in the RFC. This item closes when the RFC is accepted or rejected.
+> **Status update (2026-04-19):** **Closed — accepted.** See [multi-team-approval.md](./multi-team-approval.md) for the accepted RFC. The context below is preserved for historical reference.
 
 ### Problem
 
@@ -152,7 +152,7 @@ No direct conflict. The challenge is operational (sync model) and scope (how muc
 |---|---|---|
 | 1. Spike bypass | Yes — Plan-before-code, Traceability | High. `CLAUDE.md` constrains the design space — see item 1. |
 | 2. Pre-plan brainstorm | No direct conflict | Low. Safest item of the three. |
-| 3. Multi-team approval | No direct conflict — aligns with traceability. Operational challenges only. Draft RFC: [multi-team-approval.md](./multi-team-approval.md). | Medium. Over-design risk if scoped too broadly. |
+| 3. Multi-team approval | No direct conflict — aligns with traceability. Operational challenges only. Accepted RFC: [multi-team-approval.md](./multi-team-approval.md). | Medium. Over-design risk if scoped too broadly. |
 
 ---
 

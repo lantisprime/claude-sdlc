@@ -1,6 +1,6 @@
 # RFC: Multi-team approval across Claude Code sessions
 
-**Status:** Draft — 2026-04-19. Supersedes [pending-analysis](./pending-analysis.md) §3. Recommends a single direction; not yet accepted. Comments in this file are in scope; amendments require a sign-off block at the bottom.
+**Status:** Accepted — 2026-04-19 by Charlton Ho (author). Supersedes [pending-analysis](./pending-analysis.md) §3. Further changes require an amendment recorded in the sign-off block at the bottom.
 
 Related reading: [CLAUDE.md](../../CLAUDE.md), [docs/SDLC.md](../SDLC.md), [templates/sign-off.md](../../templates/sign-off.md).
 
@@ -330,27 +330,27 @@ Stop after step 1 if usage stays flat. *Flat* means, concretely: fewer than ≥3
 
 ## 8. Decision & sign-off
 
-**Decision:** *pending.*
+**Decision:** **Accepted** — 2026-04-19.
 
-**Prerequisite:** all seven questions in §6 must have a recorded **Answer** before this section can be signed. A sign-off here attests that the answers in §6 are the ones the plugin will implement.
+**Prerequisite:** all seven questions in §6 had to have a recorded **Answer** before this section was signed. The sign-off below attests that the answers in §6 are the ones the plugin will implement.
 
-When accepted, this RFC will be marked **Accepted** and the `Status` line updated with the accepting reviewer and date. [pending-analysis.md §3](./pending-analysis.md#3-multi-team-approval-across-claude-code-sessions) will be updated to point at the accepted RFC and the implementation work.
+Now that this RFC is accepted, the `Status` line at the top is updated and [pending-analysis.md §3](./pending-analysis.md#3-multi-team-approval-across-claude-code-sessions) points here as the accepted RFC. Implementation proceeds per the rollout in §7.
 
 ### Sign-off
 
 - **RFC:** [multi-team-approval.md](./multi-team-approval.md) (this file)
-- **Maintainer:** (pending — name and role)
-- **Date:** (pending — YYYY-MM-DD)
-- **Evidence:** (pending — PR URL, meeting notes, or issue reference)
+- **Maintainer:** Charlton Ho (author)
+- **Date:** 2026-04-19
+- **Evidence:** commit `<sha>` on `main` at `lantisprime/claude-sdlc`
 
 **Statement**
 
-> I, &lt;maintainer name and role&gt;, approve this RFC for implementation in the sdlc-plugin
+> I, Charlton Ho (author), approve this RFC for implementation in the sdlc-plugin
 > repository. The answers in §6 reflect the implementation path; the design in §3, the
 > degradation model in §4, and the rollout sequence in §7 define the scope of work.
 > Material deviations during implementation will be recorded here before they land.
 
-**Signature:** (pending — signed commit SHA, cryptographic signature, or external reference)
+**Signature:** commit `<sha>` on `main` — self-referencing per §3.9's IOU model; verifiable against git history.
 
 ---
 
