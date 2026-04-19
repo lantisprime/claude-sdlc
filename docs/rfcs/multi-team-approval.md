@@ -140,6 +140,48 @@ The plugin calls these by name via MCP; specific integrations (Slack, GitHub, Ji
 
 Connectors are optional. The plugin core works without any.
 
+### 3.8 Role-to-gate mapping (guidance)
+
+The suggested role vocabulary (§6.4) and when each role typically signs. This is **guidance, not enforcement** — repos pick which roles a specific change actually needs.
+
+**Role definitions**
+
+- **product** — Owns the product vision and user outcomes. Signs that the ask is worth building (Plan), REQs capture the intent (Analyze), and the release is ready for users (Deploy).
+- **ba** — Business analyst; translates stakeholder needs into concrete, testable requirements. Signs that requirements are complete and unambiguous (Analyze); optionally validates acceptance in Test.
+- **architecture** — Technical lead or architecture review board. Signs that the design fits existing system constraints, avoids duplication, and handles cross-cutting concerns (Design).
+- **security** — Application security / infosec engineer. Signs the threat model and design (Design), security-critical code paths (Build, situational), and release-time vulnerability posture (Deploy); on-call during Support incidents.
+- **privacy** — Data protection officer (DPO) or privacy engineer. Signs when the change touches personal data — confirming lawful basis, retention, GDPR/CCPA compliance (scope-triggered across Analyze, Design, Deploy).
+- **compliance** — Regulatory / audit lead. Signs when the change falls under industry regulation (SOX, HIPAA, PCI, etc.) — confirming controls are met and audit evidence is captured (scope-triggered across Plan, Analyze, Deploy).
+- **sre** — Site reliability / platform engineer. Signs that the change is operationally sound — deployable, monitorable, has a runbook and a viable rollback plan (Design, Deploy, Support).
+- **qa** — Quality assurance lead representing the test organization. Signs that test coverage meets policy, exploratory testing is done, and no blocker defects remain (Test); optionally co-signs Deploy.
+- **legal** — Legal counsel. Signs when the change touches IP, open-source licenses, third-party data sharing, or contractual terms (scope-triggered across Design, Deploy).
+
+**Gate mapping**
+
+**Legend:** ● typically required · ○ situational (depends on scope) · blank = not expected
+
+| Role | Plan | Analyze | Design | Build | Test | Deploy | Support |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| product | ● | ● |  |  | ○ | ● |  |
+| ba | ○ | ● |  |  | ○ |  |  |
+| architecture | ○ |  | ● |  |  |  |  |
+| security |  |  | ● | ○ |  | ● | ○ |
+| privacy |  | ○ | ○ |  |  | ○ |  |
+| compliance | ○ | ○ |  |  |  | ● | ○ |
+| sre |  |  | ○ |  |  | ● | ● |
+| qa |  |  |  |  | ● | ○ |  |
+| legal |  |  | ○ |  |  | ○ |  |
+
+**Notes**
+
+- **Build** phase has no typical cross-team sign-off. Code review + adjacent-function detector + tests inside the dev team cover it.
+- **`privacy`, `legal`, `compliance`** are *scope-triggered* — only require them when the work actually touches data handling, IP/licensing, or regulated concerns. Declaring them on every gate trains teams to rubber-stamp.
+- **`product`** appears twice intentionally — approving the ask at Plan and approving the release at Deploy are different questions.
+- **Docs (phase 8)** is cross-cutting with no dedicated gate file; attach docs sign-off to whichever phase gate touches user-facing content.
+- **`/fix-fast`** skips the reconciler entirely (§6.3).
+
+**Velocity considerations (for scrum teams).** Multi-team sign-off is overhead. The plugin mitigates queueing with one-file-per-signer (parallel signing), warn-not-block defaults, offline outbox drain for cross-timezone work, and the `/fix-fast` bypass for small fixes. The biggest velocity lever, though, is in the team's hands: *which roles a gate actually requires*. Surgical role scoping on each story adds a single-digit-percent overhead; cargo-culting all nine roles on every story can halve sprint velocity. Treat the matrix as a tool for narrowing, not a checklist to satisfy.
+
 ## 4. Degradation matrix
 
 | Scenario | Behavior | Principle |
@@ -180,7 +222,7 @@ Each question below must be answered before the RFC can be marked **Accepted** i
 Concurrent writes from two sessions to the same share path — acceptable or needs file locking? SMB and NFS behave differently.
 
 - **Proposal:** rely on one-file-per-signer to avoid overlap; document that the plugin does not implement locking.
-- **Answer:** _pending_
+- **Answer:** Confirmed. The plugin does not implement locking. One-file-per-signer (§3.1) eliminates collisions in the common case; the remaining risk — two signers claiming the same role for the same REQ — is a *conflict*, not a locking problem, and is handled by §6.7.
 
 ### 6.2 `APPROVALS.md` regeneration timing
 
@@ -194,14 +236,14 @@ On every reconcile run, or only on phase advance?
 The fast-path collapses Plan + Analyze + Design; cross-team approval is almost certainly out of scope for a ≤2-file, ≤50-LOC fix.
 
 - **Proposal:** `/fix-fast` does not parse `## Required sign-offs` and does not run the reconciler. Documented exception.
-- **Answer:** _pending_
+- **Answer:** Confirmed. If a task needs cross-team sign-off it is out of `/fix-fast` scope by definition — fix-fast eligibility already excludes schema/API/security/UX changes. The correct response is "promote to `/plan`," not widening the fast path. To be documented alongside the fix-fast eligibility rules in [docs/SDLC.md](../SDLC.md).
 
 ### 6.4 Role vocabulary
 
 Free-form per §3.2, but should the plugin ship a suggested list (security, product, compliance, sre, legal)?
 
 - **Proposal:** yes, in [docs/SDLC.md](../SDLC.md) as guidance, not enforcement.
-- **Answer:** _pending_
+- **Answer:** Per-repo configurable vocabulary. New config key `approvals.roles` in `config/tools.json`. Default suggested list (9 roles): `security, product, compliance, sre, legal, privacy, architecture, qa, ba`. Reconciler warns on unknown roles (catches typos) but does not enforce membership. See §3.8 for role definitions, gate mapping, and velocity considerations.
 
 ### 6.5 Signer revocation
 
@@ -215,14 +257,14 @@ If Juan signs, then the design changes substantively — is Juan's sign-off auto
 Can the `evidence` URL point at something mutable (a Slack message that gets deleted)?
 
 - **Proposal:** document that evidence should be immutable where possible; no enforcement.
-- **Answer:** _pending_
+- **Answer:** Confirmed. No enforcement — parsing arbitrary URL schemes would couple the plugin to specific tools (principle 6). Accompany with a short **evidence quality ladder** in docs: *prefer* git SHA, PDF path with sha256, archived email message ID, signed commit; *avoid* Slack message links, editable wiki pages, cloud-doc URLs without a version pin.
 
 ### 6.7 Sync conflict resolution
 
 If a sign-off exists both locally and externally (via an MCP connector) with different content, which wins? One-file-per-signer (§3.1) makes this rare, but not impossible — e.g., two sessions edit the same `REQ-042-security.md` before either syncs.
 
 - **Proposal:** last-write-wins by `timestamp` field; the losing copy is preserved as `REQ-042-security.conflict.md` for human review; reconciler warns.
-- **Answer:** _pending_
+- **Answer:** No automatic winner. Last-write-wins on `timestamp` risks clock-skew silent overwrites and makes a judgment call without a human (principle 1). On conflict, preserve both variants as `REQ-042-security.local.conflict.md` and `REQ-042-security.remote.conflict.md`; the reconciler blocks that specific role as "conflicting" until a human picks one and deletes the other. More friction, better principle fit.
 
 ## 7. Rollout
 
