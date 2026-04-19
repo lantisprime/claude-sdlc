@@ -12,6 +12,8 @@ Claude Code is fast. Sometimes too fast. This plugin trades a little velocity fo
 
 If any of that sounds like friction you don't want — this plugin is not for you, and that's fine.
 
+For how this fits an enterprise engineering org — role shifts, cost mechanics, audit evidence, and what stays human-in-the-lead — see [docs/claude-sdlc-enterprise-adoption.md](docs/claude-sdlc-enterprise-adoption.md).
+
 ## Core principles
 
 These are load-bearing. The plugin is built around them; changes that violate them usually feel like simplifications but aren't.
