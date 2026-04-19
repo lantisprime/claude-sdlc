@@ -490,6 +490,16 @@ Each scenario shows: the initial user input → what the plugin does → what it
 
 > **Every scenario assumes the drafted artifact is correct before you sign.** If the plan, requirements, design, or any other artifact comes back wrong — which it will sometimes — do **not** sign it as-is. See [section 5 → Before you sign: correcting an artifact](#before-you-sign-correcting-an-artifact) for the three correction paths (ask Claude to redraft, edit the file yourself, or abort the phase). This loop is available at every `Plugin writes …` → `You sign` step below; it is omitted from the scenario walkthroughs only to keep them short.
 
+#### The chat sign-off paste (same shape every time)
+
+For phases that use chat sign-off (`/plan`, `/analyze`, `/design`, `/build`, `/test`, `/support`), what you type at the sign-off prompt is **one line** — a ticket URL, PR URL, or the `no ticket REQ-<n>` degraded form:
+
+```
+https://linear.app/acme/issue/API-4421
+```
+
+That single line is quoted verbatim into the gate file's `Acknowledgment` block along with an ISO-8601 timestamp. Scenarios below show it as `**You (sign-off):** <the literal paste>` — mentally substitute the URL that matches your actual work item. For manual sign-off (deploy, fix-fast), you edit the gate file directly — see the worked example in [section 5 → Manual sign-off](#manual-sign-off-required-for-deploy-and-fix-fast).
+
 ### 7.1 Scenario A — Greenfield feature (full 8 phases)
 
 **Task:** add rate-limit headers to the public API.
@@ -538,7 +548,10 @@ https://linear.app/acme/issue/API-4421
   - Each REQ has acceptance criteria, priority, source.
 - Maps each REQ to `scope.md` sections.
 
-**You:** sign gate with ticket URL.
+**You (sign-off):**
+```
+https://linear.app/acme/issue/API-4421
+```
 
 ---
 
@@ -551,7 +564,10 @@ https://linear.app/acme/issue/API-4421
 - Writes `.claude/sdlc/tech-specs/ratelimit-middleware.md`: API signatures, error modes, NFRs.
 - `test-designer` subagent writes `.claude/sdlc/test-cases/TC-1.md`…`TC-5.md`, each traced to a REQ ID.
 
-**You:** sign gate.
+**You (sign-off):**
+```
+https://linear.app/acme/issue/API-4421
+```
 
 ---
 
@@ -570,7 +586,12 @@ https://linear.app/acme/issue/API-4421
 - `adjacent-function-detector.sh` scans hunk headers → warns if you accidentally edited a neighbor
 - `modified-code-test-gate.sh` fires on `Stop` — warns if any modified function lacks a test
 
-**You:** review the diff. Sign the gate by pasting the PR URL once the diff is committed.
+**You:** review the diff. Once committed and pushed, sign the gate with the PR URL:
+
+**You (sign-off):**
+```
+https://github.com/acme/gateway/pull/1182
+```
 
 ---
 
@@ -584,7 +605,10 @@ https://linear.app/acme/issue/API-4421
 - Writes `.claude/sdlc/test/rate-limit-headers-report.md` with pass/fail and coverage
 - Any failures → defects opened as GitHub Issues (since `env.json` says `issue_tracker: github`), labeled `defect`, `severity:*`, `phase:test`
 
-**You:** sign gate.
+**You (sign-off):**
+```
+https://linear.app/acme/issue/API-4421
+```
 
 ---
 
@@ -599,7 +623,11 @@ https://linear.app/acme/issue/API-4421
   - Feature flag: `api.ratelimit_headers_enabled` (default off)
   - Rollback: revert the flag; no data impact
   - Blast radius: public API surface
-- **Manual sign-off.** You open the gate file and add your signature, then run the deploy command yourself.
+- **Manual sign-off.** You open `.claude/sdlc/gates/deploy-rate-limit-headers.md` in your editor and fill the five placeholder fields. The exact edits are shown in [section 5 → Worked example — signing a deploy gate by hand](#worked-example--signing-a-deploy-gate-by-hand). After saving, you run the actual deploy command yourself, e.g.:
+
+```bash
+./scripts/deploy prod --flag api.ratelimit_headers_enabled=on --canary 10
+```
 
 **Plugin never auto-deploys.**
 
@@ -616,7 +644,10 @@ https://linear.app/acme/issue/API-4421
   - `runbook.md` — what to check when an alert fires
 - Proposes — never auto-applies to production.
 
-**You:** sign gate.
+**You (sign-off):**
+```
+https://linear.app/acme/issue/API-4421
+```
 
 ---
 
@@ -686,6 +717,28 @@ If any box is unchecked, run the full phases instead. The plugin does **not** wi
 
 **You:** **manual sign-off** — you edit the mini-gate file at `.claude/sdlc/gates/plan-pagination-off-by-one.md` yourself. Chat sign-off is rejected here.
 
+Apply the same five-field edit shown in [section 5 → Worked example — signing a deploy gate by hand](#worked-example--signing-a-deploy-gate-by-hand). For this fix-fast mini-gate the edit looks like:
+
+```diff
+- - **Signed by:** <human name or email>
++ - **Signed by:** juan.delacruz@acme.com
+
+- - **Signed at:** <YYYY-MM-DDTHH:MM:SSZ>
++ - **Signed at:** 2026-04-18T11:22:03Z
+
+- - **Work-item reference:** <URL of REQ / ticket / CR>
++ - **Work-item reference:** https://github.com/acme/api/issues/884
+
+  ## Acknowledgment
+
+- <Write your raw sign-off message here, then save.>
++ > Verified fix-fast eligibility: 1 file touched, ~12 LOC, no schema
++ > / API / security / UX changes. Off-by-one confirmed by the failing
++ > boundary test. Approving the compressed path.
+```
+
+Save the file. Phase 4 (`/build`) can now run.
+
 **Then Phases 4–8 run normally** — Build, Test, Deploy, Support, Docs are **not** compressed.
 
 #### How the eligibility limits are actually enforced
@@ -744,7 +797,12 @@ Create the file, then re-run /analyze.
 - Match existing header button style (see button.tsx)
 ```
 
-**You re-run:** `/analyze` → proceeds, requirements drafted, sign gate.
+**You re-run:** `/analyze` → proceeds, requirements drafted.
+
+**You (sign-off):**
+```
+https://linear.app/acme/issue/WEB-2207
+```
 
 **Phase 5 (`/test`):** runs UX conformance checks — compares rendered UI against your description / mockups, stores screenshots under `.claude/sdlc/test/ux/`.
 
@@ -804,9 +862,34 @@ Rationale: internal tools hit rate limits without visibility
 Risk: moderate — admin ops may see 429s sooner
 ```
 
-**You sign the CR** at `.claude/sdlc/sign-offs/CR-3.md` — ISO-8601 timestamp + reviewer name.
+**You sign the CR** by creating `.claude/sdlc/sign-offs/CR-3.md`:
 
-**Update the plan** to add the admin gateway files to `In-scope files`.
+```markdown
+# Sign-off: CR-3
+
+- **Reviewer:** juan.delacruz@acme.com
+- **Signed at:** 2026-04-18T15:47:19Z
+- **Decision:** approved
+
+## Rationale
+
+Admin API rate-limit headers are a reasonable scope addition — same
+middleware, internal-only blast radius, caught before Build completed.
+Accepting moderate risk of admin tools seeing 429s sooner.
+```
+
+**Update the plan** at `.claude/sdlc/plans/rate-limit-headers.md` — add the admin gateway files under `## In-scope files`:
+
+```diff
+  ## In-scope files
+
+  - gateway/middleware/ratelimit.go
+  - gateway/middleware/ratelimit_test.go
++ - admin-gateway/middleware/ratelimit.go
++ - admin-gateway/middleware/ratelimit_test.go
+```
+
+(Reference the CR in the commit message of your plan edit, e.g. `plan: extend scope per CR-3`.)
 
 **Resume Build.** `work-item-validation.sh` sees the signed CR and permits the Edit. Without the sign-off, it blocks.
 
@@ -856,16 +939,51 @@ Pick a number, or paste a different mock command.
 
 ---
 
-**You:** export the RFC to `docs/rfcs/rate-limits.md`.
+**You:** export the RFC from Notion and drop it in the repo:
 
-**You:** `/plan "use the RFC at docs/rfcs/rate-limits.md as the plan input"`
+```bash
+mkdir -p docs/rfcs
+cp ~/Downloads/rate-limits-rfc.md docs/rfcs/rate-limits.md
+```
+
+**You:**
+```
+/plan "use the RFC at docs/rfcs/rate-limits.md as the plan input"
+```
 
 **Plugin:**
 - Reads the RFC.
 - Produces `.claude/sdlc/plans/rate-limit-headers.md` in the plugin's template shape, with a `Source:` line pointing back to the RFC.
-- If required fields are missing (e.g. no explicit `In-scope files` list), asks you to fill the gaps — doesn't invent them.
+- If required fields are missing (e.g. no explicit `In-scope files` list), asks you to fill the gaps — doesn't invent them. Example prompt:
+  ```
+  RFC imported. Two fields are missing from the plan template:
+   - In-scope files (not mentioned explicitly in the RFC)
+   - Rollback (RFC describes forward cut-over only)
 
-**You:** fill gaps, sign gate.
+  Please fill these in .claude/sdlc/plans/rate-limit-headers.md
+  before sign-off.
+  ```
+
+**You:** open the file and fill the gaps. Example of the minimum edit:
+
+```diff
+  ## In-scope files
+
+- <to be determined>
++ - gateway/middleware/ratelimit.go
++ - gateway/middleware/ratelimit_test.go
+
+  ## Rollback
+
+- <to be determined>
++ Disable the feature flag `api.ratelimit_headers_enabled`. No data
++ migrations, no schema changes — flag flip reverts behavior.
+```
+
+**You (sign-off):**
+```
+https://linear.app/acme/issue/API-4421
+```
 
 Same pattern works for `/analyze "pull requirements from JIRA PROJ-123"` — the plugin will read the ticket (via MCP if configured) and transform it into the requirements template.
 
