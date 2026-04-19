@@ -341,7 +341,7 @@ Now that this RFC is accepted, the `Status` line at the top is updated and [pend
 - **RFC:** [multi-team-approval.md](./multi-team-approval.md) (this file)
 - **Maintainer:** Charlton Ho (author)
 - **Date:** 2026-04-19
-- **Evidence:** commit `<sha>` on `main` at `lantisprime/claude-sdlc`
+- **Evidence:** commit `54437d4` on `main` at `lantisprime/claude-sdlc`
 
 **Statement**
 
@@ -350,7 +350,7 @@ Now that this RFC is accepted, the `Status` line at the top is updated and [pend
 > degradation model in §4, and the rollout sequence in §7 define the scope of work.
 > Material deviations during implementation will be recorded here before they land.
 
-**Signature:** commit `<sha>` on `main` — self-referencing per §3.9's IOU model; verifiable against git history.
+**Signature:** commit `54437d4` on `main` — self-referencing per §3.9's IOU model; verifiable against git history.
 
 ---
 
