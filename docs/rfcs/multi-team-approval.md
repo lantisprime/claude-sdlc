@@ -182,6 +182,45 @@ The suggested role vocabulary (§6.4) and when each role typically signs. This i
 
 **Velocity considerations (for scrum teams).** Multi-team sign-off is overhead. The plugin mitigates queueing with one-file-per-signer (parallel signing), warn-not-block defaults, offline outbox drain for cross-timezone work, and the `/fix-fast` bypass for small fixes. The biggest velocity lever, though, is in the team's hands: *which roles a gate actually requires*. Surgical role scoping on each story adds a single-digit-percent overhead; cargo-culting all nine roles on every story can halve sprint velocity. Treat the matrix as a tool for narrowing, not a checklist to satisfy.
 
+### 3.9 Connector conventions (examples, non-normative)
+
+This section grounds §3.7's abstract contract with concrete shapes for common tools. It is **informational** — no connector is required to follow these conventions, and no plugin skill or hook depends on them. Connectors ship in separate repos and document their own conventions; what follows illustrates how the contract is typically implemented.
+
+**Inbox flow**
+
+```
+External tool  →  Connector (MCP)                →  Plugin core
+                  list_approvals(req_id)
+                  fetch_approval(external_ref)         writes conforming
+                    — translate to §3.1 shape          sign-off file into
+                    — resolve signer → email           local sign-offs/
+                    — capture evidence URL
+                    — apply dedup rule
+```
+
+The plugin core calls `list_approvals` and `fetch_approval` per §3.7; the connector is responsible for translation. The plugin trusts whatever conforming file arrives in `sign-offs/`.
+
+**Example native forms**
+
+| Tool | Native form | Translation notes |
+|---|---|---|
+| Slack | A message in a designated channel starting with `APPROVE REQ-<id> AS <role>` followed by the statement | `signer` ← Slack user → email (workspace directory); `evidence` ← `slack://C01.../p123...`; `timestamp` ← message `ts` |
+| Notion | A page in an "Approvals" database with properties `req_id`, `role`, `status=Approved`, and a statement block | `signer` ← page creator's email; `evidence` ← page URL with block anchor; `timestamp` ← page edit time |
+| Jira | A workflow transition ("Approve") on a custom issue type, or a comment matching `/approve REQ-<id> --- <role>` | `signer` ← transition actor; `evidence` ← issue URL + changelog entry; `timestamp` ← transition time |
+| GitHub | A PR review approval on a PR titled or labeled with `REQ-<id>` | `signer` ← reviewer's commit email; `evidence` ← PR review URL; `timestamp` ← review submission time |
+
+**Connector responsibilities**
+
+Connectors must handle the following; the plugin core does not.
+
+1. **Identity resolution.** Every tool has its own user namespace; connectors must resolve to an email. If resolution fails, skip the record and surface a warning — do not fabricate an identity. Aligns with §3.6: the plugin never trusts external identity, but connectors must be honest about what they can and can't prove.
+2. **Mutable source handling.** Slack messages, Notion pages, and similar are editable after signing. The fetched sign-off file captures a snapshot at fetch time; the `evidence` URL may later become misleading. §6.6's evidence quality ladder ranks these tools as low-immutability.
+3. **Duplicate / conflicting approvals.** A signer may post twice (edit + repost, or in two channels). Connectors pick a dedup policy — typically *first-seen wins* or *latest wins* — and document it. This is *connector-internal*; §6.7's conflict handling only fires when two *different* transports produce conflicting files for the same role.
+4. **Retroactive harvest.** Pre-existing messages or pages may match the convention and risk being picked up unintentionally. Connectors should filter by explicit opt-in or a date window.
+5. **Rate limits and pagination.** `list_approvals` on large backlogs will hit API limits; connectors paginate and cache. The plugin treats all connector calls as fallible and warns on partial results.
+
+Connectors that cannot meet one of these responsibilities should declare the gap in their own docs. Teams adopting a connector accept its limitations — the plugin core has no visibility into them.
+
 ## 4. Degradation matrix
 
 | Scenario | Behavior | Principle |
@@ -264,7 +303,7 @@ Can the `evidence` URL point at something mutable (a Slack message that gets del
 If a sign-off exists both locally and externally (via an MCP connector) with different content, which wins? One-file-per-signer (§3.1) makes this rare, but not impossible — e.g., two sessions edit the same `REQ-042-security.md` before either syncs.
 
 - **Proposal:** last-write-wins by `timestamp` field; the losing copy is preserved as `REQ-042-security.conflict.md` for human review; reconciler warns.
-- **Answer:** No automatic winner. Last-write-wins on `timestamp` risks clock-skew silent overwrites and makes a judgment call without a human (principle 1). On conflict, preserve both variants as `REQ-042-security.local.conflict.md` and `REQ-042-security.remote.conflict.md`; the reconciler blocks that specific role as "conflicting" until a human picks one and deletes the other. More friction, better principle fit.
+- **Answer:** No automatic winner. Last-write-wins on `timestamp` risks clock-skew silent overwrites and makes a judgment call without a human (principle 1). On conflict, preserve both variants as `REQ-042-security.local.conflict.md` and `REQ-042-security.remote.conflict.md`; the reconciler blocks that specific role as "conflicting" until a human picks one and deletes the other. More friction, better principle fit. Applies only across transports. Within a single connector (e.g., two Slack messages for the same role), dedup is the connector's internal responsibility — see §3.9.
 
 ## 7. Rollout
 
