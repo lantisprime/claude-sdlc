@@ -89,9 +89,11 @@ Transports *deliver* sign-off files into `.claude/sdlc/sign-offs/`. They never r
 | 0 | Local file | — | Baseline; signer authors the file in their own session | Always works |
 | 1 | Network share | `approvals.share_path` | Enterprise environments with SMB/NFS; cross-repo visibility | Reconciler warns if path unreachable; local still works |
 | 2 | Git central repo | `approvals.git_repo` | Orgs with a shared git host; strong audit trail | Warn on fetch failure; local still works |
-| 3 | Slack file drop | `approvals.slack.*` | Teams wanting "attach signed file in thread" convenience | Warn if sidecar absent; local still works |
+| 3 | MCP connector | `approvals.mcp.*` | Teams whose approvals naturally live in another tool (Slack, GitHub, Jira, ServiceNow, …) | Warn if MCP unreachable; local still works; queued writes drain on reconnect |
 
-**Local is authoritative.** All transports are eventual-consistency pipes. A signer who authors the file locally and commits it has produced a valid sign-off regardless of transport availability.
+**Local is authoritative.** All transports are eventual-consistency pipes. A signer who authors the file locally has produced a valid sign-off regardless of transport availability.
+
+**Online-sync behavior (tiers 1–3).** The reconciler treats connectivity as a property of each run, not a precondition. When a tier's destination is unreachable, the local file is marked `sync_pending: true` in its frontmatter. On the next reconciler run where the destination *is* reachable, the outbox drains (pushes queued files) and the inbox pulls (fetches externally-produced sign-offs into local). Signers can work fully offline; the shared view catches up without manual intervention. Conflict handling is covered in §6.7.
 
 ### 3.5 Git mirror: `APPROVALS.md`
 
@@ -118,11 +120,25 @@ This is the "todo in git" surface: pending approvals show up in PR diffs, git bl
 
 ### 3.6 Identity model
 
-Slack is a **file-drop transport, not a signature source.** A signer authors the sign-off file (in their own Claude Code session or by hand), uploads it to a Slack thread, and an optional sidecar moves it into `sign-offs/`. The plugin does not read Slack user IDs, does not map them to emails, and does not trust Slack's authentication layer.
+External tools are **file-drop transports, not signature sources.** A signer authors the sign-off file (in their own Claude Code session or by hand); the transport moves it *out* to the external system and *in* from others. The plugin does not read external user IDs, does not map them to emails, and does not trust external authentication layers. Each MCP connector documents its own identity semantics externally; the plugin core stays agnostic.
 
 Three alternatives were considered and rejected (see §5).
 
-**Consequence:** the "approve from my phone by replying yes" pattern is *not supported by this RFC*. Teams that want it must build a sidecar outside the plugin that produces a valid sign-off file on their behalf. The plugin reconciles whatever files appear in `sign-offs/`.
+**Consequence:** the "approve from my phone by replying yes" pattern is *not supported by the plugin core.* Teams that want it must build a connector or sidecar outside the plugin that produces a valid sign-off file on their behalf. The plugin reconciles whatever files appear in `sign-offs/`.
+
+### 3.7 MCP connector contract
+
+Tier 3 is opened up by a small generic contract, not a specific integration. A connector implements three operations:
+
+| Operation | Purpose | Return |
+|---|---|---|
+| `list_approvals(req_id)` | Enumerate sign-off artifacts the external system knows about for a given REQ ID | List of (role, signer, timestamp, external-ref) |
+| `fetch_approval(external_ref)` | Pull one sign-off artifact from the external system | Sign-off file body (same contract as §3.1) |
+| `push_approval(file)` | Publish a locally-authored sign-off to the external system | External reference string |
+
+The plugin calls these by name via MCP; specific integrations (Slack, GitHub, Jira) ship as separate connectors and are referenced only by config in `approvals.mcp.*`. Principle 6 is preserved: no tool name appears in any skill or hook.
+
+Connectors are optional. The plugin core works without any.
 
 ## 4. Degradation matrix
 
@@ -131,7 +147,7 @@ Three alternatives were considered and rejected (see §5).
 | No network, no git, no Slack | Local `sign-offs/` only. All signers commit files directly. | 5 — always works offline |
 | Share configured but unreachable | Warn on reconcile; local signatures still count | 5 |
 | Git configured but unreachable | Warn on reconcile; `APPROVALS.md` regenerates from whatever is local | 5 |
-| Slack sidecar absent | Warn only if `approvals.slack.*` is set; signers fall back to direct file commit | 5 |
+| MCP connector unreachable | Warn only if `approvals.mcp.*` is set; new sign-offs mark `sync_pending`; outbox drains on next reachable reconcile | 5 |
 | Required role has no sign-off file | Warn (default) or block (if `approvals.block_on_missing: true`) | 1 — human decides |
 | Sign-off file present but `gate_ref` points at a gate that doesn't exist | Warn; reconciler flags as "orphan" | 4 |
 
@@ -144,7 +160,7 @@ Mapped to the five options in [pending-analysis.md §3](./pending-analysis.md#3-
 | A — multi-signature gate files | **Partially adopted.** We keep the gate file as the declaration of required signers (3.2), but move the signatures themselves into per-signer files (3.1) so teams sign without merge conflicts. | Parallel signing. |
 | B — external approval references | **Absorbed.** The git transport (3.4 tier 2) is a constrained form of this. | Simpler than arbitrary URL refs. |
 | C — shared central approvals repo | **Adopted as tier 2.** Not as the primary model. | Graceful degradation requires local to be canonical. |
-| D — integrate with GitHub / Jira / etc. | **Rejected for the plugin core.** Users who want this can add a sidecar. | Principle 6 — stack-agnostic. |
+| D — integrate with GitHub / Jira / etc. | **Partially adopted** via the MCP connector contract (§3.7). Specific integrations ship outside the plugin core; the contract is generic. | Keeps principle 6 while enabling the integrations users want. |
 | E — document the manual pattern, don't solve | **Rejected.** The artifact contract is cheap, the reconciler is cheap, and the gap is real. | Demand is concrete. |
 
 Rejected identity models (for §3.6):
@@ -201,6 +217,13 @@ Can the `evidence` URL point at something mutable (a Slack message that gets del
 - **Proposal:** document that evidence should be immutable where possible; no enforcement.
 - **Answer:** _pending_
 
+### 6.7 Sync conflict resolution
+
+If a sign-off exists both locally and externally (via an MCP connector) with different content, which wins? One-file-per-signer (§3.1) makes this rare, but not impossible — e.g., two sessions edit the same `REQ-042-security.md` before either syncs.
+
+- **Proposal:** last-write-wins by `timestamp` field; the losing copy is preserved as `REQ-042-security.conflict.md` for human review; reconciler warns.
+- **Answer:** _pending_
+
 ## 7. Rollout
 
 Incremental. Each step is independently valuable and stops a useful place:
@@ -209,7 +232,7 @@ Incremental. Each step is independently valuable and stops a useful place:
 2. **Git mirror (`APPROVALS.md`).** Add the generator. Stack-agnostic; no config.
 3. **Network share transport (tier 1).** Add `approvals.share_path` support. Simple copy-in, copy-out.
 4. **Git transport (tier 2).** Add `approvals.git_repo` with fetch/push semantics.
-5. **Slack sidecar (tier 3).** Document the contract for external sidecars; ship a reference implementation *outside* the plugin core if demand warrants.
+5. **MCP connector transport (tier 3).** Define the three-operation contract (§3.7) in [config/tools.example.json](../../config/tools.example.json). Add the outbox/inbox drain as a subphase of the reconciler. Reference connectors (Slack, GitHub) ship in separate repos, not in the plugin core.
 
 Stop after step 1 if usage stays flat. Each further step is gated on seeing real adoption of the previous one.
 
@@ -217,7 +240,7 @@ Stop after step 1 if usage stays flat. Each further step is gated on seeing real
 
 **Decision:** *pending.*
 
-**Prerequisite:** all six questions in §6 must have a recorded **Answer** before this section can be signed. A sign-off here attests that the answers in §6 are the ones the plugin will implement.
+**Prerequisite:** all seven questions in §6 must have a recorded **Answer** before this section can be signed. A sign-off here attests that the answers in §6 are the ones the plugin will implement.
 
 When accepted, this RFC will be marked **Accepted** and the `Status` line updated with the accepting reviewer and date. [pending-analysis.md §3](./pending-analysis.md#3-multi-team-approval-across-claude-code-sessions) will be updated to point at the accepted RFC and the implementation work.
 
