@@ -464,6 +464,14 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 └── templates/       (10)        # artifact templates
 ```
 
+## Related reading
+
+- [docs/SDLC.md](docs/SDLC.md) — authoritative phase reference
+- [docs/USER-MANUAL.md](docs/USER-MANUAL.md) — scenario walkthroughs
+- [docs/when-not-to-use.md](docs/when-not-to-use.md) — anti-patterns; who this plugin is *not* for
+- [docs/claude-sdlc-enterprise-adoption.md](docs/claude-sdlc-enterprise-adoption.md) — enterprise role/cost/audit story
+- [docs/rfcs/pending-analysis.md](docs/rfcs/pending-analysis.md) — open design questions under analysis
+
 ## Contributing
 
 Before submitting a change, read [`CLAUDE.md`](CLAUDE.md) — it documents the design intent and the anti-patterns that look like improvements but aren't.
