@@ -32,6 +32,42 @@ No direct conflict with the six principles.
 
 ## 3. Proposed design
 
+### 3.0 Component overview
+
+The plugin core owns `sign-offs/`, `APPROVALS.md`, and `approvals-archive/`. Transports are optional pipes that move files in and out of `sign-offs/`; external tools are never trusted as sources of truth.
+
+```mermaid
+flowchart TB
+    Signer([Signer — human])
+
+    subgraph Repo["Repo workspace"]
+        Gates["Gate files<br/>.claude/sdlc/gates/"]
+        Signoffs["Sign-offs<br/>.claude/sdlc/sign-offs/"]
+        Archive["Archive<br/>.claude/sdlc/approvals-archive/"]
+        Approvals["APPROVALS.md<br/>git mirror"]
+    end
+
+    Reconciler["approval-reconcile.sh<br/>hook + /sync-approvals"]
+
+    subgraph Transports["Optional transports (tiers 1–3)"]
+        Share["Network share"]
+        Git["Central git repo"]
+        MCP["MCP connectors<br/>Slack, Notion, Jira, GitHub"]
+    end
+
+    Signer -->|authors sign-off| Signoffs
+    Signer -.->|or signs in external tool| MCP
+
+    Gates -->|"## Required sign-offs"| Reconciler
+    Signoffs -->|reads| Reconciler
+    Reconciler -->|regenerates| Approvals
+    Reconciler -->|archives > 90d| Archive
+
+    Share <-->|outbox / inbox| Signoffs
+    Git <-->|outbox / inbox| Signoffs
+    MCP <-->|outbox / inbox| Signoffs
+```
+
 ### 3.1 Approval artifact contract
 
 One file per signer, at `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md`. The plugin's reconciler treats this location as **authoritative**: every transport syncs files *into* this directory.
@@ -131,6 +167,27 @@ This is the "todo in git" surface: pending approvals show up in PR diffs, git bl
 
 **Regeneration across sync events.** Because `APPROVALS.md` is generated purely from the local `sign-offs/` directory, offline and online behavior share the same code path. Offline signers produce files locally; the next reconciler run regenerates `APPROVALS.md` to reflect them (no network needed). On reconnect, the transport sync (§3.4) pulls external sign-offs into `sign-offs/`, bumps its mtime, and the next reconciler run regenerates with the full picture.
 
+```mermaid
+sequenceDiagram
+    participant S as Signer (offline)
+    participant L as Local sign-offs/
+    participant R as Reconciler
+    participant A as APPROVALS.md
+    participant T as Transport
+
+    Note over S,A: Offline — no network
+    S->>L: write sign-off<br/>(sync_pending: true)
+    R->>L: mtime changed → regenerate
+    R->>A: rewrite (local view only)
+
+    Note over T: Connection restored
+    R->>T: outbox drain — push queued
+    T-->>R: inbox pull — fetch remote
+    T->>L: new files arrive<br/>(sync_pending cleared)
+    R->>L: mtime changed again
+    R->>A: rewrite (full picture)
+```
+
 **Guiding the human through merge conflicts.** Three layers, all stack-agnostic and requiring no client-side git config:
 
 1. **File-header rule.** The generated `APPROVALS.md` begins with a blockquote stating the resolution rule: *accept either side; the reconciler will regenerate from `sign-offs/` on its next run.* Visible in both raw markdown and rendered views.
@@ -209,14 +266,20 @@ This section grounds §3.7's abstract contract with concrete shapes for common t
 
 **Inbox flow**
 
-```
-External tool  →  Connector (MCP)                →  Plugin core
-                  list_approvals(req_id)
-                  fetch_approval(external_ref)         writes conforming
-                    — translate to §3.1 shape          sign-off file into
-                    — resolve signer → email           local sign-offs/
-                    — capture evidence URL
-                    — apply dedup rule
+```mermaid
+flowchart LR
+    Ext["External tool<br/>Slack / Notion / Jira / GitHub"]
+
+    subgraph Connector["Connector — MCP"]
+        List["list_approvals(req_id)"]
+        Fetch["fetch_approval(ref)<br/>• translate to §3.1 shape<br/>• resolve signer → email<br/>• capture evidence URL<br/>• apply dedup rule"]
+    end
+
+    Core["Plugin core<br/>writes to local sign-offs/"]
+
+    Ext --> List
+    List --> Fetch
+    Fetch --> Core
 ```
 
 The plugin core calls `list_approvals` and `fetch_approval` per §3.7; the connector is responsible for translation. The plugin trusts whatever conforming file arrives in `sign-offs/`.
