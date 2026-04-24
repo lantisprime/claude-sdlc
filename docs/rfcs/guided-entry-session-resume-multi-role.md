@@ -212,24 +212,30 @@ Layer 2 reads this block to decide what to pass to `/configure --needs` and how 
 
 **Dry-run.** `/configure --check` parses current config, runs the validation pass, prints what would be asked. No prompts, no writes. Mirrors `/status`'s read-only posture.
 
-**First-install question budget: 8 questions maximum.** Layer 0's wizard is capped to keep onboarding from becoming a tax. Progressive disclosure enforces the cap:
+**First-install question budget: 8 questions maximum.** Layer 0's wizard is capped to keep onboarding from becoming a tax. Progressive disclosure enforces the cap.
+
+**Scope of the multi-team questions (Q5–Q8).** Three things the accepted RFC leaves out of config are deliberately absent from this wizard:
+
+- **No per-role email assignments.** Signer identity lives in the `signer:` field of each sign-off file (accepted RFC §3.1, §3.6), never in config. The wizard does not ask "who signs what."
+- **No signed-commit enforcement.** Cryptographic attestation is a team-workflow concern outside the plugin (accepted RFC §3.9). Teams that want `git commit -S` should configure git itself.
+- **No tracker-notification-on-signature.** Not in accepted-RFC scope; would need its own mini-RFC before this wizard could prompt for it.
+
+The questions:
 
 1. Tracker type? (Linear / GitHub Issues / Jira / none)
 2. Tracker auth token? (only if tracker chosen; stored in `tools.local.json`)
 3. Tracker project key or repo? (only if tracker chosen)
-4. Will this project use multi-team sign-off? (Y/n) — **if `n`, skip questions 5–7 and finish**
-5. Role vocabulary? (suggested 9-role set from accepted RFC §6.4 / custom comma-separated list) — writes `approvals.roles`
-6. Sync sign-off files across machines? (none / network share / central git repo / defer)
+4. Will this project use multi-team sign-off? (Y/n) — **if `n`, skip questions 5–8 and finish**
+5. Role vocabulary? (suggested 9-role set from accepted RFC §6.4 / custom comma-separated list) — writes `approvals.roles`. *No per-role email prompt follows; identity lives in the sign-off file itself per accepted RFC §3.6.*
+6. Sync sign-off files across machines? (none / network share / central git repo / defer). *Transport is a file-delivery mechanism, not an identity source — no signed-commit prompt follows.*
 7. (Conditional on Q6) Share path or central git repo URL? — writes `approvals.share_path` or `approvals.git_repo`
 8. Enable `display.session_signoff_hints` personalization in PR 3? (Y/n; default Y)
 
 Single sign-off users answer 3 questions and finish. Multi-team users answer up to 8. No question presents a free-text field without a sensible default offered where possible. The budget is a ceiling, not a target — adding a 9th question requires justifying why it can't be deferred to a later reconfigure flow.
 
-**Deliberately excluded from Q5–Q8:** per-role email assignments (accepted RFC keeps signer identity in the sign-off file, not in config), signed-commit enforcement (accepted RFC §3.9 treats cryptographic attestation as a team-workflow concern outside the plugin), and tracker-notification-on-signature (not in accepted RFC scope; would need its own mini-RFC to land).
-
 **Context-aware defaults.** `/configure` inspects the environment before prompting and pre-selects likely answers: `.github/` directory → suggest GitHub Issues; `.linear.yml` or the Linear CLI on PATH → suggest Linear; `git remote -v` containing `github.com` → suggest GitHub Issues as the secondary default. User can always override; the point is to make the default the user's probable answer so accept-and-continue is a single keystroke.
 
-**Rationale.** `/configure` is the largest single cognitive-load win in this RFC. Current users must read `config/tools.example.json`, infer the schema, and know which fields are secret. `/configure` asks plain-language questions, validates as it goes, handles the public/local split automatically, and — because Layers 0 and 2 auto-invoke — removes the need to memorize the command at all. After reshape, the question bank is *smaller* than the pre-reshape draft (per-role assignments and signed-commit enforcement dropped out), so onboarding is faster, not slower.
+**Rationale.** `/configure` addresses a concrete, named friction: today's users must read `config/tools.example.json`, infer the schema, and know which fields are secret. `/configure` asks plain-language questions, validates as it goes, handles the public/local split automatically, and — because Layers 0 and 2 auto-invoke — removes the need to memorize the command at all. The question bank stays tight: three questions for single-signer users, up to seven for multi-team users, with one optional display preference.
 
 ### 9. Glossary, `/help`, and shared message library
 
@@ -315,7 +321,12 @@ PR 10 (auto next-step hints) — ships last; applied uniformly across every skil
 
 **Ship order:** 1 → 2 → 3 → 4 → 8 → 9 → 6 → 10
 
-PR 3 ships before PR 4 because session-resume is the fastest-visible cognitive-load win. Until PR 4 lands, PR 3's "drafted-but-unsigned" and "signed mid-phase" outputs include a short caveat: "revising a signed plan currently mutates it in place; versioning ships in PR 4." PR 8 lands immediately before PR 9 because the configuration surface introduces `approvals.roles` + transport config, and the glossary is cleaner if written against a stable config surface. PR 9 lands after PR 8 so the glossary is written once against the full new vocabulary, not grown piecemeal. PR 6 lands after PR 4 so the packet's delta section knows the version shape, and after PR 9 so glossary cross-links work. PR 10 is last because it's a cross-cutting output convention — applying it to every skill is cleanest when each skill has settled into its final output shape.
+The ordering rationale separates hard dependencies from soft preferences:
+
+- **Hard:** PR 10 must ship last — it rewrites every skill's output shape and is cleanest when every other skill has settled. PR 6 uses PR 4's version machinery in its delta section, so PR 4 precedes it.
+- **Soft (quality-of-rollout):** PR 3 ships before PR 4 because session-resume is the fastest-visible cognitive-load win, not because PR 4 depends on it. Until PR 4 lands, PR 3's "drafted-but-unsigned" output includes a short caveat ("revising a signed plan currently mutates it in place; versioning ships in PR 4"). PR 9 ships after PR 8 because the glossary reads better when `approvals.roles` and the transport config keys are already user-facing; PR 9 would still ship fine before PR 8 with a shorter initial glossary. PR 6 is placed after PR 9 so packet cross-links into the glossary work on day one.
+
+No two PRs block each other outside PR 4→6 and PR 10-last; the rest of the order is a rollout preference, not a constraint.
 
 **Estimated effort:** roughly one week of focused work for one engineer, or one-and-a-half to two weeks calendar with testing, documentation, and iterating on skill descriptions until they trigger reliably. (Reduced from pre-reshape estimate because PRs 5 and 7 represented roughly one-third of the original scope.)
 
@@ -361,6 +372,19 @@ Metrics describe reality. They do not predict it. No improvement percentages are
 
 **Appeal paths, reviewer-of-reviewers, sophisticated delegation.** Deferred. Real usage will generate specific requirements; pre-building governance for abuse cases that may not occur is how systems become unusable.
 
+## Open questions
+
+Questions that must be answered before the corresponding PR lands. Each lists a proposal; reviewers confirm or replace with an answer inline.
+
+### OQ-1 — PR 4 material-edit detection for `In-scope files`
+
+The material-edit prompt fires when a save touches the `In-scope files` field of a signed plan. "Touches" is underspecified: does adding a file count? Removing one? Reordering? Renaming a path the linter reformatted? Each choice trades false-positive rate (annoying the user) against false-negative rate (a material change slips through unversioned).
+
+- **Proposal:** material change = the *set* of in-scope files changes (additions or removals). Pure reordering does not trigger. Path rename detected via git rename heuristics (or the user confirms on prompt) counts as set-preserving, not material. This keeps the prompt quiet on cosmetic edits while firing on the cases that matter for `gate_hash` (accepted RFC §6.5) consistency.
+- **Answer:** *(pending — resolve before PR 4 implementation)*
+
+Similar sub-questions for `In-scope functions`, `Out-of-scope`, and `Classification` may surface during implementation; resolve them with the same set-vs-ordering framing if they do.
+
 ## Pending discussions
 
 Directions that surfaced during design iteration and are worth resolving before or alongside implementation, but haven't been decided yet. Captured here so they aren't lost; each can fold into an existing PR, become a new PR, or defer to post-ship.
@@ -370,10 +394,12 @@ Directions that surfaced during design iteration and are worth resolving before 
 Offer named presets at Layer 0 question 5 so users with no opinion don't have to design a role vocabulary from scratch:
 
 - **Solo developer** — no sign-off roles required; skips Q5–Q8.
-- **Small team** — `approvals.roles: [product, tech_lead]`; sync mode `none`.
+- **Small team** — `approvals.roles: [product, qa]`; sync mode `none`.
 - **Open source** — `approvals.roles: [product, architecture]`; sync mode `central git repo` (per-team choice).
 - **Enterprise** — `approvals.roles` set to the full 9-role vocabulary from accepted RFC §6.4: `[security, product, compliance, sre, legal, privacy, architecture, qa, ba]`; sync mode `central git repo`.
 - **Custom** — free-form list (today's default).
+
+All four non-Custom presets use roles from the accepted RFC's suggested 9-role vocabulary (§6.4). The accepted RFC permits free-form role strings (§3.2) — teams that prefer labels like `tech_lead`, `reviewer`, or `maintainer` should pick **Custom**; the reconciler will still recognize them and warn only on typos, not on presence outside the suggested set.
 
 Each preset bundles matching `approvals.roles` and `approvals.share_path`/`approvals.git_repo` defaults. Would fold into §8 if accepted. Note: presets do not bundle per-role email assignments or signed-commit enforcement — both are deliberately out of scope per accepted RFC.
 
