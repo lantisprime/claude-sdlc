@@ -1,7 +1,17 @@
 # PR 7 — Distributed Sign-Off: Degradation and Failure Modes
 
-**Companion to:** RFC 0001
-**Scope:** Implementation reference for `skills/gate-signoff/SKILL.md` and `templates/gate.md` changes in PR 7.
+> **Status:** superseded (2026-04-24)
+
+**Companion to:** formerly RFC 0001 PR 7 (dropped during reshape)
+**Scope (historical):** Implementation reference for `skills/gate-signoff/SKILL.md` and `templates/gate.md` changes that were proposed for PR 7.
+
+**Superseded by:** [multi-team-approval.md](../multi-team-approval.md). PR 7 was dropped during the guided-entry RFC's reshape on 2026-04-24. The accepted multi-team-approval RFC handles distributed sign-off via a different mechanism — **file transports**, not commits-as-signatures. See accepted RFC §3.4 (transport ladder, with Tier 2 carrying sign-off files through a central git repo), §3.5 (`APPROVALS.md` projection), and §3.6 (identity model — external tools are file-drop transports, not signature sources).
+
+This note is kept for historical reference. Some of the failure-mode analysis below may still be useful when implementing the accepted RFC's Tier 2 git transport, which has overlapping failure modes (no remote, push rejection, branch protection) even though the *artifact* being moved is different (a sign-off file in `sign-offs/`, not the gate file itself with embedded signature blocks). Treat this document as background, not spec.
+
+---
+
+## Original note content follows
 
 This note exists because PR 7's "graceful degradation" story is more nuanced than PR 5's. PR 5 had a single fallback: config absent means current behavior. PR 7 has multiple layers that can be present, misconfigured, or missing, and each requires a different correct response. Some degrade, some hand off, some intentionally refuse. Implementers should read this before writing the skill changes.
 
@@ -150,7 +160,7 @@ Status: awaiting-approvals
 
 <!-- @@SIGNATURE tech_lead @@ -->
 - Role: tech_lead
-- Signer: alice@acme.com (resolved from git config)
+- Signer: juan.delacruz@acme.com (resolved from git config)
 - role_verified: true
 - Work item: https://linear.app/acme/issue/PROJ-1234
 - Acknowledgment: "https://linear.app/acme/issue/PROJ-1234"
@@ -161,7 +171,7 @@ Status: awaiting-approvals
 
 <!-- @@SIGNATURE architect @@ -->
 - Role: architect
-- Signer: bob@acme.com (resolved from git config)
+- Signer: maria.santos@acme.com (resolved from git config)
 - role_verified: true
 - Work item: https://linear.app/acme/issue/PROJ-1234
 - Acknowledgment: "https://linear.app/acme/issue/PROJ-1234"

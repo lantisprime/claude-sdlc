@@ -42,7 +42,7 @@ A note with no status field should be treated as `discussion`.
 | --- | --- | --- |
 | [`_repo-context.md`](./_repo-context.md) | reference | Canonical repo grounding — principles, capability counts, accepted RFCs, open PRs, anti-patterns. Paste first in any new conversation. |
 | [`plan-phase-scope-ingest-discussion.md`](./plan-phase-scope-ingest-discussion.md) | discussion | Proposal for reshaping Phase 1: `scope-ingest` agent + `domain-expert` skill. Includes conflict analysis against accepted multi-team-approval RFC and PR #1. |
-| [`guided-entry-pr7-degradation.md`](./guided-entry-pr7-degradation.md) | companion | Refuse/degrade/hand-off taxonomy for PR 7 of the guided-entry UX RFC (PR #1). |
+| [`guided-entry-pr7-degradation.md`](./guided-entry-pr7-degradation.md) | superseded | Historical reference for dropped PR 7. Superseded by accepted `multi-team-approval.md` §3.4–§3.6 (file-transport distributed sign-off). Some failure-mode analysis may still inform Tier 2 git transport implementation. |
 
 ## Adding a new note
 
