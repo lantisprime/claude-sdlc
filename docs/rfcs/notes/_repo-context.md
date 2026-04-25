@@ -3,7 +3,7 @@
 > **Purpose.** Paste or reference this file at the start of any new conversation about the repo so the assistant has accurate grounding without re-fetching everything. Keep it short and current. If a fact drifts, fix it here first.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-25 (scope-ingest RFC promoted)
+**Last updated:** 2026-04-25 (scope-ingest RFC reviewed + OQ-SCOPE-1 resolved)
 
 ---
 
@@ -110,7 +110,7 @@ Frontend tasks halt in Phase 2 until some UX artifact exists at `.claude/sdlc/ar
 
 ## Draft RFCs (not yet PR'd)
 
-- **Scope ingest + domain expert** — `docs/rfcs/scope-ingest.md` (promoted from discussion note 2026-04-25). Proposes `scope-ingest` agent + `domain-expert` skill hanging off `/plan`. All accepted-RFC conflicts resolved. One open question before implementation: OQ-SCOPE-1 (pseudo-phase gate vs. new artifact class for scope gate file).
+- **Scope ingest + domain expert** — `docs/rfcs/scope-ingest.md` (promoted 2026-04-25, second-opinion review applied). Proposes `scope-ingest` agent + `domain-expert` skill hanging off `/plan`. All conflicts and open questions resolved. OQ-SCOPE-1 resolved: pseudo-phase gate for v1; new artifact class deferred to v2 (trigger: post-ship operator confusion or reconciler divergence). Implementation checklist unblocked — start with `domains/_schema.md` + seed files.
 
 ## Anti-patterns the repo explicitly guards against
 

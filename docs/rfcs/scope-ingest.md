@@ -217,7 +217,11 @@ Scope currently acts as a **pseudo-phase gate** (same gate file shape as `plan-<
 
 **Approval condition:** This RFC must not be signed off until OQ-SCOPE-1 is answered. All gate-related implementation items — `templates/scope-gate.md`, the `plan-gate.sh` modification, and the reconciler's `APPROVALS.md` projection behavior — depend on this answer. Record the decision as an inline amendment here before implementation begins.
 
-**Answer:** *(pending)*
+**Answer (resolved 2026-04-25): pseudo-phase gate for v1.**
+
+Rationale: the artifact format is identical to phase gate files; the reconciler handles it today with no code changes; the upgrade path to a new artifact class is a rename + `env.json` registry entry with no data migration. The label imprecision ("scope isn't a phase") is real but addressable via the glossary rather than requiring a new code path at this stage.
+
+**New artifact class deferred to v2.** After v1 ships and real usage is observed, evaluate whether the "pre-Plan gate" label causes operator confusion or whether reconciler behavior for scope needs to diverge from phase gate behavior. If either condition holds, promote to a new artifact class in a follow-on RFC amendment. The v2 checklist item is: (a) add `scope_gate` entry to `env.json` artifact registry, (b) rename `gates/scope-<project>.md` convention if needed, (c) add a reconciler branch for the new class. No data migration required — the file content is the same either way.
 
 ## 7. Architectural decisions
 
@@ -290,7 +294,7 @@ No improvement percentages committed here. Baseline first, interpret later.
 
 Sequencing follows the principle: validate the schema before building consumers; build the skill before the agent; wire them into `/plan` last.
 
-- [ ] Resolve OQ-SCOPE-1 (pseudo-phase gate vs. artifact class) before writing any gate-related code
+- [x] ~~Resolve OQ-SCOPE-1~~ — resolved 2026-04-25: pseudo-phase gate for v1 (see §6)
 - [ ] Write `domains/_schema.md` — the contract all domain files must follow
 - [ ] Write `domains/payments.md` seed file
 - [ ] Write `domains/auth.md` seed file
