@@ -161,7 +161,7 @@ No direct conflict. The challenge is operational (sync model) and scope (how muc
 
 ## Process for items on this page
 
-- **Status today:** all three items are open. Nothing has been decided.
+- **Status today:** items 1 and 2 are open. Item 3 (multi-team approval) is closed — accepted RFC at [multi-team-approval.md](./multi-team-approval.md).
 - **When an item is ready to decide,** it moves into a short RFC-style write-up (a new file under `docs/rfcs/`) with a single recommended option and a sign-off.
 - **When an item is decided,** this page is updated with the decision + a link to the implementation work.
 - **When an item is rejected,** the rejection and its reason stay on this page — a rejected item is still useful context for future contributors.
