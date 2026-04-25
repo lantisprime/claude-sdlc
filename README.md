@@ -155,6 +155,39 @@ Per the *graceful degradation* principle, the plugin never silently skips a chec
 
 > **Sharp edge:** Frontend tasks halt until a UX artifact exists — but any form works (Figma, PDF, screenshots, wireframes, or a written description). This is the only place the plugin blocks on missing external inputs. Everything else degrades to local files. **Backend-only tasks skip the UX track entirely** — no halt in Phase 2, no UX conformance in Phase 5.
 
+## Scope setup
+
+Before the first `/plan` in a new project, the plugin needs a scope statement. On first run, it will ask you to point at source material:
+
+```
+/plan "Add rate-limit headers to the public API"
+# → No scope.md found. Point me at source material:
+#   - a file path (README.md, docs/brief.txt, PRD.pdf…)
+#   - paste text directly in chat
+#   - or type 'skip' to write a one-paragraph statement by hand
+```
+
+The [`scope-ingest`](agents/scope-ingest.md) agent parses the source, extracts fields (in-scope, out-of-scope, success criteria, constraints, stakeholders, assumptions), and writes a provenance-traced draft to `.claude/sdlc/scope-drafts/<timestamp>.md`. You review the draft, fill any gaps marked `⚠️`, then copy it to `.claude/sdlc/scope.md` and sign the scope gate. Subsequent `/plan` runs read `scope.md` automatically.
+
+**Accepted source formats (v1):** `.md`, `.txt`, pasted text, or an existing `scope.md` in re-validate mode. PDF, DOCX, PPTX, and Jira/Linear ticket ingest are on the roadmap.
+
+## Adding domain files
+
+Domain files give the `plan` skill specialized knowledge about a business domain — gap questions, NFRs, regulatory flags, security hotspots. The plugin ships seeds for `payments` and `auth`. You add your own for any other domain (insurance, healthcare, real-time bidding, etc.).
+
+**Trigger:** when `/plan` runs and no matching domain is found, it offers once per session:
+
+```
+No domain file found for this area. Create one?
+A — Source-driven: paste a URL (spec, compliance guide, wiki page)
+B — Guided Q&A: answer 6 questions
+skip — don't ask again this session
+```
+
+**Project-level files take precedence.** Put your domain files in `domains/` at the repo root. They are merged with the plugin's built-in seeds; any file with the same slug as a plugin seed overrides it entirely.
+
+See [`skills/domain-expert/AUTHORING.md`](skills/domain-expert/AUTHORING.md) for the full authoring flow.
+
 ## Quick start
 
 > For a detailed walkthrough with scenarios, prerequisites, and exact user inputs at each step, see [docs/USER-MANUAL.md](docs/USER-MANUAL.md).
@@ -328,7 +361,8 @@ The plugin writes to `.claude/sdlc/` in the repo that *uses* the plugin — not 
 ```
 .claude/sdlc/
 ├── env.json                # detected integrations
-├── scope.md                # project scope statement
+├── scope.md                # signed project scope statement
+├── scope-drafts/           # raw scope-ingest output — reviewed before promoting to scope.md
 ├── plans/                  # one file per task
 ├── requirements/
 ├── architecture/
@@ -338,7 +372,7 @@ The plugin writes to `.claude/sdlc/` in the repo that *uses* the plugin — not 
 ├── tickets/
 ├── change-requests/
 ├── sign-offs/
-├── gates/                  # phase-gate sign-offs
+├── gates/                  # phase-gate sign-offs (includes scope-<project>.md)
 ├── defects/
 ├── deployments/
 ├── monitoring/
@@ -388,6 +422,7 @@ Cross-cutting skills — triggered by context across phases:
 | [security-review](skills/security-review/SKILL.md) | Reviews the current diff for OWASP-class issues; runs as part of `/review` |
 | [api-integration](skills/api-integration/SKILL.md) | Verifies API spec + endpoint reachability; offers a mock if unreachable |
 | [gate-signoff](skills/gate-signoff/SKILL.md) | Captures phase sign-off via chat with a work-item URL as non-trivial acknowledgment |
+| [domain-expert](skills/domain-expert/SKILL.md) | Injects domain-specific gap questions, NFRs, and regulatory flags into the plan (payments, auth, and user-defined domains) |
 
 ### Commands (11)
 
@@ -405,7 +440,7 @@ Cross-cutting skills — triggered by context across phases:
 | [/fix-fast](commands/fix-fast.md) | Compressed path for small bug fixes only (≤2 files, ≤50 LOC) |
 | [/token-review](commands/token-review.md) | Analyze per-phase token usage from the tracking log; surface optimization candidates |
 
-### Agents (4)
+### Agents (5)
 
 Bounded subagents with narrow write scope — they propose; humans approve.
 
@@ -415,6 +450,7 @@ Bounded subagents with narrow write scope — they propose; humans approve.
 | [test-designer](agents/test-designer.md) | Generates test cases from approved REQs | `.claude/sdlc/test-cases/` only |
 | [security-reviewer](agents/security-reviewer.md) | Audits the diff against the security checklist | Read-only (proposes remediations) |
 | [observability](agents/observability.md) | Produces monitoring / alerts / runbooks | `.claude/sdlc/monitoring/` only |
+| [scope-ingest](agents/scope-ingest.md) | Parses source material into a provenance-traced scope draft | `.claude/sdlc/scope-drafts/` only |
 
 ### Hooks (10)
 
@@ -422,7 +458,7 @@ Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy do
 
 | Hook | Event | Severity | What it does |
 |---|---|---|---|
-| [plan-gate.sh](hooks/plan-gate.sh) | PreToolUse (Edit/Write) | **Block** | Refuses edits when no plan exists for the task |
+| [plan-gate.sh](hooks/plan-gate.sh) | PreToolUse (Edit/Write) | **Block** / Warn | Blocks edits when no plan exists; warns when `scope.md` or the scope gate is absent |
 | [work-item-validation.sh](hooks/work-item-validation.sh) | PreToolUse | **Block** | Requires a valid REQ ID, ticket, or signed CR |
 | [secret-scan.sh](hooks/secret-scan.sh) | PreToolUse | **Block** | Blocks writes containing confirmed secrets |
 | [phase-gate.sh](hooks/phase-gate.sh) | PreToolUse (commands) | **Block** | Refuses a phase command until the prior gate is signed |
@@ -434,7 +470,7 @@ Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy do
 | [env-detect.sh](hooks/env-detect.sh) | SessionStart | — | Writes `.claude/sdlc/env.json` with detected integrations |
 | [token-tracker.sh](hooks/token-tracker.sh) | Stop | — | Parses the session transcript; writes raw per-phase token counts to `token-log.json` / `token-history.jsonl`. Off by default; enabled via `config/tools.json` |
 
-### Templates (10)
+### Templates (11)
 
 Shape of the artifacts the plugin produces. Headings and fields are parsed by hooks — don't rename them without checking downstream consumers.
 
@@ -448,6 +484,7 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 | [change-request.md](templates/change-request.md) | Scope change with sign-off |
 | [sign-off.md](templates/sign-off.md) | Reusable sign-off block |
 | [gate.md](templates/gate.md) | Phase gate file |
+| [scope-gate.md](templates/scope-gate.md) | Scope sign-off gate (`gates/scope-<project>.md`) |
 | [deployment.md](templates/deployment.md) | Deployment record |
 | [defect.md](templates/defect.md) | Defect report |
 
@@ -458,16 +495,18 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 ├── .claude-plugin/plugin.json   # manifest
 ├── config/tools.example.json    # copy to tools.json and fill in
 ├── docs/SDLC.md                 # full phase reference
-├── skills/          (14)        # 8 phase skills + 6 cross-cutting
+├── domains/                     # built-in domain knowledge seeds (payments, auth)
+├── skills/          (15)        # 8 phase skills + 7 cross-cutting (incl. domain-expert)
 ├── commands/        (11)        # one per checkpoint + /review + /fix-fast + /token-review
-├── agents/          (4)         # bounded subagents
+├── agents/          (5)         # bounded subagents (incl. scope-ingest)
 ├── hooks/                       # hooks.json + 10 shell scripts
-└── templates/       (10)        # artifact templates
+└── templates/       (11)        # artifact templates (incl. scope-gate)
 ```
 
 ## Related reading
 
 - [docs/SDLC.md](docs/SDLC.md) — authoritative phase reference
+- [docs/GLOSSARY.md](docs/GLOSSARY.md) — plugin-specific terms (scope draft, domain context, gap questions, scope gate, two-source lookup, and more)
 - [docs/USER-MANUAL.md](docs/USER-MANUAL.md) — scenario walkthroughs
 - [docs/when-not-to-use.md](docs/when-not-to-use.md) — anti-patterns; who this plugin is *not* for
 - [docs/claude-sdlc-enterprise-adoption.md](docs/claude-sdlc-enterprise-adoption.md) — enterprise role/cost/audit story

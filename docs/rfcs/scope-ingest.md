@@ -398,16 +398,16 @@ Sequencing follows the principle: validate the schema before building consumers;
 - [x] ~~Write `domains/payments.md` seed file~~ — done 2026-04-25
 - [x] ~~Write `domains/auth.md` seed file~~ — done 2026-04-25
 - [x] ~~Write `domains/_index.json` with keyword + stack rules for payments and auth~~ — done 2026-04-25
-- [ ] Build `domain-expert` skill — two-source lookup (project + plugin `domains/`), merges `_index.json` files (project rules first), matches against scope + stack, injects `## Domain context` into plan artifact; on miss, offers inline authoring flow (§3.5)
-- [ ] Build domain file authoring flow (§3.5) — Path A (source-driven ingest) and Path B (guided Q&A, 6 steps); writes to project `domains/<slug>.md`; updates project `_index.json` with any named keywords
-- [ ] Dry-run `domain-expert` + authoring flow against 3–5 past plan artifacts to validate gap question quality and Q&A UX
-- [ ] Build `scope-ingest` agent — markdown + plain text parsers first; PDF in a follow-up; DOCX/PPTX/URL as a separate scoped change
-- [ ] Add `scope-drafts/` to the artifact tree in `.claude/sdlc/`
-- [ ] Modify `skills/plan/SKILL.md` — wire in Step 2 (scope-ingest invocation) and Step 3 (domain-expert injection)
-- [ ] Write scope gate file template (`templates/scope-gate.md`) with `## Required sign-offs` block and `gate_hash` field (sha256 of content above `## Required sign-offs`, per accepted RFC §6.5)
-- [ ] Add scope gate check to `hooks/plan-gate.sh`
-- [ ] Dry-run end-to-end on one real project: source → draft → sign → plan → domain inject → gate
-- [ ] Documentation pass: README "Scope setup" section + "Adding domain files" guide; `docs/SDLC.md` Phase 1 update; `docs/GLOSSARY.md` entries for new terms (scope draft, provenance footer, domain context, gap questions, scope gate, domain miss, two-source lookup)
+- [x] ~~Build `domain-expert` skill~~ — done 2026-04-25: `skills/domain-expert/SKILL.md` — two-source lookup, 3-tier matching, `## Domain context` injection, authoring offer on miss
+- [x] ~~Build domain file authoring flow (§3.5)~~ — done 2026-04-25: `skills/domain-expert/AUTHORING.md` — Path A (source-driven ingest) and Path B (guided Q&A, 6 steps)
+- [x] ~~Modify `skills/plan/SKILL.md` — wire Step 2.5 (domain-expert check)~~ — done 2026-04-25
+- [x] ~~Dry-run `domain-expert` + authoring flow against 3–5 past plan artifacts~~ — done 2026-04-25: 5 artifacts (1 real plan + 3 real templates + 1 synthetic). 3 findings: F1 phrase-matching clarified in SKILL.md; F2 s2s auth section added to auth.md; F3 partial-answer detection deferred to v2
+- [x] ~~Build `scope-ingest` agent~~ — done 2026-04-25: `agents/scope-ingest.md` — md + txt v1, re-validate mode, confidence per field, provenance footer, graceful degradation
+- [x] ~~Add `scope-drafts/` to the artifact tree~~ — done 2026-04-25: wired into `skills/plan/SKILL.md` Step 2; agent creates directory on first run
+- [x] ~~Write `templates/scope-gate.md`~~ — done 2026-04-25: REQ-SCOPE-<project-slug>, gate_hash, ## Required sign-offs block, scope fields checklist, provenance pointer
+- [x] ~~Add scope gate check to `hooks/plan-gate.sh`~~ — done 2026-04-25: warn if scope.md absent; warn if no scope-*.md in gates/; existing plan-artifact block unchanged
+- [x] ~~Dry-run end-to-end~~ — done 2026-04-25: NihongoQuest README.md → scope draft (3 absent fields, 1 low-confidence) → scope gate → plan for "add fill-in-the-blank quiz". Finding F4: domain-expert was not checking scope.md when evaluating unanswered questions — fixed in SKILL.md (answer search order: plan body then scope.md). plan-gate.sh passed cleanly.
+- [x] ~~Documentation pass~~ — done 2026-04-25: README (Scope setup + Adding domain files + updated counts/tables); SDLC.md (artifact tree + Phase 1 six-step description); GLOSSARY.md (new file — 8 terms: scope draft, provenance footer, scope gate, domain context, gap questions, domain miss, two-source lookup, suggested roles, extraction confidence)
 
 ---
 

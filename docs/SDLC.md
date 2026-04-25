@@ -19,7 +19,9 @@ The plugin writes into `.claude/sdlc/` in the consuming repo:
 ```
 .claude/sdlc/
 ├── env.json                # integrations detected by env-detect.sh
-├── scope.md                # the project's scope statement
+├── scope.md                # signed project scope statement
+├── scope-drafts/           # scope-ingest output; reviewed before promoting to scope.md
+├── gates/scope-<project>.md  # scope gate (pseudo-phase gate, signed before first /plan)
 ├── plans/<task-slug>.md
 ├── requirements/<task-slug>.md
 ├── architecture/
@@ -51,11 +53,21 @@ The plugin writes into `.claude/sdlc/` in the consuming repo:
 
 **Command:** `/plan`  
 **Skill:** `plan`  
-**Prereq:** a one-paragraph scope statement (`scope.md`) — created interactively if missing.
+**Prereq:** a signed `scope.md`. On first run the `scope-ingest` agent turns source material (README, brief, spec) into a provenance-traced draft; the human reviews, corrects, and signs the scope gate before planning proceeds. Fallback: one-paragraph statement entered in chat.
 
-Produces a plan artifact with classification, in-scope files/functions, out-of-scope list, approach, tests to add, risks, rollback, estimate, and a technology-stack compatibility matrix. For fixes and CRs, validates the request against the original scope and surfaces any delta for human decision.
+Produces a plan artifact in six steps:
 
-**Gate:** `.claude/sdlc/gates/plan-<task-slug>.md`
+1. Classify the work item (new-build / fix / CR)
+2. Resolve scope — read `scope.md` if signed; otherwise invoke `scope-ingest` against source material the human provides
+3. Domain-expert check — matches the task against `domains/_index.json`; injects a `## Domain context` block (gap questions, NFRs, security hotspots) when a domain is detected
+4. Write the plan artifact (classification, in-scope files/functions, out-of-scope, approach, tests, risks, estimate)
+5. Technology stack compatibility matrix
+6. Human gate sign-off
+
+For fixes and CRs, Step 2 also validates the request against the original scope and surfaces any delta for human decision.
+
+**Gate:** `.claude/sdlc/gates/plan-<task-slug>.md`  
+**Scope gate (one-time per project):** `.claude/sdlc/gates/scope-<project>.md`
 
 ## Phase 2 — Analyze
 

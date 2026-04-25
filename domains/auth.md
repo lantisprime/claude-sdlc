@@ -32,6 +32,17 @@ suggested_roles: [product, security]
 - **SOC 2 Type II (if applicable)**: Access control, MFA enforcement, and session management are typically in scope for CC6. This plugin does not deliver SOC 2 compliance — it surfaces the question.
 - **HIPAA (if applicable)**: Automatic session timeout required. Audit log of all access to PHI systems required. Check with compliance before choosing session durations.
 
+## Service-to-service auth
+
+Inter-service authentication (machine-to-machine, sidecars, internal APIs) has a different risk profile from user-facing auth. If the change involves headers like `x-user-id`, `x-service-token`, or mTLS between services, several user-facing concerns (refresh token rotation, session invalidation propagation, MFA) do not apply. What does apply:
+
+- **Credential scoping:** service tokens must be scoped to the minimum permissions required for the call. Wildcard permissions on service accounts are high risk.
+- **Rotation policy:** service credentials must have a documented rotation interval. Unlike user sessions, there is no "user logs out" event to force expiry.
+- **Token propagation:** verify that a service-level credential cannot be escalated by a downstream service to access resources beyond the original caller's permission boundary.
+- **Audit trail:** service-to-service calls to sensitive resources require the same access logging as user-facing calls.
+
+If the task is clearly service-to-service, treat questions about PKCE, MFA, JWKS caching, and session invalidation as not applicable. Note this explicitly in the plan's `## Domain context` section.
+
 ## Common pitfalls
 
 - **Storing tokens in `localStorage`**: XSS-accessible. Prefer `HttpOnly` cookies for web. If using localStorage (e.g. for mobile web), understand the XSS risk surface.

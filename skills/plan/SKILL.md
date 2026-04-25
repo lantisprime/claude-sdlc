@@ -17,15 +17,29 @@ Ask (or infer from context) which of these the request is:
 
 The classification drives different validation downstream (Phase 4 Build).
 
-## Step 2 — Validate against original scope
+## Step 2 — Resolve scope
 
-Read `.claude/sdlc/scope.md` if it exists. Then:
+**If `.claude/sdlc/scope.md` exists and is signed:** read it and proceed. Run a quick re-validation check — if the plan task looks materially different from what scope.md describes, invoke `scope-ingest` in re-validate mode and surface the drift report before continuing.
 
-- **New build:** confirm the request is within the documented project scope. If not, surface a **scope-delta** and ask the human whether to (a) treat as a CR, (b) expand scope, or (c) defer.
+**If `.claude/sdlc/scope.md` does not exist:** ask the human to point at source material (file path or paste text). Then invoke the `scope-ingest` agent, which produces a draft at `.claude/sdlc/scope-drafts/<timestamp>.md`. Show the draft to the human and wait for review. The human copies/renames it to `.claude/sdlc/scope.md` and signs it before the plan proceeds.
+
+**Fallback — no source material:** if the human has no source to point at, ask for a one-paragraph scope statement and write `.claude/sdlc/scope.md` directly (existing behavior, preserved for minimal-friction cases).
+
+Then validate the resolved scope against the work item:
+
+- **New build:** confirm the request is within documented scope. If not, surface a **scope-delta** and ask the human whether to (a) treat as a CR, (b) expand scope, or (c) defer.
 - **Fix:** confirm the fix addresses in-scope behavior. An out-of-scope fix is a CR in disguise.
-- **CR:** require a change-request ID. If missing, create one under `.claude/sdlc/change-requests/CR-<n>.md` using `templates/change-request.md` and ask the human for sign-off before continuing. Build will later require the sign-off artifact.
+- **CR:** require a change-request ID. If missing, create one under `.claude/sdlc/change-requests/CR-<n>.md` using `templates/change-request.md` and ask the human for sign-off before continuing.
 
-If `.claude/sdlc/scope.md` does not exist, ask the human for a one-paragraph scope statement and write it.
+See `agents/scope-ingest.md` for accepted source formats and draft output spec.
+
+## Step 2.5 — Domain expert check
+
+After scope validation and before writing the plan, invoke the `domain-expert` skill. It runs the two-source domain lookup (project `domains/` then plugin `domains/`), matches the task against the domain index, and — when a match is found — prepares a `## Domain context` block to be appended to the plan artifact in Step 3.
+
+If no domain matches, the skill exits silently. Do not wait for the human or prompt them unless the skill itself surfaces a medium/low-confidence match that requires confirmation.
+
+See `skills/domain-expert/SKILL.md` for the full matching and output specification.
 
 ## Step 3 — Write the plan
 
@@ -73,4 +87,6 @@ Produce a one-screen summary of the plan and ask the human to confirm before Ana
 - `templates/plan.md` — plan artifact template
 - `templates/change-request.md` — CR template
 - `templates/gate.md` — phase-gate template
+- `agents/scope-ingest.md` — scope draft producer (Step 2)
+- `skills/domain-expert/SKILL.md` — domain context injector (Step 2.5)
 - `docs/SDLC.md` — full phase reference
