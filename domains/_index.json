@@ -1,0 +1,30 @@
+{
+  "_comment": "Keyword + stack rules for domain-expert skill matching. Rules are evaluated in order; first match at each confidence level wins. The domain-expert skill checks scope.md content and stack fields against these rules. Confidence: high = strong signal, match without confirmation; medium = probable, confirm at low-confidence threshold; low = weak signal, always confirm.",
+  "version": "1",
+  "rules": [
+    {
+      "slug": "payments",
+      "confidence": "high",
+      "keywords": ["payment", "stripe", "checkout", "billing", "invoice", "subscription", "pci", "pci-dss", "cardholder", "card number", "tokenization", "chargeback", "refund", "authorize.net", "braintree"],
+      "stacks": ["stripe", "stripe-node", "stripe-python", "stripe-php", "braintree", "paypal", "square", "adyen", "worldpay", "checkout.com"]
+    },
+    {
+      "slug": "payments",
+      "confidence": "medium",
+      "keywords": ["transaction", "charge", "merchant", "settlement", "reconciliation", "payout", "wallet", "sca", "3d secure", "strong customer authentication"],
+      "stacks": []
+    },
+    {
+      "slug": "auth",
+      "confidence": "high",
+      "keywords": ["authentication", "authorization", "login", "logout", "oauth", "oidc", "openid", "sso", "saml", "jwt", "access token", "refresh token", "session management", "password reset", "mfa", "two-factor", "2fa", "passkey", "webauthn"],
+      "stacks": ["auth0", "okta", "cognito", "keycloak", "passport", "passport-local", "passport-oauth2", "nextauth", "auth.js", "firebase-auth", "azure-ad", "ping-identity"]
+    },
+    {
+      "slug": "auth",
+      "confidence": "medium",
+      "keywords": ["identity", "credential", "permission", "role", "rbac", "abac", "access control", "privilege", "token expiry", "pkce", "authorization code"],
+      "stacks": []
+    }
+  ]
+}
