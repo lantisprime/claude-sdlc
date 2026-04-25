@@ -39,7 +39,8 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/env-detect.sh" }
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/env-detect.sh" },
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-plan-check.sh" }
         ]
       }
     ]

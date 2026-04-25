@@ -47,6 +47,10 @@
   },
   "artifact_format_fallback": "markdown",
   "_artifact_format_options": "markdown | json",
+  "display": {
+    "session_signoff_hints": "on",
+    "_comment": "Set session_signoff_hints to \"off\" to suppress the personalized sign-off hint in the SessionStart hook (session-plan-check.sh). Unpersonalized role lists are still shown."
+  },
   "token_tracking": {
     "enabled": false,
     "_comment": "When true, the Stop hook parses the session transcript and writes raw per-phase token counts to .claude/sdlc/token-log.json and token-history.jsonl. Records input/output/cache_creation/cache_read only — no cost calculation."
