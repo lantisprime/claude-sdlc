@@ -1,6 +1,6 @@
 # RFC: Scope Ingest and Domain-Expert Skill
 
-**Status:** Draft
+**Status:** Implemented (2026-04-25)
 
 **Author:** Charlton Ho
 **Target:** `lantisprime/claude-sdlc`
