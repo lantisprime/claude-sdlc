@@ -11,6 +11,14 @@ SCOPE=".claude/sdlc/scope.md"
 TOOL_INPUT="${CLAUDE_TOOL_INPUT:-}"
 if echo "$TOOL_INPUT" | grep -qE '\.claude/sdlc/'; then exit 0; fi
 
+# Block if plan was presented but not yet approved by the human.
+# Claude creates this marker (via Bash) at the end of a plan-presentation turn,
+# and removes it (via Bash) as the first action when the user approves.
+if [ -f ".claude/.plan-approval-pending" ]; then
+  echo "[plan-gate] BLOCK: plan presented but not yet approved — reply with 'yes' / 'go' to proceed." >&2
+  exit 2
+fi
+
 # --- Scope gate check (warn-level) ---
 # Warn if scope.md is absent — the plan skill will handle creation, but surface early.
 if [ ! -f "$SCOPE" ]; then
