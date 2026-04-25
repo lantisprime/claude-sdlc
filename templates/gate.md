@@ -30,3 +30,22 @@
 ## Confirmation
 
 I have reviewed the phase outputs and approve advancing to the next phase.
+
+## Required sign-offs
+
+<!--
+Optional — remove this section entirely for single-signer gates.
+Add one role per line when this gate requires multi-team approval.
+Roles are free-form strings; use whatever your team calls the reviewers.
+
+The approval-reconcile.sh hook warns at the end of each turn if sign-off files
+are missing for any listed role. Sign-off files live at:
+  .claude/sdlc/sign-offs/<REQ-ID>-<role>.md
+Use templates/sign-off-multi.md as the starting point.
+
+Example:
+  - security
+  - product
+  - compliance
+-->
+
