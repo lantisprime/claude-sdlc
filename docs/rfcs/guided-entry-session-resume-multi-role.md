@@ -474,7 +474,7 @@ No migration required for existing users.
 
 ## Implementation checklist
 
-- [ ] PR 1: `/status` command + skill (includes sign-off progress render)
+- [x] PR 1: `/status` command + skill (includes sign-off progress render)
 - [ ] PR 2: `/start` command + skill
 - [ ] PR 3: SessionStart plan check hook (includes opt-out partial personalization)
 - [ ] PR 4: Plan versioning and supersede
