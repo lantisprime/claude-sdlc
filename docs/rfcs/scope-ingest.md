@@ -1,0 +1,304 @@
+# RFC: Scope Ingest and Domain-Expert Skill
+
+**Status:** Draft
+
+**Author:** Charlton Ho
+**Target:** `lantisprime/claude-sdlc`
+**Date:** 2026-04-25
+**Promoted from:** `docs/rfcs/notes/plan-phase-scope-ingest-discussion.md` (discussion note preserved as historical record)
+
+**Related:**
+- `docs/rfcs/multi-team-approval.md` (accepted 2026-04-19) — sign-off conventions; all conflicts resolved, see §5
+- `docs/rfcs/guided-entry-session-resume-multi-role.md` (PR #1, draft) — Pending A resolved 2026-04-25; workflow presets and domain files are orthogonal, see §3.2
+
+---
+
+## 1. Problem
+
+`scope.md` today is authored by the human at first `/plan` invocation. Three failure modes:
+
+1. **Format sprawl.** Real-world scope lives in PDFs, Word docs, PPTX briefs, Confluence pages, Notion, Jira epics. The human has to translate any of those into a one-paragraph chat statement or a hand-written markdown file.
+2. **Quality uncertainty.** There is no validation that `scope.md` is clear, complete, or aligned with domain-specific regulations. The plan skill reads it and trusts it.
+3. **Cognitive load.** Open-ended authoring ("write the scope statement") is higher load than closed-form answering ("answer these four questions"). The plugin's own design philosophy — reduce surprise, reduce friction at the expensive moments — applies to scope too.
+
+`scope.md` is the artifact every downstream phase validates against. Getting it wrong silently widens what the plugin permits for the lifetime of the project.
+
+## 2. Design goals (mapped to core principles)
+
+| Principle | How this RFC respects it |
+|---|---|
+| 1. Human in the lead | `scope-ingest` drafts; the human validates and signs. The plugin never writes `scope.md` unilaterally. |
+| 2. Plan before code | Unchanged — scope sign-off gates the plan artifact, which already gates all edit operations. |
+| 3. Surgical edits | `scope-ingest` agent has narrow write scope: `scope-drafts/` only. It cannot touch `scope.md` directly. |
+| 4. Work-item traceability | Scope sign-off uses synthetic REQ-ID `REQ-SCOPE-<project-slug>`, traceable across phases. |
+| 5. Graceful degradation | No source material → fall back to the existing one-paragraph prompt. Works offline. |
+| 6. Stack-agnostic | Domain files and `domains/_index.json` are plain markdown and JSON. No tool-specific logic. |
+
+## 3. Proposed design
+
+### 3.0 Component overview
+
+```mermaid
+flowchart TB
+    Human([Human])
+
+    subgraph Plan["/plan invocation"]
+        Classify["1. Classify work item"]
+        ResolveScope["2. Resolve scope\n(scope-ingest agent or fallback)"]
+        DetectDomain["3. Detect + load domain\n(domain-expert skill)"]
+        WritePlan["4. Write plan artifact\n(includes ## Domain context)"]
+        Gate["6. Human gate sign-off"]
+    end
+
+    subgraph Artifacts["Artifacts"]
+        ScopeDraft[".claude/sdlc/scope-drafts/<timestamp>.md"]
+        ScopeMd[".claude/sdlc/scope.md (signed)"]
+        DomainFiles["domains/<slug>.md"]
+        PlanFile[".claude/sdlc/plans/<slug>.md"]
+        ScopeGate[".claude/sdlc/gates/scope-<project>.md"]
+        SignOff[".claude/sdlc/sign-offs/REQ-SCOPE-<slug>-product.md"]
+    end
+
+    Human -->|points at source| ResolveScope
+    ResolveScope --> ScopeDraft
+    ScopeDraft -->|human reviews + edits| ScopeMd
+    ScopeMd --> ScopeGate
+    Human -->|signs| SignOff
+    SignOff --> ScopeGate
+    DomainFiles --> DetectDomain
+    ScopeMd --> DetectDomain
+    DetectDomain --> WritePlan
+    WritePlan --> PlanFile
+    PlanFile --> Gate
+```
+
+### 3.1 `scope-ingest` agent
+
+A bounded subprocess with narrow write scope (`scope-drafts/` only). Its job is turning raw source material into a normalized, provenance-traced scope draft. The human reviews the draft, makes any corrections, and signs it.
+
+**Accepted source formats:**
+- File paths: `.md`, `.txt`, `.pdf`, `.docx`, `.pptx`
+- URLs (auth-walled sources require the human to export and paste content first)
+- Ticket references (if Jira/Linear MCP is wired via `env.json`)
+- Raw chat text
+- An existing `scope.md` (re-validate mode — reports drift; does not rewrite)
+
+**Pipeline:**
+1. Parse to plain-text blocks with provenance (source file, page/section, line span)
+2. Normalize into a fixed schema: `project_name`, `domain`, `in_scope[]`, `out_of_scope[]`, `success_criteria`, `constraints[]`, `stakeholders`, `assumptions`. Absent fields stay absent — no fabrication.
+3. Emit a draft at `.claude/sdlc/scope-drafts/<timestamp>.md` with a per-bullet provenance footer so every extracted claim traces to its source span.
+4. Return to the plan skill: draft path + extraction confidence per field.
+
+**Explicit non-goals:** writing `scope.md` directly, signing anything, deciding domain, fabricating fields where source material is thin.
+
+**Why agent, not skill.** Ingesting a 50-page PDF is expensive and isolated; bounding it to a subprocess keeps main-turn tokens sane. Narrow write scope (`scope-drafts/` only) is a real safety property — the agent cannot widen scope.md silently. The skill pattern is appropriate for `domain-expert` because that is a lightweight read-and-inject operation reused across phases; those economics don't apply here.
+
+### 3.2 `domain-expert` skill
+
+A read-and-inject skill. Invoked by `/plan` now; reusable by `/analyze` and `/design` in later work.
+
+**New directory at plugin root:**
+```
+domains/
+├── _index.json          # keyword + stack → domain slug
+├── _schema.md           # required shape for domain files
+├── payments.md          # seed
+├── auth.md              # seed
+└── ...
+```
+
+**Domain file shape:**
+```
+---
+slug: payments
+last_reviewed: 2026-03-15
+owner: <team-or-person>
+suggested_roles: []
+---
+# Payments
+
+## Glossary
+## Typical NFRs
+## Regulatory concerns
+## Common pitfalls
+## Stack notes
+## Security hotspots
+## Scope must address
+## Questions plan must answer
+```
+
+`last_reviewed` and `owner` are load-bearing — without them, domain files rot silently.
+
+`suggested_roles` is optional. When present, the plan skill surfaces these at plan-time as advisory context ("this domain typically involves compliance sign-off") but does not enforce or override `approvals.roles`. Absent field and empty list are equivalent. This is the advisory bridge agreed in the PR #1 Pending A resolution — workflow presets configure the mechanics; domain files advise on domain-specific role patterns.
+
+**Matching logic (3-tier, in order):**
+1. Explicit `domain:` tag in `scope.md` frontmatter → authoritative, no prompt needed
+2. Rule match against `domains/_index.json` → confidence `high` / `medium` / `low`
+3. No match → `domain: unknown`, proceed without injection
+
+Low-confidence matches require human confirmation at the plan gate before the domain context is written to the plan artifact. No silent assignment.
+
+**Output:** a `## Domain context` section in the plan artifact containing matched domain, confidence level, unanswered items from `Questions plan must answer`, and `Scope must address` items the current scope doesn't cover.
+
+### 3.3 Modified `/plan` flow
+
+Six steps instead of five:
+
+| Step | What happens | Changed? |
+|---|---|---|
+| 1 | Classify work item | Unchanged |
+| 2 | **Resolve scope** — if `scope.md` exists and is signed, read it. Otherwise invoke `scope-ingest` against the source the human points at. No source → prompt for one-paragraph statement (existing fallback). | **New** |
+| 3 | **Detect and load domain** — `domain-expert` matches scope + stack, produces gap questions | **New** |
+| 4 | Write plan artifact, including `## Domain context` section | Modified (new section) |
+| 5 | Record tech stack + compatibility matrix | Unchanged |
+| 6 | Human gate — sign-off covers plan + domain confirmation | Unchanged |
+
+The user-facing surface is unchanged: same `/plan` command, same gate ritual.
+
+### 3.4 Cognitive load — honest accounting
+
+**First `/plan` in a new repo (increases slightly):**
+1. Point at source material (path, URL, or paste text)
+2. Answer gap questions (closed-form, not open-ended)
+3. Sign scope — new one-time step
+4. Confirm domain match if confidence is not high
+5. Sign plan gate — existing
+
+**Subsequent `/plan` runs (roughly unchanged):**
+1. Run `/plan "<task>"`
+2. Confirm domain match if confidence is not high
+3. Sign plan gate
+
+The reduction is load *shifting* from open-ended authoring to closed-form answering. First-time setup costs slightly more in exchange for better scope quality from day one. Gap questions are advisory unless the domain file marks a question `required` — teams can tune how much friction the domain expert adds.
+
+## 4. Domain file schema
+
+The `domains/_schema.md` file defines the contract all domain files must follow. Implementers write it before writing the first seed file so the seed validates the schema rather than defines it.
+
+Required frontmatter: `slug`, `last_reviewed`, `owner`.
+Optional frontmatter: `suggested_roles`.
+
+Required sections: `## Scope must address`, `## Questions plan must answer`.
+Optional sections: `## Glossary`, `## Typical NFRs`, `## Regulatory concerns`, `## Common pitfalls`, `## Stack notes`, `## Security hotspots`.
+
+Sections with no content for a given domain are omitted entirely rather than present-but-empty — empty sections are noise that lowers the signal-to-noise ratio when the plan skill injects domain context.
+
+**Questions can be marked `required`.** A question marked `required: true` (inline tag) blocks plan sign-off if the plan artifact doesn't address it. Questions without the tag are advisory — surfaced in the `## Domain context` section but not enforced. Default: advisory. Only mark required when the gap genuinely voids the plan.
+
+**v1 seed files: `payments.md` and `auth.md`.** Two domains are enough to test the machinery. Start narrow — a seed that says too much becomes noise; a seed that says nothing is useless. Expand based on observed gaps after dry-runs on real past plan artifacts.
+
+## 5. Sign-off alignment with accepted `multi-team-approval.md`
+
+All four conflicts identified in the discussion note are resolved. No named exceptions to the accepted RFC's conventions are needed.
+
+| Conflict | Resolution |
+|---|---|
+| Sign-off filename convention | Synthetic REQ-ID `REQ-SCOPE-<project-slug>`. File: `sign-offs/REQ-SCOPE-<slug>-product.md`. Follows accepted RFC's `<REQ-ID>-<role>.md` pattern. |
+| Signer role | Default role is `product`. Drop tentative label `scope-owner` — not in the 9-role vocabulary. Domain files may declare `suggested_roles` for regulated domains; advisory, not enforced. |
+| Transport ladder | Same Tier 0–3 ladder as phase sign-offs. Tier 0 (local, authoritative) only for v1. Teams already using `approvals.share_path` or `approvals.git_repo` for phase sign-offs use the same keys; no new config. |
+| Reconciler / `APPROVALS.md` | Scope gate file at `.claude/sdlc/gates/scope-<project>.md` with `## Required sign-offs` block — same shape as phase gate files per §3.2 of the accepted RFC. Reconciler reads it identically; no new format. |
+
+## 6. Open question — OQ-SCOPE-1
+
+### Pseudo-phase gate vs. new artifact class
+
+Scope currently acts as a **pseudo-phase gate** (same gate file shape as `plan-<slug>.md`, `analyze-<slug>.md`, etc., just at a pre-Plan position). The alternative is treating scope as a **first-class artifact class** with its own schema, its own sign-off template variant, and explicit registry in `env.json`.
+
+| | Pseudo-phase gate | New artifact class |
+|---|---|---|
+| Implementation cost | Low — reconciler already handles phase gates; no new code path | Higher — new artifact schema, new registry entry, new skill branch |
+| Conceptual clarity | Lower — scope isn't really a phase; the "pre-Plan gate" label confuses the 8-phase model | Higher — scope is genuinely different from a phase gate |
+| Downstream ripple | Minimal — downstream phases read `scope.md`, not the gate file | Contained — the artifact class is new; existing phases are unaffected |
+| `APPROVALS.md` projection | Works today with no changes | Requires reconciler to understand the new class |
+
+**Proposal:** ship v1 as a pseudo-phase gate (low cost, unblocks the rest of the feature). If real usage shows the gate label confusion causes operator errors, promote to a new artifact class in a follow-on amendment. The gate file content and sign-off file format are identical either way — the upgrade is a rename and a registry entry, not a data migration.
+
+**Answer:** *(pending — resolve before implementation begins)*
+
+## 7. Architectural decisions
+
+- **Agent for `scope-ingest`, skill for `domain-expert`.** Agent when bounded write scope and expensive isolated work justify the subprocess cost. Skill when it is a reusable read-and-inject pattern across phases. This distinction is not cosmetic — agents cost more tokens per invocation.
+- **No new commands.** Cognitive load lives at the command level. `/plan` stays the single entry point. Both capabilities hang off it internally.
+- **`scope.md` is a derived, validated artifact — not an authoring target.** This lets the plugin accept any source format: the human points at material, the agent derives, the human validates and signs.
+- **Gap report, not draft.** A draft invites rubber-stamping. A gap report forces targeted answers. The load reduction happens here, not in automation.
+- **Provenance footer required.** Every scope bullet traces to its source span. Without this, fabrication in the normalization step is undetectable at sign-off.
+
+## 8. Failure modes to guard against
+
+- **Domain files too generic.** "Payments" covers too much → gap questions become noise → humans ignore. Start narrow; expand based on observed gaps from dry-runs.
+- **Over-aggressive ingestion.** Fabricating scope from thin sources → subtly wrong signed scope → every downstream phase drifts. Mitigation: per-bullet provenance, source-next-to-extracted-bullet view before signing.
+- **Onerous first-time setup.** If scope ingest + domain validation makes greenfield setup painful, teams skip the plugin. Mitigation: minimum-viable one-paragraph scope remains acceptable; gap questions are advisory unless domain file marks them `required`.
+- **Stale domain files.** `last_reviewed` + `owner` required; treat as living documentation. A domain file without an owner silently becomes the worst kind of documentation.
+- **Wrong domain match.** Wrong checklist → wrong gaps → misleading scope. Low-confidence matches require human confirmation; no silent assignment.
+
+## 9. What we will measure
+
+Following the existing `token-tracker.sh` pattern — JSONL lines appended to a history file.
+
+- Source type distribution (file path / URL / ticket ref / raw text / fallback one-paragraph)
+- Extraction confidence per field, per run — tracks whether domain file quality improves over time
+- Number of gap questions answered vs. deferred per plan
+- Scope drift detected by re-validate mode (how often does the source update between plans?)
+- Domain match confidence distribution — how often do users override low-confidence matches?
+
+No improvement percentages committed here. Baseline first, interpret later.
+
+## 10. Alignment with design principles
+
+| Principle | How this RFC preserves it |
+|---|---|
+| Human in the lead | `scope-ingest` drafts; human signs. `domain-expert` reports gaps; human confirms. No auto-advancement. |
+| Plan before code | `plan-gate.sh` is unchanged. Scope sign-off gates the plan artifact; plan artifact gates edit operations. |
+| Surgical edits | `scope-ingest` agent write scope is `scope-drafts/` only. `domain-expert` reads and injects; writes nothing. |
+| Work-item traceability | `REQ-SCOPE-<slug>` is a stable, traceable identifier across phases. |
+| Graceful degradation | No source → one-paragraph fallback. Missing domain match → proceed without injection. Missing transport → Tier 0 local. |
+| Stack-agnostic | Domain files are plain markdown + JSON. No tool-specific logic anywhere. |
+
+## 11. Non-goals
+
+- Adding a `/scope` command or any other user-visible command
+- Auto-writing `scope.md` without human review and sign-off
+- Multi-domain matching in v1 (top-1 match; human can override)
+- Scope regeneration policy when source document updates (observe v1 behavior first)
+- Domain file curation process and review cadence (decide after seeing how stale files manifest in practice)
+- Appeal paths, rollback, or retrospective scope audits
+
+## 12. Alternatives considered
+
+**A separate `/scope` command.** Rejected — adds a command users must memorize. The plugin's anti-patterns section explicitly flags this. Both capabilities hang off `/plan` internally.
+
+**LLM-generated scope without provenance.** Rejected — fabrication at scope produces the worst possible downstream drift because `scope.md` gates every subsequent phase. Provenance-traced gap report is the only honest alternative.
+
+**Domain files as part of the workflow preset (Pending A, unified option).** Rejected 2026-04-25 — workflow presets configure sign-off mechanics; domain files encode domain knowledge. Different purposes, different owners, different evolution cadence. Advisory `suggested_roles` bridge is the narrowest connection that recovers the useful part of unification without merging stewardship.
+
+**Domain file matching via full-text semantic search.** Over-engineered for v1 — keyword + stack rules in `_index.json` are transparent, debuggable, and correctable. Semantic search adds a model dependency for a matching problem that is mostly "does the scope mention payments / auth / healthcare?" Upgrade path is clear if keyword rules prove insufficient.
+
+## 13. Backward compatibility
+
+- Existing repos with a hand-written `scope.md` are not affected — Step 2 reads the existing file and proceeds. `scope-ingest` is only invoked when `scope.md` is absent or unsigned.
+- Existing `/plan` invocations without domain files proceed with `domain: unknown` — no injection, no disruption.
+- `domains/` directory is additive; absent directory means no domain detection (same as `domain: unknown`).
+- Scope gate file is a new artifact — existing repos have no `gates/scope-<project>.md`. First `/plan` after install creates it. No migration.
+
+## 14. Implementation checklist
+
+Sequencing follows the principle: validate the schema before building consumers; build the skill before the agent; wire them into `/plan` last.
+
+- [ ] Resolve OQ-SCOPE-1 (pseudo-phase gate vs. artifact class) before writing any gate-related code
+- [ ] Write `domains/_schema.md` — the contract all domain files must follow
+- [ ] Write `domains/payments.md` seed file
+- [ ] Write `domains/auth.md` seed file
+- [ ] Write `domains/_index.json` with keyword + stack rules for payments and auth
+- [ ] Build `domain-expert` skill — reads `_index.json`, matches, injects `## Domain context` into plan artifact
+- [ ] Dry-run `domain-expert` against 3–5 past plan artifacts to validate gap question quality
+- [ ] Build `scope-ingest` agent — markdown + plain text parsers first; PDF in a follow-up; DOCX/PPTX/URL as a separate scoped change
+- [ ] Add `scope-drafts/` to the artifact tree in `.claude/sdlc/`
+- [ ] Modify `skills/plan/SKILL.md` — wire in Step 2 (scope-ingest invocation) and Step 3 (domain-expert injection)
+- [ ] Write scope gate file template (`templates/scope-gate.md`) with `## Required sign-offs` block
+- [ ] Add scope gate check to `hooks/plan-gate.sh`
+- [ ] Dry-run end-to-end on one real project: source → draft → sign → plan → domain inject → gate
+- [ ] Documentation pass: README "Scope setup" section; `docs/SDLC.md` Phase 1 update; `docs/GLOSSARY.md` entries for new terms (scope draft, provenance footer, domain context, gap questions)
+
+---
+
+*End of RFC.*

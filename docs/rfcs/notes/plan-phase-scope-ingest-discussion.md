@@ -1,12 +1,14 @@
 # Plan phase — scope ingest + domain expert discussion
 
-> **Status:** discussion note. Not an RFC, not accepted. Captures current thinking on reshaping Phase 1 to reduce cognitive load around scope authoring and introduce domain-aware plan validation.
+> **Status:** superseded (promoted 2026-04-25)
+
+**Promoted to:** [`docs/rfcs/scope-ingest.md`](../scope-ingest.md) — formal RFC draft as of 2026-04-25. All four accepted-RFC conflicts resolved; Pending A coordination gate lifted. This note is kept as a historical record of the analysis path.
 
 **Date:** 2026-04-24
 **Scope:** Phase 1 (`/plan`) only. Skill-count audit explicitly deferred.
 **Related:**
 - `docs/rfcs/multi-team-approval.md` (accepted 2026-04-19) — sign-off conventions this proposal must conform to
-- PR #1 *Guided-entry UX RFC (draft)* — overlapping "reduce cognitive load" thesis, pending Path A reshape
+- PR #1 *Guided-entry UX RFC (draft)* — overlapping "reduce cognitive load" thesis, Pending A resolved 2026-04-25
 
 ---
 

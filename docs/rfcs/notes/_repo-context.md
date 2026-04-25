@@ -3,7 +3,7 @@
 > **Purpose.** Paste or reference this file at the start of any new conversation about the repo so the assistant has accurate grounding without re-fetching everything. Keep it short and current. If a fact drifts, fix it here first.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-25 (Pending A resolved)
+**Last updated:** 2026-04-25 (scope-ingest RFC promoted)
 
 ---
 
@@ -108,9 +108,9 @@ Frontend tasks halt in Phase 2 until some UX artifact exists at `.claude/sdlc/ar
   - **Compensating additions (option-b):** PR 1 unordered sign-off state render, PR 3 opt-out historical-email personalization, PR 9 unordered-parallel callout — together recover most of the multi-role UX affordance without reopening the conflict.
   - **Pending discussions:** A. Workflow templates — **resolved 2026-04-25 (keep orthogonal; advisory `suggested_roles:` bridge in domain file schema)**. B–E deferred: B. Back/cancel navigation, C. Error-message audit, D. TodoWrite integration, E. Per-phase `/status` detail.
 
-## Active discussions (not yet PR'd)
+## Draft RFCs (not yet PR'd)
 
-- **Plan phase — scope ingest + domain expert.** See `docs/rfcs/notes/plan-phase-scope-ingest-discussion.md` in this same notes directory.
+- **Scope ingest + domain expert** — `docs/rfcs/scope-ingest.md` (promoted from discussion note 2026-04-25). Proposes `scope-ingest` agent + `domain-expert` skill hanging off `/plan`. All accepted-RFC conflicts resolved. One open question before implementation: OQ-SCOPE-1 (pseudo-phase gate vs. new artifact class for scope gate file).
 
 ## Anti-patterns the repo explicitly guards against
 
