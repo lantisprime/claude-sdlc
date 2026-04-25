@@ -49,6 +49,35 @@ dir_mtime() {
   stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0
 }
 
+# Sync one local sign-off file to the share. Newer ISO timestamp wins.
+# If remote is newer: write .local.conflict.md + .remote.conflict.md locally.
+sync_signoff() {
+  local src="$1" dst="$2"
+  local src_name src_ts dst_ts
+  src_name=$(basename "$src")
+
+  if [ ! -f "$dst" ]; then
+    cp "$src" "$dst"
+    echo "[approval-reconcile] pushed $src_name to share" >&2
+    return 0
+  fi
+
+  src_ts=$(frontmatter_field "$src" "timestamp")
+  dst_ts=$(frontmatter_field "$dst" "timestamp")
+
+  if [ "$src_ts" = "$dst_ts" ]; then
+    return 0
+  elif [[ "$src_ts" > "$dst_ts" ]] || [ -z "$dst_ts" ]; then
+    cp "$src" "$dst"
+    echo "[approval-reconcile] pushed $src_name (newer local)" >&2
+  else
+    # Remote is newer — create conflict files; manual resolution required
+    cp "$src" "${src%.md}.local.conflict.md"
+    cp "$dst" "${src%.md}.remote.conflict.md"
+    echo "[approval-reconcile] CONFLICT: $src_name — remote is newer; see .local.conflict.md / .remote.conflict.md" >&2
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Setup
 # ---------------------------------------------------------------------------
@@ -65,9 +94,87 @@ OPEN_TMP=$(mktemp)
 CLOSED_TMP=$(mktemp)
 trap 'rm -f "$OPEN_TMP" "$CLOSED_TMP"' EXIT
 
+QUEUE_DIR=".queue"
 FOUND_GATES=0
 NEEDS_REGEN=0
 found_warnings=0
+
+# ---------------------------------------------------------------------------
+# Tier 1: Network share transport (sync before reconciliation loop)
+# ---------------------------------------------------------------------------
+
+_share_path=""
+if command -v jq >/dev/null 2>&1 && [ -f "config/tools.json" ]; then
+  _share_path=$(jq -r '.approvals.share_path // empty' config/tools.json 2>/dev/null || true)
+fi
+
+if [ -n "$_share_path" ] && [ "$_share_path" != "null" ]; then
+  _share_signoffs="$_share_path/sign-offs"
+  _share_reachable=0
+
+  # Write-probe: `test -d` alone passes on stale NFS mounts; touch+rm confirms real I/O
+  if command -v timeout >/dev/null 2>&1; then
+    _probe="$_share_path/.claude-probe"
+    if timeout 5 test -d "$_share_path" 2>/dev/null && \
+       timeout 5 touch "$_probe" 2>/dev/null && \
+       timeout 5 rm -f "$_probe" 2>/dev/null; then
+      _share_reachable=1
+    fi
+  else
+    _probe="$_share_path/.claude-probe"
+    if test -d "$_share_path" 2>/dev/null && \
+       touch "$_probe" 2>/dev/null && \
+       rm -f "$_probe" 2>/dev/null; then
+      _share_reachable=1
+    fi
+  fi
+
+  if [ "$_share_reachable" -eq 1 ]; then
+    mkdir -p "$_share_signoffs"
+
+    # --- Queue drain: retry sign-offs that failed to reach the share last run ---
+    if [ -d "$QUEUE_DIR" ]; then
+      while IFS= read -r -d '' qf; do
+        so_name=$(basename "${qf%.network-share}")
+        so_src="$SIGNOFFS_DIR/$so_name"
+        if [ -f "$so_src" ]; then
+          sync_signoff "$so_src" "$_share_signoffs/$so_name" && rm -f "$qf"
+        else
+          rm -f "$qf"  # stale queue entry — source sign-off no longer exists
+        fi
+      done < <(find "$QUEUE_DIR" -maxdepth 1 -name "*.network-share" -print0 2>/dev/null)
+    fi
+
+    # --- Outbox: push local sign-offs to share (newer local wins) ---
+    if [ -d "$SIGNOFFS_DIR" ]; then
+      while IFS= read -r -d '' sf; do
+        sync_signoff "$sf" "$_share_signoffs/$(basename "$sf")"
+      done < <(find "$SIGNOFFS_DIR" -maxdepth 1 -name "*.md" -not -name ".gitkeep" -print0 2>/dev/null)
+    fi
+
+    # --- Inbox: pull new remote sign-offs not yet present locally ---
+    while IFS= read -r -d '' rf; do
+      so_name=$(basename "$rf")
+      so_local="$SIGNOFFS_DIR/$so_name"
+      if [ ! -f "$so_local" ]; then
+        cp "$rf" "$so_local"
+        echo "[approval-reconcile] pulled $so_name from share" >&2
+      fi
+    done < <(find "$_share_signoffs" -maxdepth 1 -name "*.md" -not -name ".gitkeep" -print0 2>/dev/null)
+
+  else
+    # Share unreachable — queue local sign-offs so they sync on the next run
+    echo "[approval-reconcile] WARN: share unreachable ($_share_path) — queuing local sign-offs" >&2
+    if [ -d "$SIGNOFFS_DIR" ]; then
+      mkdir -p "$QUEUE_DIR"
+      while IFS= read -r -d '' sf; do
+        so_name=$(basename "$sf")
+        qf="$QUEUE_DIR/$so_name.network-share"
+        [ -f "$qf" ] || touch "$qf"
+      done < <(find "$SIGNOFFS_DIR" -maxdepth 1 -name "*.md" -not -name ".gitkeep" -print0 2>/dev/null)
+    fi
+  fi
+fi
 
 # ---------------------------------------------------------------------------
 # Step 1: check for leftover merge markers in existing APPROVALS.md
