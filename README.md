@@ -355,7 +355,7 @@ Warnings are *warnings*. They're not auto-blockers-in-waiting. The adjacent-func
 
 ## Multi-team sign-offs
 
-When a gate requires sign-off from more than one team (e.g. security + product, backend + frontend, compliance + dev), add a `## Required sign-offs` block to the gate file listing one role per line. The `approval-reconcile.sh` hook checks at the end of every session turn that a sign-off file exists for each listed role in `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md`, warns on any missing, and warns if gate content has changed since a sign-off was captured (hash drift). Use [`templates/sign-off-multi.md`](templates/sign-off-multi.md) as the starting point for each sign-off file. The hook regenerates `APPROVALS.md` at the git root as an at-a-glance summary and can sync sign-offs to/from a shared filesystem path when `approvals.share_path` is set in `config/tools.json`.
+When a gate requires sign-off from more than one team (e.g. security + product, backend + frontend, compliance + dev), add a `## Required sign-offs` block to the gate file listing one role per line. The `approval-reconcile.sh` hook checks at the end of every session turn that a sign-off file exists for each listed role in `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md`, warns on any missing, and warns if gate content has changed since a sign-off was captured (hash drift). Use [`templates/sign-off-multi.md`](templates/sign-off-multi.md) as the starting point for each sign-off file. The hook regenerates `APPROVALS.md` at the git root as an at-a-glance summary and can sync sign-offs via network share, central git repo, or MCP connector depending on which transport key is set in `config/tools.json` (`approvals.share_path`, `approvals.git_repo`, or `approvals.mcp.connector`).
 
 Multi-team sign-offs are **opt-in per gate** — removing the `## Required sign-offs` block returns a gate to single-signer behavior.
 
@@ -505,7 +505,7 @@ Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy do
 | [env-detect.sh](hooks/env-detect.sh) | SessionStart | — | Writes `.claude/sdlc/env.json` with detected integrations; sets Layer 0/3 flags for the configure skill |
 | [session-plan-check.sh](hooks/session-plan-check.sh) | SessionStart | — | Shows in-flight task state and personalized sign-off hints at the start of each session |
 | [token-tracker.sh](hooks/token-tracker.sh) | Stop | — | Parses the session transcript; writes raw per-phase token counts to `token-log.json` / `token-history.jsonl`. Off by default; enabled via `config/tools.json` |
-| [approval-reconcile.sh](hooks/approval-reconcile.sh) | Stop | Warn | For every gate with a `## Required sign-offs` block, warns on missing per-role sign-off files and on hash mismatches (gate content changed since signing); regenerates `APPROVALS.md` at the git root; syncs sign-offs to/from a network share when `approvals.share_path` is set in `config/tools.json` |
+| [approval-reconcile.sh](hooks/approval-reconcile.sh) | Stop | Warn | For every gate with a `## Required sign-offs` block, warns on missing per-role sign-off files and on hash mismatches (gate content changed since signing); regenerates `APPROVALS.md` at the git root; syncs sign-offs via network share (`approvals.share_path`), central git repo (`approvals.git_repo`), or MCP connector (`approvals.mcp.connector`) when configured in `config/tools.json` |
 
 ### Templates (13)
 
