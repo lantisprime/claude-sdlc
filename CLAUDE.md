@@ -14,15 +14,17 @@ These principles are load-bearing. Changes that violate them usually feel like s
 
 1. **Human in the lead, always.** Every phase ends at a signed gate file. Subagents, hooks, and MCP connectors propose — humans approve. Do not add an "auto-approve" convenience. Do not let a subagent advance a phase. Do not let observation of past behavior substitute for a fresh human confirmation.
 
-2. **Plan before code.** `plan-gate.sh` blocks Edit/Write when no plan exists. This is the single most important rule in the plugin. If it seems to be firing "too often," the fix is better planning, not a looser hook.
+2. **Reduce cognitive load, always.** The human is the bottleneck this plugin is designed to protect. Additions to artifacts, prompts, hook messages, and subagent output must make the human's decision easier — less to read, less to reconcile, clearer next step. If a change adds surface area without removing more elsewhere, it's the wrong change.
 
-3. **Surgical edits.** Skills and hooks together enforce that only plan-listed files and functions are modified. Adjacent functions are never touched. "While I'm here" cleanups are a footgun, not a virtue.
+3. **Plan before code.** `plan-gate.sh` blocks Edit/Write when no plan exists. This is the single most important rule in the plugin. If it seems to be firing "too often," the fix is better planning, not a looser hook.
 
-4. **Work-item traceability.** Every build references a REQ ID, an issue ticket, or a signed CR. Don't add a "quick fix" escape hatch that bypasses this.
+4. **Surgical edits.** Skills and hooks together enforce that only plan-listed files and functions are modified. Adjacent functions are never touched. "While I'm here" cleanups are a footgun, not a virtue.
 
-5. **Graceful degradation.** Missing Git? Missing ticket system? Missing observability platform? The plugin writes markdown/JSON artifacts locally and surfaces the gap. It never silently skips a check.
+5. **Work-item traceability.** Every build references a REQ ID, an issue ticket, or a signed CR. Don't add a "quick fix" escape hatch that bypasses this.
 
-6. **Stack-agnostic.** Tool names live in `config/tools.json`, nowhere else. Don't hardcode `ruff`, `pytest`, `eslint`, `vitest`, etc. anywhere in skills or hooks.
+6. **Graceful degradation.** Missing Git? Missing ticket system? Missing observability platform? The plugin writes markdown/JSON artifacts locally and surfaces the gap. It never silently skips a check.
+
+7. **Stack-agnostic.** Tool names live in `config/tools.json`, nowhere else. Don't hardcode `ruff`, `pytest`, `eslint`, `vitest`, etc. anywhere in skills or hooks.
 
 ## Eat your own dog food
 

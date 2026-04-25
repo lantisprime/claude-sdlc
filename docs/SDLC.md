@@ -5,11 +5,12 @@ This document is the authoritative reference for the 8-phase workflow the plugin
 ## Guiding principles
 
 1. **Human in the lead, always.** Every phase ends at a signed gate. Every scope change, every irreversible action, every production touch is confirmed by a human — never by a subagent, a hook, or a heuristic.
-2. **Plan before code.** No `Edit`/`Write` tool call runs without a plan artifact. This is enforced by the plan-gate hook.
-3. **Surgical edits.** Only plan-listed files are modified. Only plan-listed functions are changed. Adjacent functions are never touched.
-4. **Work-item traceability.** Every build references a REQ ID (new build), an issue ticket (fix), or a signed change request (CR).
-5. **Graceful degradation.** Missing Git, ticketing, or observability? The plugin writes markdown (or JSON) artifacts locally and surfaces the gap in the phase summary — never silently skips.
-6. **Stack-agnostic.** Tool choices are placeholders in `config/tools.json`. Leave any value as `null` to skip that check.
+2. **Reduce cognitive load.** Artifacts, prompts, and gate summaries surface the essential signal, not everything knowable. Every new field, hook output, or subagent earns its place by shrinking what the human must hold in their head.
+3. **Plan before code.** No `Edit`/`Write` tool call runs without a plan artifact. This is enforced by the plan-gate hook.
+4. **Surgical edits.** Only plan-listed files are modified. Only plan-listed functions are changed. Adjacent functions are never touched.
+5. **Work-item traceability.** Every build references a REQ ID (new build), an issue ticket (fix), or a signed change request (CR).
+6. **Graceful degradation.** Missing Git, ticketing, or observability? The plugin writes markdown (or JSON) artifacts locally and surfaces the gap in the phase summary — never silently skips.
+7. **Stack-agnostic.** Tool choices are placeholders in `config/tools.json`. Leave any value as `null` to skip that check.
 
 ## The artifact tree
 

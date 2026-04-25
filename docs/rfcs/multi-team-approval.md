@@ -252,7 +252,7 @@ Mapped to the five options in [pending-analysis.md §3](./pending-analysis.md#3-
 | A — multi-signature gate files | **Partially adopted.** We keep the gate file as the declaration of required signers (3.2), but move the signatures themselves into per-signer files (3.1) so teams sign without merge conflicts. | Parallel signing. |
 | B — external approval references | **Absorbed.** The git transport (3.4 tier 2) is a constrained form of this. | Simpler than arbitrary URL refs. |
 | C — shared central approvals repo | **Adopted as tier 2.** Not as the primary model. | Graceful degradation requires local to be canonical. |
-| D — integrate with GitHub / Jira / etc. | **Partially adopted** via the deferred MCP connector transport (§3.7). Specific integrations ship outside the plugin core; the contract itself is deferred until a real connector shapes it. | Keeps principle 6 while enabling the integrations users want. |
+| D — integrate with GitHub / Jira / etc. | **Partially adopted** via the deferred MCP connector transport (§3.7). Specific integrations ship outside the plugin core; the contract itself is deferred until a real connector shapes it. | Keeps principle 7 while enabling the integrations users want. |
 | E — document the manual pattern, don't solve | **Rejected.** The artifact contract is cheap, the reconciler is cheap, and the gap is real. | Demand is concrete. |
 
 Rejected identity models (for §3.6):
@@ -307,7 +307,7 @@ If Juan signs, then the design changes substantively — is Juan's sign-off auto
 Can the `evidence` URL point at something mutable (a Slack message that gets deleted)?
 
 - **Proposal:** document that evidence should be immutable where possible; no enforcement.
-- **Answer:** Confirmed. No enforcement — parsing arbitrary URL schemes would couple the plugin to specific tools (principle 6). Accompany with a short **evidence quality ladder** in docs: *prefer* git SHA, PDF path with sha256, archived email message ID, signed commit; *avoid* Slack message links, editable wiki pages, cloud-doc URLs without a version pin.
+- **Answer:** Confirmed. No enforcement — parsing arbitrary URL schemes would couple the plugin to specific tools (principle 7). Accompany with a short **evidence quality ladder** in docs: *prefer* git SHA, PDF path with sha256, archived email message ID, signed commit; *avoid* Slack message links, editable wiki pages, cloud-doc URLs without a version pin.
 
 ### 6.7 Sync conflict resolution
 

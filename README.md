@@ -26,11 +26,12 @@ For how this fits an enterprise engineering org — role shifts, cost mechanics,
 These are load-bearing. The plugin is built around them; changes that violate them usually feel like simplifications but aren't.
 
 1. **Human in the lead, always.** Subagents and hooks never advance a phase on their own.
-2. **Plan before code.** `plan-gate.sh` blocks `Edit`/`Write` when no plan exists for the task.
-3. **Surgical edits.** Only plan-listed files and functions are modified. Adjacent functions are never touched. "While I'm here" cleanups are a footgun.
-4. **Work-item traceability.** Every build references a REQ ID (new work), a ticket (bug), or a signed change request (scope change).
-5. **Graceful degradation.** No Git? No ticket system? No observability platform? The plugin writes local markdown/JSON artifacts and surfaces the gap. It never silently skips a check.
-6. **Stack-agnostic.** Formatter, linter, test runner, scanners — all live in `config/tools.json`. Nothing is hardcoded.
+2. **Reduce cognitive load.** Artifacts, prompts, and gate summaries surface the essential signal, not everything knowable. Every new field, hook output, or subagent earns its place by shrinking what the human must hold in their head.
+3. **Plan before code.** `plan-gate.sh` blocks `Edit`/`Write` when no plan exists for the task.
+4. **Surgical edits.** Only plan-listed files and functions are modified. Adjacent functions are never touched. "While I'm here" cleanups are a footgun.
+5. **Work-item traceability.** Every build references a REQ ID (new work), a ticket (bug), or a signed change request (scope change).
+6. **Graceful degradation.** No Git? No ticket system? No observability platform? The plugin writes local markdown/JSON artifacts and surfaces the gap. It never silently skips a check.
+7. **Stack-agnostic.** Formatter, linter, test runner, scanners — all live in `config/tools.json`. Nothing is hardcoded.
 
 ## At a glance
 

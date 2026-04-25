@@ -138,7 +138,7 @@ No direct conflict. The challenge is operational (sync model) and scope (how muc
 ### Next steps
 
 1. **Scope the demand.** Is this enterprise-only, or do mid-size teams hit it too? Enterprise can justify Option C/D; mid-size likely wants Option A.
-2. **Pick the degradation story first.** The plugin's principle 5 says missing infrastructure → local artifacts + surfaced gap. For multi-team approval, what's the local fallback? Probably: a gate file with unsigned blocks, plus a warning naming which teams haven't signed.
+2. **Pick the degradation story first.** The plugin's principle 6 says missing infrastructure → local artifacts + surfaced gap. For multi-team approval, what's the local fallback? Probably: a gate file with unsigned blocks, plus a warning naming which teams haven't signed.
 3. **Prototype Option A (multi-signature gate files)** — this is the minimum-surface-area version and doesn't require any cross-session coordination. If it's enough, we can stop there.
 4. **Define the approval artifact contract** — what does an "approval" file look like (REQ ID, signer, role, timestamp, gate reference)? The contract is reusable across Options A/B/C.
 5. **Research how other SDLC tools handle this** — specifically how they keep the audit trail coherent across teams.
