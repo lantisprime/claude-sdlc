@@ -1,6 +1,25 @@
 ---
 name: status
 description: Use this skill when the user asks "where am I", "what's the current task", "what's blocking me", "show status", "what needs sign-off", or "what's next". Prints a snapshot of the active plan, gate, sign-off progress, and next action. Reads only — writes nothing.
+next_suggestions:
+  - when: no_active_work
+    suggest: "run /start to begin a new task, or /plan if you already know what to build"
+  - when: pending_signoff_for_current_user
+    suggest: "write your sign-off at sign-offs/<REQ-ID>-<role>.md"
+  - when: plan_drafted_and_unsigned
+    suggest: "sign the plan gate to unlock /analyze"
+  - when: phase_active_gate_unsigned
+    suggest: "continue with the active phase commands, or sign the gate when ready"
+  - when: analyze_gate_signed
+    suggest: "run /design"
+  - when: design_gate_signed
+    suggest: "run /build"
+  - when: build_gate_signed
+    suggest: "run /test"
+  - when: test_gate_signed
+    suggest: "run /deploy"
+  - when: deploy_gate_signed
+    suggest: "run /support, then /docs"
 ---
 
 # Status
@@ -131,3 +150,23 @@ Next:      run /start or /plan to begin a task
 - `docs/rfcs/multi-team-approval.md` §3.1–3.2 — sign-off file contract and gate-file `## Required sign-offs` block
 - `templates/gate.md` — gate file shape this skill reads
 - `hooks/approval-reconcile.sh` — the hook that enforces sign-off presence at phase-advance time
+
+## Next step hint
+
+After printing the status snapshot, pipe the `next_suggestions` conditions to `skills/_shared/next-hint.sh` and print any output:
+
+```bash
+printf '%s\n' \
+  'no_active_work|run /start to begin a new task, or /plan if you already know what to build' \
+  'pending_signoff_for_current_user|write your sign-off at sign-offs/<REQ-ID>-<role>.md' \
+  'plan_drafted_and_unsigned|sign the plan gate to unlock /analyze' \
+  'phase_active_gate_unsigned|continue with the active phase commands, or sign the gate when ready' \
+  'analyze_gate_signed|run /design' \
+  'design_gate_signed|run /build' \
+  'build_gate_signed|run /test' \
+  'test_gate_signed|run /deploy' \
+  'deploy_gate_signed|run /support, then /docs' \
+  | bash skills/_shared/next-hint.sh
+```
+
+Print any output verbatim. If the script outputs nothing, add nothing.

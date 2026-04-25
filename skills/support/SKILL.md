@@ -1,6 +1,9 @@
 ---
 name: support
 description: Use this skill during Phase 7 after a successful deployment to generate or update monitoring, logging, alerting, and observability artifacts that catch exceptions and issues in the deployed code. Produces platform-neutral scripts when no observability platform is configured, and integrates with Grafana/Datadog/CloudWatch via MCP when configured. Trigger after deploy, or when the user says "add monitoring", "observability", "alerts", "dashboards", or "what should we watch for?".
+next_suggestions:
+  - when: support_gate_signed
+    suggest: "run /docs to refresh the artifact index and traceability matrix"
 ---
 
 # Support (Phase 7)
@@ -59,3 +62,15 @@ Summarize: what's now being watched, what's alerted, runbook status. Sign-off â†
 ## References
 
 - `docs/SDLC.md` Support
+
+## Next step hint
+
+After writing the gate file, pipe the `next_suggestions` conditions to `skills/_shared/next-hint.sh` and print any output:
+
+```bash
+printf '%s\n' \
+  'support_gate_signed|run /docs to refresh the artifact index and traceability matrix' \
+  | bash skills/_shared/next-hint.sh
+```
+
+Print any output verbatim. If the script outputs nothing, add nothing.

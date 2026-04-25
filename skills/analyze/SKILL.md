@@ -1,6 +1,11 @@
 ---
 name: analyze
 description: Use this skill after Phase 1 Plan to create or intake requirements for a task. Produces requirements with stable IDs (REQ-001, REQ-002, ...), validates each requirement against the project's scope statement, and — critically — halts and asks for UX designs and brand guidelines whenever the work touches a frontend or user interface. Trigger whenever a plan has been approved and requirements are not yet written, or when the user asks to "gather requirements", "write user stories", or "define acceptance criteria". Runs before Design.
+next_suggestions:
+  - when: analyze_gate_signed
+    suggest: "run /design to produce the architecture bundle and test cases"
+  - when: pending_signoff_for_current_user
+    suggest: "write your sign-off at sign-offs/<REQ-ID>-<role>.md, then /design when all roles are covered"
 ---
 
 # Analyze (Phase 2)
@@ -65,3 +70,16 @@ Summarize: total REQs, mapped vs. unmapped, frontend yes/no, UX artifact status.
 - `templates/requirements.md`
 - `templates/gate.md`
 - `docs/SDLC.md` Analyze
+
+## Next step hint
+
+After writing the gate file, pipe the `next_suggestions` conditions to `skills/_shared/next-hint.sh` and print any output:
+
+```bash
+printf '%s\n' \
+  'analyze_gate_signed|run /design to produce the architecture bundle and test cases' \
+  'pending_signoff_for_current_user|write your sign-off at sign-offs/<REQ-ID>-<role>.md, then /design when all roles are covered' \
+  | bash skills/_shared/next-hint.sh
+```
+
+Print any output verbatim. If the script outputs nothing, add nothing.

@@ -2,6 +2,13 @@
 name: configure
 description: Use this skill when the user runs /configure, /configure --needs, or /configure --check. Also auto-invoked by env-detect.sh on fresh install (Layer 0) and by skills that find required config missing at runtime (Layer 2). Guides setup of config/tools.json and config/tools.local.json through a question bank; handles public/local split, diff-before-write, and resume semantics for interrupted commands.
 config_requirements: []
+next_suggestions:
+  - when: no_active_work
+    suggest: "run /start to begin a new task, or /plan if you already know what to build"
+  - when: plan_drafted_and_unsigned
+    suggest: "run /status to see your in-flight task"
+  - when: always
+    suggest: "run /status to see current state, or /start to begin a task"
 ---
 
 # Configure — Guided Setup
@@ -161,3 +168,19 @@ On A: copy `config/tools.json` to `config/tools.json.bak`, delete `config/tools.
 - `config/tools.example.json` — full schema reference
 - `docs/rfcs/guided-entry-session-resume-multi-role.md` §8 — PR 8 spec and four-layer model
 - `docs/rfcs/multi-team-approval.md` §3.1, §3.6 — why identity stays in sign-off files, not config
+
+## Next step hint
+
+**Layer 2 exception:** When this skill completes via Layer 2 scoped-run and resumes the original command, skip this step entirely — the resumed command's output is the next step.
+
+For standalone `/configure` runs (full wizard or `--check`), pipe the `next_suggestions` conditions to `skills/_shared/next-hint.sh` and print any output:
+
+```bash
+printf '%s\n' \
+  'no_active_work|run /start to begin a new task, or /plan if you already know what to build' \
+  'plan_drafted_and_unsigned|run /status to see your in-flight task' \
+  'always|run /status to see current state, or /start to begin a task' \
+  | bash skills/_shared/next-hint.sh
+```
+
+Print any output verbatim. If the script outputs nothing, add nothing.

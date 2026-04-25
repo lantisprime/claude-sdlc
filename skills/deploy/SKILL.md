@@ -1,6 +1,11 @@
 ---
 name: deploy
 description: Use this skill during Phase 6 to deploy code that has passed Phase 5 Test. Updates tickets with deployment details when a ticketing system is configured; otherwise generates deployment artifacts as markdown or JSON under .claude/sdlc/deployments/. Never auto-executes a deployment — always proposes and waits for explicit human confirmation. Trigger after test is signed off, or when the user says "deploy", "release", or "ship".
+next_suggestions:
+  - when: deploy_gate_signed
+    suggest: "run /support to wire observability for the deployment"
+  - when: phase_active_gate_unsigned
+    suggest: "open gates/deploy-<task-slug>.md and sign it manually, then run /support"
 ---
 
 # Deploy (Phase 6)
@@ -66,3 +71,16 @@ Run the smoke-test subset of the test suite against the deployed environment. If
 - `templates/deployment.md`
 - `templates/gate.md`
 - `docs/SDLC.md` Deploy
+
+## Next step hint
+
+After the deployment record is written, pipe the `next_suggestions` conditions to `skills/_shared/next-hint.sh` and print any output:
+
+```bash
+printf '%s\n' \
+  'deploy_gate_signed|run /support to wire observability for the deployment' \
+  'phase_active_gate_unsigned|open gates/deploy-<task-slug>.md and sign it manually, then run /support' \
+  | bash skills/_shared/next-hint.sh
+```
+
+Print any output verbatim. If the script outputs nothing, add nothing.

@@ -8,6 +8,13 @@ config_requirements:
   - key: tracker.project
     required: false
     on_skip: skip_project_validation
+next_suggestions:
+  - when: all_signoffs_present
+    suggest: "run /analyze to produce requirements with REQ IDs"
+  - when: pending_signoff_for_current_user
+    suggest: "write your sign-off at sign-offs/<REQ-ID>-<role>.md, then /analyze when all roles are covered"
+  - when: plan_gate_signed
+    suggest: "run /analyze to produce requirements with REQ IDs"
 ---
 
 # Plan (Phase 1)
@@ -136,3 +143,17 @@ Produce a one-screen summary of the plan and ask the human to confirm before Ana
 - `agents/scope-ingest.md` — scope draft producer (Step 2)
 - `skills/domain-expert/SKILL.md` — domain context injector (Step 2.5)
 - `docs/SDLC.md` — full phase reference
+
+## Next step hint
+
+After writing the gate file, pipe the `next_suggestions` conditions to `skills/_shared/next-hint.sh` and print any output:
+
+```bash
+printf '%s\n' \
+  'all_signoffs_present|run /analyze to produce requirements with REQ IDs' \
+  'pending_signoff_for_current_user|write your sign-off at sign-offs/<REQ-ID>-<role>.md, then /analyze when all roles are covered' \
+  'plan_gate_signed|run /analyze to produce requirements with REQ IDs' \
+  | bash skills/_shared/next-hint.sh
+```
+
+Print any output verbatim. If the script outputs nothing (suppressed, faded, or no match), add nothing.

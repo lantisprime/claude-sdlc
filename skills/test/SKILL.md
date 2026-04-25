@@ -1,6 +1,11 @@
 ---
 name: test
 description: Use this skill during Phase 5 to execute functional tests, record results, log defects, and validate UX conformance. Logs defects to Git Issues when available, otherwise to markdown (or JSON, per config) under .claude/sdlc/defects/. Reports code coverage against the configured threshold. Triggered after build is signed off and before deploy. Also trigger when the user says "run tests", "report coverage", "log defects", or "validate UX".
+next_suggestions:
+  - when: test_gate_signed
+    suggest: "run /deploy to produce a deployment proposal"
+  - when: pending_signoff_for_current_user
+    suggest: "write your sign-off at sign-offs/<REQ-ID>-<role>.md, then /deploy when all roles are covered"
 ---
 
 # Test (Phase 5)
@@ -62,3 +67,16 @@ Summarize: tests run, pass/fail, coverage on modified code, defects logged, UX s
 - `templates/defect.md`
 - `templates/gate.md`
 - `docs/SDLC.md` Test
+
+## Next step hint
+
+After writing the gate file, pipe the `next_suggestions` conditions to `skills/_shared/next-hint.sh` and print any output:
+
+```bash
+printf '%s\n' \
+  'test_gate_signed|run /deploy to produce a deployment proposal' \
+  'pending_signoff_for_current_user|write your sign-off at sign-offs/<REQ-ID>-<role>.md, then /deploy when all roles are covered' \
+  | bash skills/_shared/next-hint.sh
+```
+
+Print any output verbatim. If the script outputs nothing, add nothing.

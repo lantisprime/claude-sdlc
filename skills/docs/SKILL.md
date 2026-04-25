@@ -1,6 +1,11 @@
 ---
 name: docs
 description: Use this skill at the end of any phase that changed SDLC artifacts to update the SDLC documentation tree — the artifact index, requirements traceability matrix, architecture manifest, changelog, and any user-facing docs affected by the change. Also trigger when the user says "update docs", "refresh the index", "regenerate the traceability matrix", or after a deployment completes.
+next_suggestions:
+  - when: support_gate_signed
+    suggest: "task complete — run /start or /plan to begin the next work item"
+  - when: always
+    suggest: "docs updated — continue with the current phase or run /start for the next work item"
 ---
 
 # Docs (Phase 8, cross-cutting)
@@ -53,3 +58,16 @@ If the change affects user-facing APIs, CLI flags, config keys, or UI flows, upd
 ## References
 
 - `docs/SDLC.md` Docs
+
+## Next step hint
+
+After updating the artifact index, pipe the `next_suggestions` conditions to `skills/_shared/next-hint.sh` and print any output:
+
+```bash
+printf '%s\n' \
+  'support_gate_signed|task complete — run /start or /plan to begin the next work item' \
+  'always|docs updated — continue with the current phase or run /start for the next work item' \
+  | bash skills/_shared/next-hint.sh
+```
+
+Print any output verbatim. If the script outputs nothing, add nothing.

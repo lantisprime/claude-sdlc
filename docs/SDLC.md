@@ -236,3 +236,15 @@ Tune hook strictness against real work:
 - If humans rubber-stamp gates without reading, the phase summaries are too long — tighten them.
 
 The goal is a plugin that makes the right thing feel natural and the wrong thing feel friction-y — not one that stops work.
+
+## Next-step hints
+
+Every user-facing skill appends a single `Next:` line at the end of its output, suggesting the most likely next action based on current state. The suggestion is resolved at runtime by `skills/_shared/next-hint.sh` using the `next_suggestions` block in each skill's frontmatter.
+
+Three suppressors keep hints out of automated contexts and from wearing out their welcome:
+
+1. **Non-TTY** — if stdout is piped (scripts, CI), no `Next:` line prints. Zero config.
+2. **Explicit opt-out** — set `display.next_hints: "off"` in `config/tools.json` to suppress all hints.
+3. **Fade-after-3** — each distinct hint text retires silently after appearing three times, tracked in `.claude/sdlc/hints.jsonl`. New hints (new `when` conditions) still get full treatment.
+
+`/start` suppresses its own hint because it hands off to `/plan` — the plan skill's output is the next step. `/configure` suppresses its hint after a Layer 2 scoped-run for the same reason. Silence is always better than a wrong hint.

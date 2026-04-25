@@ -11,6 +11,11 @@ config_requirements:
   - key: test_runner.command
     required: false
     on_skip: skip_test_execution
+next_suggestions:
+  - when: build_gate_signed
+    suggest: "run /test to execute tests and record defects"
+  - when: pending_signoff_for_current_user
+    suggest: "write your sign-off at sign-offs/<REQ-ID>-<role>.md, then /test when all roles are covered"
 ---
 
 # Build (Phase 4)
@@ -87,3 +92,16 @@ Summarize: files modified, functions modified, tests added/updated, pipeline cha
 - `skills/security-review/SKILL.md`
 - `hooks/work-item-validation.sh`, `hooks/diff-scope-check.sh`, `hooks/adjacent-function-detector.sh`, `hooks/modified-code-test-gate.sh`
 - `templates/ticket.md`, `templates/change-request.md`, `templates/sign-off.md`
+
+## Next step hint
+
+After writing the gate file, pipe the `next_suggestions` conditions to `skills/_shared/next-hint.sh` and print any output:
+
+```bash
+printf '%s\n' \
+  'build_gate_signed|run /test to execute tests and record defects' \
+  'pending_signoff_for_current_user|write your sign-off at sign-offs/<REQ-ID>-<role>.md, then /test when all roles are covered' \
+  | bash skills/_shared/next-hint.sh
+```
+
+Print any output verbatim. If the script outputs nothing, add nothing.

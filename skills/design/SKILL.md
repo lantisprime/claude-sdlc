@@ -1,6 +1,11 @@
 ---
 name: design
 description: Use this skill after Phase 2 Analyze to produce the design artifacts a build depends on — application architecture, data/platform/infrastructure/security architecture, test architecture, test cases, technical specifications, and DevOps pipeline design. Validates existing architecture artifacts against current requirements before writing new ones. Trigger after requirements have been approved, or when the user asks to "design", "architect", "create specs", or "plan the tests". This is the densest phase — consider delegating architecture validation and test-case generation to subagents when available.
+next_suggestions:
+  - when: design_gate_signed
+    suggest: "run /build to write code and unit tests scoped to the plan"
+  - when: pending_signoff_for_current_user
+    suggest: "write your sign-off at sign-offs/<REQ-ID>-<role>.md, then /build when all roles are covered"
 ---
 
 # Design (Phase 3)
@@ -75,3 +80,16 @@ Summarize: architecture deltas, test-case count, spec count, pipeline changes. S
 - `templates/gate.md`
 - `agents/architect.md`
 - `agents/test-designer.md`
+
+## Next step hint
+
+After writing the gate file, pipe the `next_suggestions` conditions to `skills/_shared/next-hint.sh` and print any output:
+
+```bash
+printf '%s\n' \
+  'design_gate_signed|run /build to write code and unit tests scoped to the plan' \
+  'pending_signoff_for_current_user|write your sign-off at sign-offs/<REQ-ID>-<role>.md, then /build when all roles are covered' \
+  | bash skills/_shared/next-hint.sh
+```
+
+Print any output verbatim. If the script outputs nothing, add nothing.

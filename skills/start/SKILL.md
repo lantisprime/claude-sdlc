@@ -1,6 +1,11 @@
 ---
 name: start
 description: Use this skill when the user says "start", "begin", "I want to build", "I want to fix", "I don't know where to begin", "how do I start", or otherwise signals they are beginning a new task and haven't run /plan yet. Guides the user through a six-question intake, checks fix-fast eligibility, and hands off to the plan skill with answers pre-filled. Best for new users and first-time tasks. Power users who know the workflow can skip directly to /plan.
+next_suggestions:
+  - when: plan_drafted_and_unsigned
+    suggest: "sign the plan gate (review .claude/sdlc/plans/<slug>.md) to unlock /analyze"
+  - when: plan_gate_signed
+    suggest: "run /analyze to produce requirements with REQ IDs"
 ---
 
 # Start — Guided Intake
@@ -106,3 +111,7 @@ Then invoke the `plan` skill with the pre-fill block as context. The plan skill 
 - `commands/fix-fast.md` — fix-fast eligibility rules
 - `skills/plan/SKILL.md` — the skill this hands off to
 - `docs/rfcs/guided-entry-session-resume-multi-role.md` §2 — PR 2 spec
+
+## Next step hint
+
+After handing off to `/plan`, the plan skill will print its own hint. Do not call `next-hint.sh` here — the handed-off skill's output is the next step.
