@@ -129,7 +129,7 @@ flowchart LR
     DR --> RV{Human review<br/>fill gaps · remove bad guesses}
     RV --> S[scope.md<br/>signed]
     S --> SG[gates/scope-&lt;project&gt;.md<br/>scope gate]
-    SG --> P1[/plan/ proceeds]
+    SG --> P1[plan proceeds]
 
     classDef agent fill:#a5d8ff,stroke:#1e1e1e,color:#1e1e1e
     classDef artifact fill:#b2f2bb,stroke:#1e1e1e,color:#1e1e1e
