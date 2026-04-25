@@ -353,6 +353,12 @@ The plugin distinguishes two severities deliberately:
 
 Warnings are *warnings*. They're not auto-blockers-in-waiting. The adjacent-function detector in particular uses git hunk headers, which are imperfect — an aggressive block there would halt legitimate work.
 
+## Multi-team sign-offs
+
+When a gate requires sign-off from more than one team (e.g. security + product, backend + frontend, compliance + dev), add a `## Required sign-offs` block to the gate file listing one role per line. The `approval-reconcile.sh` hook checks at the end of every session turn that a sign-off file exists for each listed role in `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md`, warns on any missing, and warns if gate content has changed since a sign-off was captured (hash drift). Use [`templates/sign-off-multi.md`](templates/sign-off-multi.md) as the starting point for each sign-off file. The hook regenerates `APPROVALS.md` at the git root as an at-a-glance summary and can sync sign-offs to/from a shared filesystem path when `approvals.share_path` is set in `config/tools.json`.
+
+Multi-team sign-offs are **opt-in per gate** — removing the `## Required sign-offs` block returns a gate to single-signer behavior.
+
 ## Review processes
 
 Three artifacts get first-class review treatment: **code**, **test cases**, and **test scripts**. All three share the same shape — scoped to the `git diff`, traced to a REQ ID, and human-signed at a gate.
@@ -481,7 +487,7 @@ Bounded subagents with narrow write scope — they propose; humans approve.
 | [observability](agents/observability.md) | Produces monitoring / alerts / runbooks | `.claude/sdlc/monitoring/` only |
 | [scope-ingest](agents/scope-ingest.md) | Parses source material into a provenance-traced scope draft | `.claude/sdlc/scope-drafts/` only |
 
-### Hooks (12)
+### Hooks (13)
 
 Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy documented above.
 
@@ -499,8 +505,9 @@ Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy do
 | [env-detect.sh](hooks/env-detect.sh) | SessionStart | — | Writes `.claude/sdlc/env.json` with detected integrations; sets Layer 0/3 flags for the configure skill |
 | [session-plan-check.sh](hooks/session-plan-check.sh) | SessionStart | — | Shows in-flight task state and personalized sign-off hints at the start of each session |
 | [token-tracker.sh](hooks/token-tracker.sh) | Stop | — | Parses the session transcript; writes raw per-phase token counts to `token-log.json` / `token-history.jsonl`. Off by default; enabled via `config/tools.json` |
+| [approval-reconcile.sh](hooks/approval-reconcile.sh) | Stop | Warn | For every gate with a `## Required sign-offs` block, warns on missing per-role sign-off files and on hash mismatches (gate content changed since signing); regenerates `APPROVALS.md` at the git root; syncs sign-offs to/from a network share when `approvals.share_path` is set in `config/tools.json` |
 
-### Templates (12)
+### Templates (13)
 
 Shape of the artifacts the plugin produces. Headings and fields are parsed by hooks — don't rename them without checking downstream consumers.
 
@@ -518,6 +525,7 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 | [approval-packet.md](templates/approval-packet.md) | Compiled reviewer summary produced at multi-team sign-off time |
 | [deployment.md](templates/deployment.md) | Deployment record |
 | [defect.md](templates/defect.md) | Defect report |
+| [sign-off-multi.md](templates/sign-off-multi.md) | Per-signer, per-role sign-off file for multi-team gates — saved to `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md` |
 
 ## Repo layout
 
@@ -530,8 +538,8 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 ├── skills/          (19)        # 8 phase + 7 cross-cutting (incl. domain-expert) + 4 utility (configure, start, status, help)
 ├── commands/        (15)        # one per checkpoint + /status + /help + /review + /fix-fast + /token-review
 ├── agents/          (5)         # bounded subagents (incl. scope-ingest)
-├── hooks/                       # hooks.json + 12 shell scripts
-└── templates/       (12)        # artifact templates (incl. scope-gate, approval-packet)
+├── hooks/                       # hooks.json + 13 shell scripts
+└── templates/       (13)        # artifact templates (incl. scope-gate, approval-packet, sign-off-multi)
 ```
 
 ## Related reading
