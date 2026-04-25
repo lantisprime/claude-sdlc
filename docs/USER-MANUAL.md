@@ -38,7 +38,7 @@ For the concise overview, read [README.md](../README.md). For the authoritative 
 | Claude Code installed | The plugin is a Claude Code plugin — it has no standalone runtime | `claude --version` |
 | POSIX shell + `bash` | All 10 hooks are bash scripts | `bash --version` |
 | The plugin loaded in your repo | Via `/plugin` — see [README install section](../README.md#install) | `/plugin list` inside Claude Code |
-| A one-paragraph scope statement at `.claude/sdlc/scope.md` | Phase 1 (`/plan`) validates against it; created interactively on first use if missing | `cat .claude/sdlc/scope.md` |
+| `.claude/sdlc/scope.md` **or** willingness to point at source material | Phase 1 (`/plan`) validates against it. On first run, the [`scope-ingest`](../agents/scope-ingest.md) agent turns a README, brief, or `.md`/`.txt` source into a draft for you to review, promote, and sign. Fallback: type a one-paragraph statement in chat. | `cat .claude/sdlc/scope.md` |
 | `config/tools.json` exists (copy of `tools.example.json`) | Every skill and hook reads tool commands from here; missing file means no formatter/linter/tests run | `ls config/tools.json` |
 
 ### Soft prerequisites (plugin degrades, but surfaces the gap)
@@ -116,22 +116,67 @@ It fires on `SessionStart` automatically. The first session after install writes
 
 Review this file. Anything `null` that you *do* have wired up — add it to the `integrations` block in `config/tools.json` to override.
 
-### Step 4 — Write a scope statement
+### Step 4 — Produce a scope statement (`scope-ingest` flow)
 
-The first `/plan` invocation will prompt you for this if missing. You can also write it directly:
+The first `/plan` invocation runs the [`scope-ingest`](../agents/scope-ingest.md) agent if `.claude/sdlc/scope.md` is missing. You point at source material; the agent extracts a provenance-traced draft you can review and correct.
 
-```bash
-mkdir -p .claude/sdlc
-cat > .claude/sdlc/scope.md <<'EOF'
-# Project scope
+**Accepted source types (v1):** `.md`, `.txt`, raw pasted text, or an existing `scope.md` (re-validate mode). PDF/DOCX/PPTX and Jira/Linear ingest are on the roadmap.
 
-We build and operate the public-facing billing API for ACME Corp.
-In scope: REST endpoints, Stripe integration, invoicing, tax calc.
-Out of scope: mobile clients, internal admin UI, CRM sync.
-EOF
+```mermaid
+flowchart LR
+    SRC[Source<br/>README · brief · spec · pasted text] --> SI[scope-ingest agent]
+    SI -->|writes only here| DR[scope-drafts/&lt;timestamp&gt;.md<br/>provenance-traced<br/>⚠️ low-confidence flagged]
+    DR --> RV{Human review<br/>fill gaps · remove bad guesses}
+    RV --> S[scope.md<br/>signed]
+    S --> SG[gates/scope-&lt;project&gt;.md<br/>scope gate]
+    SG --> P1[/plan/ proceeds]
+
+    classDef agent fill:#a5d8ff,stroke:#1e1e1e,color:#1e1e1e
+    classDef artifact fill:#b2f2bb,stroke:#1e1e1e,color:#1e1e1e
+    classDef gate fill:#ffd8a8,stroke:#1e1e1e,color:#1e1e1e
+    classDef human fill:#fff3bf,stroke:#1e1e1e,color:#1e1e1e
+    class SI agent
+    class DR,S artifact
+    class SG gate
+    class RV human
 ```
 
-This is the document every plan is validated against.
+The interactive flow:
+
+```
+/plan "Add rate-limit headers to the public API"
+# → No scope.md found. Point me at source material:
+#   - a file path (README.md, docs/brief.txt, …)
+#   - paste text directly in chat
+#   - or type 'skip' to write a one-paragraph statement by hand
+```
+
+Pick one of:
+
+1. **File path** — e.g. `README.md`. The agent reads it, extracts fields (in-scope, out-of-scope, success criteria, constraints, stakeholders, assumptions), and writes a draft to `.claude/sdlc/scope-drafts/<timestamp>.md` with a per-bullet provenance footer and `extraction_confidence` per field (`high` / `medium` / `low` / `absent`). Low-confidence sections are prefixed with ⚠️; absent fields are omitted.
+
+2. **Pasted text** — paste a brief inline; same draft output.
+
+3. **`skip`** — fall back to typing a one-paragraph statement; the plugin writes `scope.md` directly. This is the minimal-friction degraded path.
+
+**Review the draft.** Open `.claude/sdlc/scope-drafts/<timestamp>.md`. Verify each bullet against its source comment. Remove guesses, fill ⚠️ gaps. The draft is *not* authoritative — only `scope.md` is.
+
+**Promote and sign.** Copy the draft to `.claude/sdlc/scope.md` (the agent does **not** write `scope.md` — that's your signed artifact). Strip the `<!-- source: ... -->` provenance comments before publishing.
+
+```bash
+cp .claude/sdlc/scope-drafts/20260425T032010Z.md .claude/sdlc/scope.md
+# edit out the HTML comments, fix any remaining ⚠️ fields
+```
+
+### Step 5 — Sign the scope gate (one-time per project)
+
+`/plan` then drafts a scope gate at `.claude/sdlc/gates/scope-<project-slug>.md` using [`templates/scope-gate.md`](../templates/scope-gate.md). The shape is identical to a phase gate plus a `gate_hash` and a "Scope fields confirmed" checklist.
+
+You sign it with the same chat sign-off prompt used elsewhere (URL or `no ticket REQ-SCOPE-<project-slug>`). The REQ ID for this gate is `REQ-SCOPE-<project-slug>`.
+
+After signing, `plan-gate.sh` stops warning about the missing scope gate, and subsequent `/plan` invocations read `scope.md` automatically — Steps 4 and 5 only run on the first task per project (or when you re-validate).
+
+> **Don't have source material?** Type `skip` at the prompt and write a one-paragraph statement directly. You still sign the scope gate; only the source-extraction step is skipped.
 
 ---
 
@@ -147,6 +192,10 @@ Before you start a *task*, the plugin assumes:
 | **API spec + reachable endpoint** *(or acknowledgment to use a mock)* | Only if the task integrates with an external API | Spec file path + base URL. If unreachable, the `api-integration` skill asks you to choose a mock runner (MSW / Prism / WireMock) |
 
 **Your commitment per task:** review the artifact at each of the 8 gates. The plugin will ask for a fresh sign-off every time. Rubber-stamping defeats the point.
+
+### Domain-expert check (automatic, Phase 1)
+
+Between scope validation and plan write, the [`domain-expert`](../skills/domain-expert/SKILL.md) skill checks the task against `domains/_index.json` (project-level first, plugin-level fallback). On a **high-confidence** match it silently injects a `## Domain context` block — gap questions, NFR reminders, security hotspots — into the plan artifact. On a **medium/low-confidence** match it asks you to confirm. On a **miss** in a clearly domain-sensitive area, it offers Path A (source-driven ingest of a URL) or Path B (guided 6-question Q&A) once per session — see [`AUTHORING.md`](../skills/domain-expert/AUTHORING.md). No user input is required for high-confidence matches; you'll just see the new section in the plan when you review.
 
 ---
 
@@ -482,6 +531,22 @@ This means even if someone hand-writes a broken gate, the next phase's first Edi
 | User identity unknown (no session email) | Skill asks for name or email at sign-off time; records whatever is provided, verbatim |
 | Gate file write fails (permissions, disk) | Surface the error; **do not** retry silently. The human decides whether to fix the environment or record the sign-off elsewhere |
 
+### The scope gate (one-time, pseudo-phase)
+
+Before any phase gate, every project signs a **scope gate** once: `.claude/sdlc/gates/scope-<project-slug>.md`. Shape from [`templates/scope-gate.md`](../templates/scope-gate.md) — identical to a phase gate plus three additions:
+
+| Addition | Purpose |
+|---|---|
+| `REQ ID` line | `REQ-SCOPE-<project-slug>` — the work-item reference for this scope acceptance |
+| `gate_hash` | sha256 of the gate body above the sign-offs block, computed at signing — detects post-sign tampering |
+| `## Scope fields confirmed` checklist | Eight checkboxes (Project name, In scope, Out of scope, Success criteria, Constraints, Stakeholders, Assumptions, Domain) — tick each field you reviewed |
+
+**Sign-off shape** is the standard chat sign-off prompt. Acceptable inputs: a URL, or `no ticket REQ-SCOPE-<project-slug>` for degraded mode.
+
+**Enforcement strictness:** [`plan-gate.sh`](../hooks/plan-gate.sh) **warns (does not block)** when the scope gate is missing. This is the "pseudo-phase gate" approach — surface the gap loudly, let the human decide whether to skip ahead. If post-ship usage shows operators skipping past the warning, this may be promoted to a hard block in v2 (see [docs/rfcs/scope-ingest.md](rfcs/scope-ingest.md)).
+
+The scope gate is signed once per project. Every subsequent `/plan` reads `scope.md` and proceeds without re-prompting — unless the scope-ingest re-validate flow surfaces drift.
+
 ---
 
 ## 7. Scenarios
@@ -500,17 +565,29 @@ https://linear.app/acme/issue/API-4421
 
 That single line is quoted verbatim into the gate file's `Acknowledgment` block along with an ISO-8601 timestamp. Scenarios below show it as `**You (sign-off):** <the literal paste>` — mentally substitute the URL that matches your actual work item. For manual sign-off (deploy, fix-fast), you edit the gate file directly — see the worked example in [section 5 → Manual sign-off](#manual-sign-off-required-for-deploy-and-fix-fast).
 
+### First-run setup (per project, before any scenario)
+
+The first time `/plan` runs in a project, two artifacts that don't yet exist get created **before** the plan itself: `scope.md` and the scope gate. From then on, every scenario below assumes both are in place.
+
+1. **`scope-ingest` runs** (Section 2 → Step 4) — produces a draft at `.claude/sdlc/scope-drafts/<timestamp>.md`. You review, fill ⚠️ gaps, copy to `.claude/sdlc/scope.md`.
+2. **Scope gate signed** (Section 2 → Step 5) — gate at `.claude/sdlc/gates/scope-<project>.md`, REQ ID `REQ-SCOPE-<project-slug>`. Chat sign-off, same prompt shape as a phase gate.
+3. **Phase 1 then proceeds** as shown in 7.1 below.
+
+If you skip the scope-ingest path (no source material, type `skip`), you write `scope.md` by hand and sign the scope gate the same way — the rest of the workflow is identical.
+
+> **Domain-expert is automatic:** in every Phase 1 from this point on, the `domain-expert` skill runs between scope validation and plan write. On a high-confidence match, you'll see a new `## Domain context` section in the plan artifact when you review it. On a miss in a domain-sensitive area, you'll be offered the authoring flow (Path A: paste a URL; Path B: 6-question Q&A) — once per session.
+
 ### 7.1 Scenario A — Greenfield feature (full 8 phases)
 
 **Task:** add rate-limit headers to the public API.
 
 **Classification:** backend-only — no UI change, so the UX track is skipped (no Phase 2 halt, no Phase 5 UX conformance).
 
-**Prerequisites checked:** `.claude/sdlc/scope.md` exists; `config/tools.json` has test runner + linter.
+**Prerequisites checked:** `.claude/sdlc/scope.md` exists and the scope gate is signed (see [First-run setup](#first-run-setup-per-project-before-any-scenario)); `config/tools.json` has test runner + linter.
 
 ---
 
-**Phase 1 — Plan**
+**Phase 1 — Plan** (6 steps: classify → resolve scope → domain check → write plan → tech stack → gate)
 
 **You:**
 ```
@@ -518,14 +595,38 @@ That single line is quoted verbatim into the gate file's `Acknowledgment` block 
 ```
 
 **Plugin:**
-- `plan` skill drafts `.claude/sdlc/plans/rate-limit-headers.md`:
+- **Step 1 — Classify:** `feature`.
+- **Step 2 — Resolve scope:** reads `.claude/sdlc/scope.md`. The task aligns with documented scope ("public-facing API"); no drift surfaced.
+- **Step 2.5 — Domain check:** `domain-expert` skill scans the task and `scope.md` against the merged domain index. No high/medium match for `payments` or `auth` — exits silently. (For a payments task, this step would inject a `## Domain context` block — see the example below.)
+- **Step 3 — Write plan:** drafts `.claude/sdlc/plans/rate-limit-headers.md`:
   - Classification: `feature`
   - In-scope files: `gateway/middleware/ratelimit.go`, `gateway/middleware/ratelimit_test.go`
   - In-scope functions: `RateLimitHeaders`, `addRateLimitHeaders`
   - Out-of-scope: admin API gateway, internal RPC layer
   - Estimate: 120 LOC, 2 files
-  - Tech stack: Go 1.22, existing gateway middleware pattern
-- Returns the plan and asks you to review + sign.
+- **Step 4 — Tech stack:** Go 1.22, existing gateway middleware pattern. Compatibility matrix all-pass.
+- **Step 5 — Gate:** returns the plan and asks you to review + sign.
+
+> **What a domain match looks like:** if the task had been `/plan "add idempotency keys to the Stripe charge endpoint"`, Step 2.5 would have matched `payments` at `high` confidence and injected this into the plan artifact:
+>
+> ```markdown
+> ## Domain context
+>
+> **Domain:** payments (high confidence)
+> **Domain file:** domains/payments.md (plugin-level)
+>
+> ### Unanswered questions
+>
+> - ⚠️ **Which payment processor is in use, and which SDK/API version?** *(required)*
+> - ⚠️ **Is this change PCI-scoped? If yes, what is the cardholder data isolation strategy?** *(required)*
+> - What is the idempotency key strategy for mutating operations?
+>
+> ### NFR reminders
+> - All payment operations must be idempotent.
+> - Webhook endpoints must respond within 5 seconds.
+> ```
+>
+> ⚠️ flags are **warn-level** — they don't block the plan gate. You answer them in the plan body (or in `scope.md` for project-wide answers) and re-sign.
 
 **You (sign-off):**
 ```
@@ -820,11 +921,37 @@ https://linear.app/acme/issue/WEB-2207
 { "vcs": null, "issue_tracker": null, "ci": null }
 ```
 
+**First run (scope setup):**
+
 **You:** `/plan "add a CLI flag for verbose output"`
 
-**Plugin runs normally.** Writes plan to `.claude/sdlc/plans/verbose-flag.md`.
+**Plugin:** no `scope.md` found. Prompts:
+```
+No scope.md found. Point me at source material:
+ - a file path (README.md, docs/brief.txt, …)
+ - paste text directly in chat
+ - or type 'skip' to write a one-paragraph statement by hand
+```
 
-**Phase 2 sign-off prompt:**
+**You:** `skip` (no source — it's a scratchpad).
+
+**Plugin** asks for a one-paragraph statement, writes `.claude/sdlc/scope.md`, then drafts the scope gate. **Scope-gate sign-off prompt:**
+
+```
+Paste the URL of the REQ / ticket / CR, or type
+`no ticket REQ-SCOPE-<project-slug>` for degraded mode.
+```
+
+**You:**
+```
+no ticket REQ-SCOPE-verbose-cli
+```
+
+**Plugin writes** `.claude/sdlc/gates/scope-verbose-cli.md` with this exact string + ISO-8601 timestamp.
+
+**Phase 1 then proceeds.** Plan drafted at `.claude/sdlc/plans/verbose-flag.md`. Step 2.5 runs the domain-expert check; no match (CLI is not a seeded domain), so no `## Domain context` is written.
+
+**Plan gate sign-off prompt:**
 
 ```
 Paste the URL of the REQ / ticket / CR, or type `no ticket REQ-<n>` for degraded mode.
@@ -903,7 +1030,9 @@ Accepting moderate risk of admin tools seeing 429s sooner.
 
 **You:** `/plan "integrate with Stripe refunds API"`
 
-**Plugin** asks: "Spec location? Base URL?"
+**Plugin:** Phase 1 Step 2.5 matches `payments` at `high` confidence (keyword: `stripe`) and prepares a `## Domain context` block — PCI questions, idempotency NFR, webhook security hotspots. The block is appended to the plan artifact before you review.
+
+**Plugin** then asks: "Spec location? Base URL?"
 
 **You:**
 ```
@@ -995,7 +1124,7 @@ You'll interact with hooks implicitly — they fire on Claude's tool calls, not 
 
 | Hook | Fires on | Severity | Typical user experience |
 |---|---|---|---|
-| `plan-gate.sh` | PreToolUse Edit/Write | **Block** | "I can't edit files yet — there's no plan for this task. Run `/plan` first." |
+| `plan-gate.sh` | PreToolUse Edit/Write | **Block** + 2 warns | **Block:** "I can't edit files yet — there's no plan for this task. Run `/plan` first." **Warn:** if `.claude/sdlc/scope.md` is absent, or if no scope gate exists at `.claude/sdlc/gates/scope-*.md`. The warns surface the gap; the block is reserved for the missing plan artifact. |
 | `work-item-validation.sh` | PreToolUse Edit/Write | **Block** | "Edit blocked: no REQ ID, ticket, or signed CR references this file." |
 | `phase-gate.sh` | PreToolUse (commands) | **Block** | "Can't run `/build` — the design gate isn't signed yet." |
 | `secret-scan.sh` | PostToolUse | **Block** | "Secret scanner found a confirmed secret in this diff — refusing the write." |
@@ -1042,6 +1171,24 @@ Intentional. The signature must be non-trivial — a URL, a REQ ID, or `no ticke
 ### "My scope keeps drifting"
 
 If `diff-scope-check.sh` fires often, your plans are too narrow. Expand the `In-scope files` list in the plan *before* the Build phase, or raise a CR if you're already mid-Build. See [Scenario E](#75-scenario-e--mid-build-scope-change-cr-flow).
+
+### "domain-expert flagged required questions but my plan looks complete"
+
+⚠️ flags are **warn-level only** — they never block the plan gate. Two valid responses:
+
+1. **Answer in the plan body** — add a section addressing the question. Re-run `/plan` (or just re-prompt for sign-off); the answer-search step checks the plan body and the question is no longer flagged.
+2. **Answer in `scope.md`** — if the answer is project-wide (e.g. "we use Stripe for all payments"), put it in `scope.md`. The skill checks both the plan and `scope.md` before flagging a question as unanswered.
+
+If neither — for example, the question genuinely doesn't apply — sign the gate anyway. The flag stays in the artifact as a record of acknowledged gaps.
+
+### "scope-ingest left fields marked ⚠️ in the draft"
+
+The draft is a working document, not the final scope. Open `.claude/sdlc/scope-drafts/<timestamp>.md`:
+
+- Fields prefixed with ⚠️ are **low-confidence** — the agent guessed, the source was thin. Verify against the source comment beneath the bullet (`<!-- source: ... -->`) and either correct it or remove it.
+- Fields with `absent` confidence are omitted from the draft entirely. If you needed them, add them by hand.
+
+When the draft is correct, copy to `.claude/sdlc/scope.md` (strip the HTML provenance comments first), then sign the scope gate. The agent never writes `scope.md` — that's intentional, so you always do a final read.
 
 ### "I want to see token usage per phase"
 
