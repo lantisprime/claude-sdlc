@@ -71,6 +71,24 @@ Validate compatibility:
 
 Produce a compatibility matrix as a markdown table in the plan file. Any `FAIL` row halts planning and requires human decision.
 
+## Step 4.5 — Scope gate (first task per project only)
+
+If `.claude/sdlc/gates/scope-<project-slug>.md` does not exist, draft and sign the scope gate before proceeding to the plan gate. If the file already exists, skip this step entirely.
+
+**Derive the project slug** from the `project_name` field in `scope.md` (slugify: lowercase, hyphens, no spaces). If `scope.md` has no project name, use the repository directory name.
+
+**Draft the scope gate** at `.claude/sdlc/gates/scope-<project-slug>.md` using `templates/scope-gate.md`:
+
+- Fill `## Scope summary` — one paragraph summarising what the scope covers and what source material was used.
+- Fill `## Source material` — source path (or "pasted text"), extraction confidence per field, provenance pointer to the scope draft.
+- Pre-tick `## Scope fields confirmed` for every field that was present and reviewed in the scope draft. Leave unchecked fields that were absent or low-confidence.
+- Fill `## Open items carried forward` with any low-confidence or absent fields from the draft that the plan must still resolve.
+- Compute `gate_hash`: sha256 of the file content **above** the `## Required sign-offs` heading at this point in the draft. Write it into the `gate_hash:` line before presenting the gate to the human.
+
+**Ask the human to sign** the scope gate (same chat sign-off prompt as a phase gate). Acceptable inputs: a URL, or `no ticket REQ-SCOPE-<project-slug>` for degraded mode. Write the signed gate file.
+
+After sign-off, `plan-gate.sh` will stop warning about the missing scope gate on all future `/plan` invocations for this project.
+
 ## Step 5 — Human gate
 
 Produce a one-screen summary of the plan and ask the human to confirm before Analyze/Design/Build proceeds. Write the confirmation to `.claude/sdlc/gates/plan-<task-slug>.md` using `templates/gate.md` — later commands check for this file.
@@ -87,6 +105,7 @@ Produce a one-screen summary of the plan and ask the human to confirm before Ana
 - `templates/plan.md` — plan artifact template
 - `templates/change-request.md` — CR template
 - `templates/gate.md` — phase-gate template
+- `templates/scope-gate.md` — scope gate template (Step 4.5)
 - `agents/scope-ingest.md` — scope draft producer (Step 2)
 - `skills/domain-expert/SKILL.md` — domain context injector (Step 2.5)
 - `docs/SDLC.md` — full phase reference

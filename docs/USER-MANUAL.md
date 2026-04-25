@@ -22,6 +22,7 @@ For the concise overview, read [README.md](../README.md). For the authoritative 
     - [7.5 Mid-build scope change (CR flow)](#75-scenario-e--mid-build-scope-change-cr-flow)
     - [7.6 External API integration (mock fallback)](#76-scenario-f--external-api-integration-mock-fallback)
     - [7.7 Pre-written plan / RFC intake](#77-scenario-g--pre-written-plan--rfc-intake)
+    - [7.8 Scope re-validate (task doesn't fit current scope.md)](#78-scenario-h--scope-re-validate-task-doesnt-fit-current-scopemd)
 8. [Hook behavior reference](#8-hook-behavior-reference)
 9. [Troubleshooting](#9-troubleshooting)
 
@@ -195,7 +196,9 @@ Before you start a *task*, the plugin assumes:
 
 ### Domain-expert check (automatic, Phase 1)
 
-Between scope validation and plan write, the [`domain-expert`](../skills/domain-expert/SKILL.md) skill checks the task against `domains/_index.json` (project-level first, plugin-level fallback). On a **high-confidence** match it silently injects a `## Domain context` block — gap questions, NFR reminders, security hotspots — into the plan artifact. On a **medium/low-confidence** match it asks you to confirm. On a **miss** in a clearly domain-sensitive area, it offers Path A (source-driven ingest of a URL) or Path B (guided 6-question Q&A) once per session — see [`AUTHORING.md`](../skills/domain-expert/AUTHORING.md). No user input is required for high-confidence matches; you'll just see the new section in the plan when you review.
+Between scope validation and plan write, the [`domain-expert`](../skills/domain-expert/SKILL.md) skill evaluates the task description and `scope.md` against the domain registry in `domains/_index.json` (project-level first, plugin-level fallback) using semantic judgment — no keyword list. On a **high-confidence** match it silently injects a `## Domain context` block — gap questions, NFR reminders, security hotspots — into the plan artifact. On a **medium/low-confidence** match it asks you to confirm. On a **miss** in a clearly domain-sensitive area, it offers Path A (source-driven ingest of a URL) or Path B (guided 6-question Q&A) once per session — see [`AUTHORING.md`](../skills/domain-expert/AUTHORING.md). No user input is required for high-confidence matches; you'll just see the new section in the plan when you review.
+
+**After completing Path A or B:** the skill re-runs domain matching immediately with the newly authored file and injects `## Domain context` without requiring you to re-run `/plan`. If you decline the offer (type `skip`), the session records that in `.claude/sdlc/hints.jsonl` and won't ask again until the next session.
 
 ---
 
@@ -1118,7 +1121,68 @@ Same pattern works for `/analyze "pull requirements from JIRA PROJ-123"` — the
 
 ---
 
-## 8. Hook behavior reference
+### 7.8 Scenario H — Scope re-validate (task doesn't fit current scope.md)
+
+**Situation:** your project has a signed `scope.md`. Six months later, a new task arrives that looks materially different from what the scope describes. `/plan` detects the mismatch and triggers re-validation before writing the plan.
+
+---
+
+**You:**
+```
+/plan "Add a public GraphQL API for third-party integrations"
+```
+
+**Plugin (Step 2 — scope check):**
+- Reads `scope.md`. The scope describes a REST-only internal API service; a public GraphQL API is not mentioned.
+- Detects material drift. Invokes `scope-ingest` in **re-validate mode** against the existing `scope.md`.
+
+**Plugin (re-validate output):**
+- Writes a drift report at `.claude/sdlc/scope-drafts/<timestamp>-revalidation.md`:
+  ```
+  ## Drift detected
+
+  - 'In scope' does not mention a public-facing API surface.
+  - 'Out of scope' lists "third-party integrations" explicitly.
+  - Success criteria reference internal tooling only — no public SLA.
+  ```
+- Surfaces the report and presents three options:
+
+```
+Drift detected between the task and scope.md. Choose how to proceed:
+
+  1. Expand scope — update scope.md to include this task and re-sign
+     the scope gate. Use when the project's direction has genuinely
+     widened and the new work is approved.
+
+  2. Raise a CR — create a change request (CR-<n>.md) and sign it.
+     Use when scope is expanding mid-project and you want a formal
+     record of the decision.
+
+  3. Defer — stop here. The task is out of scope; it should be
+     planned under a different project or a future scope revision.
+
+Type 1, 2, or 3.
+```
+
+**If you choose 1 (expand scope):**
+
+Open `scope.md` and add the new capability. Tell Claude when done:
+```
+Updated scope.md — re-read and continue.
+```
+Claude re-runs the scope check (now passes), re-validates the scope gate hash, and proceeds to Step 2.5 (domain-expert).
+
+> **Scope gate re-sign:** expanding scope after the initial gate was signed means the gate hash no longer matches. Draft a new scope gate (or amend the existing one) before signing the next phase gate. The plugin will warn if the hash drifts.
+
+**If you choose 2 (raise a CR):**
+
+Same flow as [Scenario E (§7.5)](#75-scenario-e--mid-build-scope-change-cr-flow) — but at Plan phase instead of Build. Create `.claude/sdlc/change-requests/CR-<n>.md`, sign it at `.claude/sdlc/sign-offs/CR-<n>.md`, then tell Claude to continue. The CR is referenced in the plan artifact's work-item field.
+
+**If you choose 3 (defer):**
+
+Planning stops. No artifacts are written. Run the task under a new or revised scope.
+
+---
 
 You'll interact with hooks implicitly — they fire on Claude's tool calls, not yours. This table explains what to expect when something "just stops":
 
