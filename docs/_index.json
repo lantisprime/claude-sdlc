@@ -1,0 +1,225 @@
+{
+  "_comment": "Machine-readable documentation index for docs/. The update_triggers field on each file uses a closed vocabulary defined in _trigger_vocabulary. The rfc_impact map is authoritative — do not maintain a separate RFC checklist; derive views from this structure. Keys in rfc_impact are RFC file paths (without .md extension) relative to the repo root.",
+  "version": "1",
+  "_trigger_vocabulary": [
+    "rfc:written",
+    "rfc:accepted",
+    "rfc:implemented",
+    "new-phase",
+    "new-command",
+    "new-hook",
+    "new-term",
+    "capability-shipped"
+  ],
+  "files": [
+    {
+      "path": "docs/GLOSSARY.md",
+      "title": "Glossary",
+      "status": "active",
+      "role": "core-reference",
+      "description": "Canonical definitions for plugin-specific terms; must mirror accepted RFC vocabulary.",
+      "update_triggers": ["new-term", "rfc:accepted", "rfc:implemented"]
+    },
+    {
+      "path": "docs/SDLC.md",
+      "title": "SDLC Reference",
+      "status": "active",
+      "role": "core-reference",
+      "description": "Authoritative 8-phase workflow spec — phases, gates, hooks, config layers, validation metrics.",
+      "update_triggers": ["new-phase", "new-hook", "rfc:implemented"]
+    },
+    {
+      "path": "docs/USER-MANUAL.md",
+      "title": "User Manual",
+      "status": "active",
+      "role": "user-guide",
+      "description": "Practical walkthrough: 8 real-world scenarios, sign-off modes, hook behavior, troubleshooting.",
+      "update_triggers": ["new-phase", "new-command", "new-hook", "rfc:implemented"]
+    },
+    {
+      "path": "docs/review-processes.md",
+      "title": "Review Processes",
+      "status": "active",
+      "role": "user-guide",
+      "description": "Four review tracks: code, architecture, test-case, and test-script.",
+      "update_triggers": ["new-command", "new-hook"]
+    },
+    {
+      "path": "docs/when-not-to-use.md",
+      "title": "When Not to Use",
+      "status": "active",
+      "role": "user-guide",
+      "description": "Anti-use-cases and best-fit conditions for the plugin.",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/claude-sdlc-enterprise-adoption.md",
+      "title": "Enterprise Adoption",
+      "status": "active",
+      "role": "positioning",
+      "description": "Regulatory/enterprise positioning, role changes, cost model, shipped-vs-deferred roadmap.",
+      "update_triggers": ["rfc:implemented", "capability-shipped"],
+      "_note": "Updates on a business/market clock, not purely a code clock. Hook enforcement not recommended."
+    },
+    {
+      "path": "docs/diagrams.md",
+      "title": "Diagrams",
+      "status": "draft",
+      "role": "visual-reference",
+      "description": "Mermaid diagrams for 8-phase flow and plugin architecture.",
+      "update_triggers": ["new-phase", "new-hook"]
+    },
+    {
+      "path": "docs/diagrams-preview.html",
+      "title": "Diagrams Preview",
+      "status": "draft",
+      "role": "diagram-source",
+      "description": "Rendered HTML preview of diagrams.md Mermaid output.",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/sdlc-architecture.excalidraw",
+      "title": "Architecture Diagram Source",
+      "status": "draft",
+      "role": "diagram-source",
+      "description": "Excalidraw source for the plugin architecture diagram.",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/sdlc-flow.excalidraw",
+      "title": "Flow Diagram Source",
+      "status": "draft",
+      "role": "diagram-source",
+      "description": "Excalidraw source for the SDLC phase flow diagram.",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/ideas/capabilities.md",
+      "title": "Capabilities Review",
+      "status": "active",
+      "role": "ideas",
+      "description": "Capability maturity ratings, integration matrix, RFC-backed roadmap status.",
+      "update_triggers": ["rfc:accepted", "rfc:implemented", "capability-shipped"]
+    },
+    {
+      "path": "docs/ideas/comparison-gstack.md",
+      "title": "Comparison vs. gstack",
+      "status": "active",
+      "role": "ideas",
+      "description": "Strategic positioning: claude-sdlc (governance) vs. gstack (acceleration).",
+      "update_triggers": [],
+      "_note": "Updates on a competitive/market clock. No trigger-based enforcement."
+    },
+    {
+      "path": "docs/rfcs/scope-ingest.md",
+      "title": "Scope Ingest & Domain Expert RFC",
+      "status": "implemented",
+      "role": "rfc",
+      "description": "Defines scope-ingest agent and domain-expert skill; all implementation checklist items complete.",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/rfcs/multi-team-approval.md",
+      "title": "Multi-team Approval RFC",
+      "status": "accepted",
+      "role": "rfc",
+      "description": "Distributed sign-off across Claude Code sessions via file-per-signer transport.",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/rfcs/guided-entry-session-resume-multi-role.md",
+      "title": "Guided Entry, Session Resume, Multi-role RFC",
+      "status": "accepted",
+      "role": "rfc",
+      "description": "8 UX surface PRs layered on multi-team-approval; ship order defined.",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/rfcs/pending-analysis.md",
+      "title": "Pending Analysis",
+      "status": "active",
+      "role": "tracker",
+      "description": "Open design questions tracker: items 1-2 open (deferred), item 3 closed/accepted.",
+      "update_triggers": ["rfc:written", "rfc:accepted"]
+    },
+    {
+      "path": "docs/rfcs/notes/README.md",
+      "title": "RFC Notes Index",
+      "status": "active",
+      "role": "notes-index",
+      "description": "Index and naming conventions for all RFC companion notes in this directory.",
+      "update_triggers": ["rfc:written", "rfc:accepted", "rfc:implemented"]
+    }
+  ],
+  "rfc_impact": {
+    "docs/rfcs/scope-ingest": {
+      "rfc_status": "implemented",
+      "accepted": [
+        "docs/GLOSSARY.md",
+        "docs/rfcs/notes/README.md",
+        "docs/ideas/capabilities.md"
+      ],
+      "implemented": [
+        "docs/SDLC.md",
+        "docs/USER-MANUAL.md",
+        "docs/GLOSSARY.md",
+        "docs/ideas/capabilities.md",
+        "docs/rfcs/notes/README.md"
+      ]
+    },
+    "docs/rfcs/multi-team-approval": {
+      "rfc_status": "accepted",
+      "accepted": [
+        "docs/GLOSSARY.md",
+        "docs/rfcs/notes/README.md",
+        "docs/ideas/capabilities.md"
+      ],
+      "implemented": [
+        "docs/SDLC.md",
+        "docs/USER-MANUAL.md",
+        "docs/GLOSSARY.md",
+        "docs/claude-sdlc-enterprise-adoption.md",
+        "docs/ideas/capabilities.md",
+        "docs/rfcs/notes/README.md"
+      ]
+    },
+    "docs/rfcs/guided-entry-session-resume-multi-role": {
+      "rfc_status": "accepted",
+      "accepted": [
+        "docs/rfcs/notes/README.md",
+        "docs/ideas/capabilities.md"
+      ],
+      "implemented": [
+        "docs/SDLC.md",
+        "docs/USER-MANUAL.md",
+        "docs/ideas/capabilities.md",
+        "docs/rfcs/notes/README.md"
+      ]
+    }
+  },
+  "always_update_on_feature": {
+    "new_phase": [
+      "docs/SDLC.md",
+      "docs/USER-MANUAL.md",
+      "docs/diagrams.md",
+      "docs/rfcs/notes/README.md"
+    ],
+    "new_command": [
+      "docs/USER-MANUAL.md",
+      "docs/review-processes.md",
+      "docs/rfcs/notes/README.md"
+    ],
+    "new_hook": [
+      "docs/SDLC.md",
+      "docs/review-processes.md",
+      "docs/USER-MANUAL.md"
+    ],
+    "new_term": [
+      "docs/GLOSSARY.md"
+    ],
+    "capability_shipped": [
+      "docs/ideas/capabilities.md",
+      "docs/rfcs/notes/README.md"
+    ]
+  }
+}
