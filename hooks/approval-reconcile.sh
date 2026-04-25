@@ -78,6 +78,32 @@ sync_signoff() {
   fi
 }
 
+# Sync one local sign-off file to a git staging area.
+# Any timestamp mismatch (either direction) produces conflict files locally — RFC §6.7.
+# Returns 0 if the file was staged for push, 1 otherwise.
+sync_signoff_git() {
+  local src="$1" dst="$2"
+  local src_name src_ts dst_ts
+  src_name=$(basename "$src")
+
+  if [ ! -f "$dst" ]; then
+    cp "$src" "$dst"
+    echo "[approval-reconcile] staged $src_name for git push" >&2
+    return 0
+  fi
+
+  src_ts=$(frontmatter_field "$src" "timestamp")
+  dst_ts=$(frontmatter_field "$dst" "timestamp")
+
+  [ "$src_ts" = "$dst_ts" ] && return 1
+
+  # Timestamps differ in either direction → preserve both; human resolves
+  cp "$src" "${src%.md}.local.conflict.md"
+  cp "$dst" "${src%.md}.remote.conflict.md"
+  echo "[approval-reconcile] CONFLICT: $src_name — versions differ; see .local.conflict.md / .remote.conflict.md" >&2
+  return 1
+}
+
 # ---------------------------------------------------------------------------
 # Setup
 # ---------------------------------------------------------------------------
@@ -92,7 +118,8 @@ APPROVALS_FILE="${GIT_ROOT:+$GIT_ROOT/APPROVALS.md}"
 # Temp files for APPROVALS.md sections (cleaned up on exit).
 OPEN_TMP=$(mktemp)
 CLOSED_TMP=$(mktemp)
-trap 'rm -f "$OPEN_TMP" "$CLOSED_TMP"' EXIT
+_git_tmpdir=""
+trap 'rm -f "$OPEN_TMP" "$CLOSED_TMP"; [ -n "$_git_tmpdir" ] && rm -rf "$_git_tmpdir"' EXIT
 
 QUEUE_DIR=".queue"
 FOUND_GATES=0
@@ -170,6 +197,115 @@ if [ -n "$_share_path" ] && [ "$_share_path" != "null" ]; then
       while IFS= read -r -d '' sf; do
         so_name=$(basename "$sf")
         qf="$QUEUE_DIR/$so_name.network-share"
+        [ -f "$qf" ] || touch "$qf"
+      done < <(find "$SIGNOFFS_DIR" -maxdepth 1 -name "*.md" -not -name ".gitkeep" -print0 2>/dev/null)
+    fi
+  fi
+fi
+
+# ---------------------------------------------------------------------------
+# Tier 2: Git transport (sync before reconciliation loop)
+# Auth (SSH key, credential helper, GIT_ASKPASS, etc.) must be configured
+# out-of-band — this hook does not manage credentials.
+# Shallow clone limitation: concurrent pushes can cause push-ancestry failures;
+# pull --rebase before push handles the common case, but does not cover
+# force-pushed remotes. Re-queue on any failure; the next run retries.
+# ---------------------------------------------------------------------------
+
+_git_repo=""
+if command -v jq >/dev/null 2>&1 && [ -f "config/tools.json" ]; then
+  _git_repo=$(jq -r '.approvals.git_repo // empty' config/tools.json 2>/dev/null || true)
+fi
+
+if [ -n "$_git_repo" ] && [ "$_git_repo" != "null" ]; then
+  _git_reachable=0
+  _git_outbox_files=""
+
+  if command -v git >/dev/null 2>&1; then
+    _git_tmpdir=$(mktemp -d)
+    if timeout 30 git clone --depth=1 --quiet "$_git_repo" "$_git_tmpdir" 2>/dev/null; then
+      _git_reachable=1
+    else
+      rm -rf "$_git_tmpdir"
+      _git_tmpdir=""
+    fi
+  fi
+
+  if [ "$_git_reachable" -eq 1 ]; then
+    git -C "$_git_tmpdir" config user.email "approval-reconcile@localhost"
+    git -C "$_git_tmpdir" config user.name "approval-reconcile"
+
+    # --- Queue drain: retry sign-offs that failed to push last run ---
+    if [ -d "$QUEUE_DIR" ]; then
+      while IFS= read -r -d '' qf; do
+        so_name=$(basename "${qf%.git-transport}")
+        so_src="$SIGNOFFS_DIR/$so_name"
+        if [ -f "$so_src" ]; then
+          if sync_signoff_git "$so_src" "$_git_tmpdir/$so_name"; then
+            _git_outbox_files="$_git_outbox_files $so_name"
+          fi
+          rm -f "$qf"
+        else
+          rm -f "$qf"  # stale queue entry
+        fi
+      done < <(find "$QUEUE_DIR" -maxdepth 1 -name "*.git-transport" -print0 2>/dev/null)
+    fi
+
+    # --- Outbox: stage local sign-offs for push ---
+    if [ -d "$SIGNOFFS_DIR" ]; then
+      while IFS= read -r -d '' sf; do
+        if sync_signoff_git "$sf" "$_git_tmpdir/$(basename "$sf")"; then
+          _git_outbox_files="$_git_outbox_files $(basename "$sf")"
+        fi
+      done < <(find "$SIGNOFFS_DIR" -maxdepth 1 -name "*.md" \
+                 -not -name ".gitkeep" -not -name "*.conflict.md" -print0 2>/dev/null)
+    fi
+
+    # --- Inbox: pull remote sign-offs not yet present locally ---
+    while IFS= read -r -d '' rf; do
+      so_name=$(basename "$rf")
+      so_local="$SIGNOFFS_DIR/$so_name"
+      if [ ! -f "$so_local" ]; then
+        cp "$rf" "$so_local"
+        echo "[approval-reconcile] pulled $so_name from git" >&2
+      fi
+    done < <(find "$_git_tmpdir" -maxdepth 1 -name "*.md" \
+               -not -name ".gitkeep" -not -name "README.md" \
+               -not -name "*.conflict.md" -print0 2>/dev/null)
+
+    # --- Commit + push only if outbox contributed files ---
+    if [ -n "${_git_outbox_files## }" ]; then
+      _now_iso=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+      _hostname=$(hostname 2>/dev/null || echo "unknown")
+      git -C "$_git_tmpdir" add -A
+      git -C "$_git_tmpdir" commit -q -m "sign-off sync [$_hostname] $_now_iso" 2>/dev/null || true
+
+      _push_ok=0
+      if timeout 30 git -C "$_git_tmpdir" pull --rebase --quiet 2>/dev/null && \
+         timeout 30 git -C "$_git_tmpdir" push --quiet 2>/dev/null; then
+        _push_ok=1
+        echo "[approval-reconcile] pushed sign-off(s) to git" >&2
+      fi
+
+      if [ "$_push_ok" -eq 0 ]; then
+        echo "[approval-reconcile] WARN: git push failed — re-queuing for next run" >&2
+        mkdir -p "$QUEUE_DIR"
+        for _so in $_git_outbox_files; do
+          [ -z "$_so" ] && continue
+          _qf="$QUEUE_DIR/$_so.git-transport"
+          [ -f "$_qf" ] || touch "$_qf"
+        done
+      fi
+    fi
+
+  else
+    # Git transport unreachable — queue local sign-offs
+    echo "[approval-reconcile] WARN: git transport unreachable ($_git_repo) — queuing local sign-offs" >&2
+    if [ -d "$SIGNOFFS_DIR" ]; then
+      mkdir -p "$QUEUE_DIR"
+      while IFS= read -r -d '' sf; do
+        so_name=$(basename "$sf")
+        qf="$QUEUE_DIR/$so_name.git-transport"
         [ -f "$qf" ] || touch "$qf"
       done < <(find "$SIGNOFFS_DIR" -maxdepth 1 -name "*.md" -not -name ".gitkeep" -print0 2>/dev/null)
     fi

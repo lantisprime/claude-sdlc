@@ -323,7 +323,7 @@ Incremental. Each step is independently valuable and stops a useful place:
 1. **Contract + template + reconciler (tier 0 only).** Ship [templates/sign-off-multi.md](../../templates/), `hooks/approval-reconcile.sh`, and the `## Required sign-offs` gate-file convention. Teams can already do multi-team approval via local files + manual distribution.
 2. **Git mirror (`APPROVALS.md`) + merge guidance.** Add the generator with the mtime-gated trigger, the file-header merge rule, and the reconciler's leftover-merge-marker self-heal. Stack-agnostic; no config.
 3. **Network share transport (tier 1).** Add `approvals.share_path` support. Simple copy-in, copy-out.
-4. **Git transport (tier 2).** Add `approvals.git_repo` with fetch/push semantics.
+4. **Git transport (tier 2).** ~~Add `approvals.git_repo` with fetch/push semantics.~~ **Shipped 2026-04-26** — see amendment §A1.
 5. **MCP connector transport (tier 3).** Accept `approvals.mcp.*` config and wire the outbox/inbox drain as a subphase of the reconciler; the connector operation contract itself stays deferred (§3.7) until the first real connector proposes its shape as an amendment. Reference connectors (Slack, GitHub) ship in separate repos, not in the plugin core.
 
 Stop after step 1 if usage stays flat. *Flat* means, concretely: fewer than ≥3 repos adopting the step, or fewer than ≥5 sign-offs produced across those repos, or less than ≥4 weeks of observation — whichever threshold isn't met. Each further step is gated on seeing real adoption of the previous one.
@@ -351,6 +351,21 @@ Now that this RFC is accepted, the `Status` line at the top is updated and [pend
 > Material deviations during implementation will be recorded here before they land.
 
 **Signature:** commit `54437d4` on `main` — self-referencing per §3.9's IOU model; verifiable against git history.
+
+---
+
+## Amendment §A1 — Step 4 shipped ahead of adoption gate (2026-04-26)
+
+**Decision:** Step 4 (git transport, tier 2) shipped on 2026-04-26 without waiting for the §7 adoption gate (≥3 repos, ≥5 sign-offs, ≥4 weeks of step 3 observation). The maintainer exercised author discretion to proceed.
+
+**Design decisions recorded here per the original sign-off statement:**
+
+- `approvals.git_repo` points to a **dedicated central approvals repo** whose root is the sign-offs store (flat `.md` files at root). This resolves the open "sparse checkout vs. dedicated branch" question in favor of a dedicated repo — no sparse checkout needed, no branch juggling, most portable across enterprise git versions.
+- Conflict logic in `sync_signoff_git` applies **both directions**: any timestamp mismatch (local-newer or remote-newer) produces `.local.conflict.md` + `.remote.conflict.md` locally; neither side is auto-pushed. This is stricter than tier 1's `sync_signoff` (which silently overwrites on local-newer) and correctly implements §6.7's resolved answer.
+- On push failure, staged files are **re-queued** as `.git-transport` entries before tmpdir cleanup. The "retry on next run" path is real — not an orphaned commit.
+- `git pull --rebase` before push handles the common concurrent-push case. Shallow clone (`--depth=1`) ancestry failures on force-pushed remotes are documented in the hook but not prevented — acceptable at current adoption scale.
+
+**Signed:** Charlton Ho (author) — commit to follow on `main` at `lantisprime/claude-sdlc`.
 
 ---
 

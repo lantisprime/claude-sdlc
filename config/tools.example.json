@@ -57,6 +57,7 @@
     "roles": [],
     "share_path": null,
     "git_repo": null,
+    "_git_repo_note": "git_repo: URL of a dedicated central approvals git repo (e.g. git@github.com:org/approvals.git). Sign-offs are stored as flat .md files at the repo root. Git auth (SSH key, credential helper, GIT_ASKPASS, etc.) must be configured out-of-band — the reconciler does not manage credentials.",
     "_roles_example": ["security", "product", "compliance"],
     "_transport_values": "none | network-share (share_path) | central-git (git_repo)"
   },
