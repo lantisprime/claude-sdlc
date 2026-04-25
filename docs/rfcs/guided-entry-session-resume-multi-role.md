@@ -477,7 +477,7 @@ No migration required for existing users.
 - [x] PR 1: `/status` command + skill (includes sign-off progress render)
 - [x] PR 2: `/start` command + skill
 - [x] PR 3: SessionStart plan check hook (includes opt-out partial personalization)
-- [ ] PR 4: Plan versioning and supersede
+- [x] PR 4: Plan versioning and supersede
 - [ ] PR 8: `/configure` command + env-detect config validation (reshaped question bank)
 - [ ] PR 9: Glossary + `/help` (with unordered-parallel callout) + shared message library
 - [ ] PR 6: Approval packet (as `evidence:` field target)
