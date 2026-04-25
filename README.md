@@ -378,7 +378,8 @@ The plugin writes to `.claude/sdlc/` in the repo that *uses* the plugin — not 
 ├── test-scripts/
 ├── tickets/
 ├── change-requests/
-├── sign-offs/
+├── sign-offs/              # one file per signer per role (<REQ-ID>-<role>.md)
+├── approval-packets/       # compiled reviewer summaries produced at multi-team sign-off time
 ├── gates/                  # phase-gate sign-offs (includes scope-<project>.md)
 ├── defects/
 ├── deployments/

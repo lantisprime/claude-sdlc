@@ -42,6 +42,30 @@ Before writing the gate file, validate the input:
 
 If any check fails, explain the failure and re-ask once. After a second failure, pause and ask the human what to do — do not guess.
 
+## Approval packet compilation
+
+Before writing the gate file, check whether the gate template will include a `## Required sign-offs` block (i.e., `approvals.roles` is non-empty or the human has added sign-off roles during this phase). If so, compile an approval packet at `.claude/sdlc/approval-packets/<phase>-<task-slug>.md` using `templates/approval-packet.md`.
+
+**Inputs to compile from (read in order; skip gracefully with a "Source unavailable" note if absent):**
+
+1. `plans/<task-slug>.md` — scope, out-of-scope, risk level, plan version
+2. `plans/<task-slug>.v<N-1>.md` — prior signed version for the delta section (omit if plan is v1)
+3. `scope.md` — overall project scope context
+4. `requirements/<task-slug>.md` — REQ IDs and summaries for the traceability table
+5. `gates/build-<task-slug>.md` — test status per REQ (if the build gate is signed)
+6. `architecture/platform.md` — mitigation and rollback context (if exists)
+
+**Length check:** if the compiled packet exceeds 100 lines, warn:
+> Approval packet is `<N>` lines — reviewers will read more than two screens. Consider tightening the scope or delta sections before sending to reviewers.
+
+This is a warn, not a block. The human decides whether to revise.
+
+**Show the packet path** in the sign-off prompt so reviewers know where to find it:
+> Approval packet compiled at `.claude/sdlc/approval-packets/<phase>-<task-slug>.md`.
+> Share this path with reviewers — they can use it as the `evidence:` value in their sign-off file.
+
+If `approvals.roles` is empty and the gate template has no `## Required sign-offs` block, skip packet compilation entirely — single-signer gates do not need a packet.
+
 ## Writing the gate file
 
 Write to `.claude/sdlc/gates/<phase>-<task-slug>.md` using the `gate.md` template. Fill:
@@ -69,5 +93,6 @@ Verbatim capture matters: an auditor reading the gate later should be able to se
 ## Related
 
 - [`templates/gate.md`](../../templates/gate.md) — the artifact shape this skill produces
+- [`templates/approval-packet.md`](../../templates/approval-packet.md) — the compiled reviewer summary this skill produces for multi-team sign-offs
 - [`hooks/phase-gate.sh`](../../hooks/phase-gate.sh) — the downstream hook that checks the signed gate exists before the next phase command runs
 - [`hooks/work-item-validation.sh`](../../hooks/work-item-validation.sh) — complementary hook that validates the work-item reference independently at build time

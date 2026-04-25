@@ -53,7 +53,8 @@ The plugin writes into `.claude/sdlc/` in the consuming repo:
 ├── test-scripts/...
 ├── tickets/ISSUE-<n>.md
 ├── change-requests/CR-<n>.md
-├── sign-offs/CR-<n>.md
+├── sign-offs/<REQ-ID>-<role>.md
+├── approval-packets/<phase>-<task-slug>.md
 ├── gates/<phase>-<task-slug>.md
 ├── defects/<task-slug>/DEF-<n>.md
 ├── deployments/<date>-<task-slug>.md
