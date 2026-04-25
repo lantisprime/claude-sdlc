@@ -21,8 +21,8 @@ This file is the authoritative index for everything under `docs/`. Its primary j
 | [ideas/capabilities.md](ideas/capabilities.md) | Capabilities Review | active | ideas | Capability maturity ratings, integration matrix, RFC-backed roadmap status |
 | [ideas/comparison-gstack.md](ideas/comparison-gstack.md) | Comparison vs. gstack | active | ideas | Strategic positioning: claude-sdlc (governance) vs. gstack (acceleration) |
 | [rfcs/scope-ingest.md](rfcs/scope-ingest.md) | Scope Ingest & Domain Expert RFC | implemented | rfc | Defines scope-ingest agent and domain-expert skill; all checklist items complete |
-| [rfcs/multi-team-approval.md](rfcs/multi-team-approval.md) | Multi-team Approval RFC | accepted | rfc | Distributed sign-off across Claude Code sessions via file-per-signer transport |
-| [rfcs/guided-entry-session-resume-multi-role.md](rfcs/guided-entry-session-resume-multi-role.md) | Guided Entry, Session Resume, Multi-role RFC | accepted | rfc | 8 UX surface PRs layered on multi-team-approval; ship order defined |
+| [rfcs/multi-team-approval.md](rfcs/multi-team-approval.md) | Multi-team Approval RFC | partially-implemented | rfc | Steps 1–3 shipped (approval-reconcile.sh, sign-off-multi.md, Required sign-offs block, APPROVALS.md, network-share sync); Steps 4–5 (git transport, MCP) parked pending adoption data |
+| [rfcs/guided-entry-session-resume-multi-role.md](rfcs/guided-entry-session-resume-multi-role.md) | Guided Entry, Session Resume, Multi-role RFC | implemented | rfc | All 10 PRs shipped: /status, /start, session hook, plan versioning, /configure, /help + glossary, approval-packet, next-hints, docs sync |
 | [rfcs/pending-analysis.md](rfcs/pending-analysis.md) | Pending Analysis | active | tracker | Open design questions: items 1–2 open (deferred), item 3 closed/accepted |
 | [rfcs/notes/README.md](rfcs/notes/README.md) | RFC Notes Index | active | notes-index | Index and naming conventions for all RFC companion notes in this directory |
 
@@ -83,8 +83,8 @@ Derived from `_index.json` update_triggers. A stale `implemented` column against
 | RFC | RFC Status | On Acceptance — update | On Implementation — update |
 |-----|------------|------------------------|----------------------------|
 | [rfcs/scope-ingest.md](rfcs/scope-ingest.md) | **implemented** | GLOSSARY.md, rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
-| [rfcs/multi-team-approval.md](rfcs/multi-team-approval.md) | **accepted** | GLOSSARY.md, rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, claude-sdlc-enterprise-adoption.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
-| [rfcs/guided-entry-session-resume-multi-role.md](rfcs/guided-entry-session-resume-multi-role.md) | **accepted** | rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
+| [rfcs/multi-team-approval.md](rfcs/multi-team-approval.md) | **partially implemented** (Steps 1–3 shipped; Steps 4–5 parked) | GLOSSARY.md, rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, claude-sdlc-enterprise-adoption.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
+| [rfcs/guided-entry-session-resume-multi-role.md](rfcs/guided-entry-session-resume-multi-role.md) | **implemented** | rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
 
 ---
 

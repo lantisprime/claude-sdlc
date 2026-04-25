@@ -121,17 +121,17 @@
     {
       "path": "docs/rfcs/multi-team-approval.md",
       "title": "Multi-team Approval RFC",
-      "status": "accepted",
+      "status": "partially-implemented",
       "role": "rfc",
-      "description": "Distributed sign-off across Claude Code sessions via file-per-signer transport.",
+      "description": "Distributed sign-off via file-per-signer transport. Steps 1–3 shipped (approval-reconcile.sh, sign-off-multi.md, Required sign-offs block, APPROVALS.md, network-share sync). Steps 4–5 (git transport, MCP) parked pending ≥3 repos + ≥4 weeks adoption.",
       "update_triggers": []
     },
     {
       "path": "docs/rfcs/guided-entry-session-resume-multi-role.md",
       "title": "Guided Entry, Session Resume, Multi-role RFC",
-      "status": "accepted",
+      "status": "implemented",
       "role": "rfc",
-      "description": "8 UX surface PRs layered on multi-team-approval; ship order defined.",
+      "description": "All 10 PRs shipped: /status, /start, session hook, plan versioning, /configure, /help + glossary, approval-packet, next-hints, docs sync.",
       "update_triggers": []
     },
     {
@@ -168,7 +168,7 @@
       ]
     },
     "docs/rfcs/multi-team-approval": {
-      "rfc_status": "accepted",
+      "rfc_status": "partially-implemented",
       "accepted": [
         "docs/GLOSSARY.md",
         "docs/rfcs/notes/README.md",
@@ -184,7 +184,7 @@
       ]
     },
     "docs/rfcs/guided-entry-session-resume-multi-role": {
-      "rfc_status": "accepted",
+      "rfc_status": "implemented",
       "accepted": [
         "docs/rfcs/notes/README.md",
         "docs/ideas/capabilities.md"

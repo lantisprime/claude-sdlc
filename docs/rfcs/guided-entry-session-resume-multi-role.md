@@ -1,6 +1,6 @@
 # RFC: Guided Entry, Session Resume, and Approval UX
 
-**Status:** Accepted — 2026-04-25 by lantisprime. Merged via PR #1 (https://github.com/lantisprime/claude-sdlc/pull/1). Further changes require an amendment.
+**Status:** Implemented — all 10 PRs shipped 2026-04-25. Original acceptance by lantisprime; merged via PR #1 (https://github.com/lantisprime/claude-sdlc/pull/1). Further changes require an amendment.
 **Author:** Charlton Ho
 **Target:** `lantisprime/claude-sdlc`
 **Date:** 2026-04-20

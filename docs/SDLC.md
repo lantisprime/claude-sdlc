@@ -248,3 +248,27 @@ Three suppressors keep hints out of automated contexts and from wearing out thei
 3. **Fade-after-3** — each distinct hint text retires silently after appearing three times, tracked in `.claude/sdlc/hints.jsonl`. New hints (new `when` conditions) still get full treatment.
 
 `/start` suppresses its own hint because it hands off to `/plan` — the plan skill's output is the next step. `/configure` suppresses its hint after a Layer 2 scoped-run for the same reason. Silence is always better than a wrong hint.
+
+## Multi-team sign-offs
+
+Multi-team sign-offs are **opt-in per gate**. To require multiple teams to approve a gate, add a `## Required sign-offs` block to the gate file (see `templates/gate.md`) listing one role per line:
+
+```markdown
+## Required sign-offs
+
+- security
+- product
+- compliance
+```
+
+Each role maps to a sign-off file at `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md` (shape from `templates/sign-off-multi.md`). The file carries frontmatter including `gate_ref`, `gate_hash` (sha256 of gate content above the `## Required sign-offs` heading), `role`, `signer`, and `timestamp`.
+
+The `approval-reconcile.sh` hook fires at every `Stop` event and:
+
+- Warns for any listed role without a matching sign-off file.
+- Warns when a sign-off's `gate_hash` no longer matches the current gate (gate was amended after signing).
+- Detects orphan sign-off files whose `gate_ref` no longer exists.
+- Regenerates `APPROVALS.md` at the git root as an open/closed summary.
+- Syncs sign-off files to/from a network share when `approvals.share_path` is configured in `config/tools.json` (Tier 1 transport). When the share is unreachable, failed syncs are queued in `.queue/` and retried on the next reachable run.
+
+The hook always exits 0 — it warns, never blocks. Gates without a `## Required sign-offs` block are unaffected.

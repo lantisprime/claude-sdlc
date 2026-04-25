@@ -1218,6 +1218,7 @@ You'll interact with hooks implicitly — they fire on Claude's tool calls, not 
 | `env-detect.sh` | SessionStart | — | Silent — writes `.claude/sdlc/env.json`. |
 | `session-plan-check.sh` | SessionStart | — | Surfaces any in-flight tasks and personalized sign-off hints at the start of each Claude Code session. |
 | `token-tracker.sh` | Stop | — | Silent — only if `token_tracking.enabled: true`. |
+| `approval-reconcile.sh` | Stop | Warn | For every gate with a `## Required sign-offs` block, warns if a sign-off file is missing for any listed role and if the gate hash has drifted since signing; shows the path for new sign-off files. Regenerates `APPROVALS.md`. |
 
 **Warnings are warnings** — they surface the signal and let you decide. They don't escalate to blocks on their own.
 
@@ -1280,6 +1281,19 @@ The draft is a working document, not the final scope. Open `.claude/sdlc/scope-d
 - Fields with `absent` confidence are omitted from the draft entirely. If you needed them, add them by hand.
 
 When the draft is correct, copy to `.claude/sdlc/scope.md` (strip the HTML provenance comments first), then sign the scope gate. The agent never writes `scope.md` — that's intentional, so you always do a final read.
+
+### "I need multiple team members to sign a gate"
+
+Add a `## Required sign-offs` block to the gate file (see [`templates/gate.md`](../templates/gate.md) for the optional block format) and list one role per line:
+
+```markdown
+## Required sign-offs
+
+- security
+- product
+```
+
+Then have each reviewer copy [`templates/sign-off-multi.md`](../templates/sign-off-multi.md) to `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md`, fill in the frontmatter (`gate_ref`, `gate_hash`, `role`, `signer`, `timestamp`), and write their sign-off statement. The `approval-reconcile.sh` hook warns at the end of each session turn for any missing sign-offs and regenerates `APPROVALS.md` at the git root as a summary view. On hash mismatch (gate content changed after signing), it warns the affected sign-off is stale.
 
 ### "I want to see token usage per phase"
 
