@@ -107,7 +107,15 @@ See [Claude Code's plugin docs](https://docs.claude.com/en/docs/claude-code/plug
 
 ## Configure for your stack
 
-Copy the example config and fill in the tools your project uses:
+The easiest way is to run the guided setup wizard:
+
+```bash
+/configure
+```
+
+`/configure` walks you through each tool slot, auto-detects what's available, and writes `config/tools.json` for you. It's also invoked automatically on fresh installs when no `tools.json` exists.
+
+Alternatively, copy the example config and fill it in by hand:
 
 ```bash
 cp config/tools.example.json config/tools.json
@@ -405,7 +413,7 @@ Details in [`docs/SDLC.md`](docs/SDLC.md).
 
 ## Capabilities reference
 
-### Skills (14)
+### Skills (19)
 
 Phase skills — one per checkpoint:
 
@@ -431,6 +439,15 @@ Cross-cutting skills — triggered by context across phases:
 | [api-integration](skills/api-integration/SKILL.md) | Verifies API spec + endpoint reachability; offers a mock if unreachable |
 | [gate-signoff](skills/gate-signoff/SKILL.md) | Captures phase sign-off via chat with a work-item URL as non-trivial acknowledgment |
 | [domain-expert](skills/domain-expert/SKILL.md) | Injects domain-specific gap questions, NFRs, and regulatory flags into the plan (payments, auth, and user-defined domains) |
+
+Utility / navigation skills:
+
+| Skill | What it does |
+|---|---|
+| [configure](skills/configure/SKILL.md) | Guided setup wizard — walks through each tool slot, auto-detects available tools, writes `config/tools.json` |
+| [start](skills/start/SKILL.md) | Front-door intake — six guided questions, fix-fast eligibility check, hands off to plan |
+| [status](skills/status/SKILL.md) | Read-only task state — renders in-flight work and pending sign-offs |
+| [help](skills/help/SKILL.md) | Command reference; `/help <command>` for detail on a specific command |
 
 ### Commands (15)
 
@@ -464,7 +481,7 @@ Bounded subagents with narrow write scope — they propose; humans approve.
 | [observability](agents/observability.md) | Produces monitoring / alerts / runbooks | `.claude/sdlc/monitoring/` only |
 | [scope-ingest](agents/scope-ingest.md) | Parses source material into a provenance-traced scope draft | `.claude/sdlc/scope-drafts/` only |
 
-### Hooks (11)
+### Hooks (12)
 
 Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy documented above.
 
@@ -483,7 +500,7 @@ Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy do
 | [session-plan-check.sh](hooks/session-plan-check.sh) | SessionStart | — | Shows in-flight task state and personalized sign-off hints at the start of each session |
 | [token-tracker.sh](hooks/token-tracker.sh) | Stop | — | Parses the session transcript; writes raw per-phase token counts to `token-log.json` / `token-history.jsonl`. Off by default; enabled via `config/tools.json` |
 
-### Templates (11)
+### Templates (12)
 
 Shape of the artifacts the plugin produces. Headings and fields are parsed by hooks — don't rename them without checking downstream consumers.
 
@@ -498,6 +515,7 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 | [sign-off.md](templates/sign-off.md) | Reusable sign-off block |
 | [gate.md](templates/gate.md) | Phase gate file |
 | [scope-gate.md](templates/scope-gate.md) | Scope sign-off gate (`gates/scope-<project>.md`) |
+| [approval-packet.md](templates/approval-packet.md) | Compiled reviewer summary produced at multi-team sign-off time |
 | [deployment.md](templates/deployment.md) | Deployment record |
 | [defect.md](templates/defect.md) | Defect report |
 
@@ -509,11 +527,11 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 ├── config/tools.example.json    # copy to tools.json and fill in
 ├── docs/SDLC.md                 # full phase reference
 ├── domains/                     # built-in domain knowledge seeds (payments, auth)
-├── skills/          (15)        # 8 phase skills + 7 cross-cutting (incl. domain-expert)
+├── skills/          (19)        # 8 phase + 7 cross-cutting (incl. domain-expert) + 4 utility (configure, start, status, help)
 ├── commands/        (15)        # one per checkpoint + /status + /help + /review + /fix-fast + /token-review
 ├── agents/          (5)         # bounded subagents (incl. scope-ingest)
-├── hooks/                       # hooks.json + 10 shell scripts
-└── templates/       (11)        # artifact templates (incl. scope-gate)
+├── hooks/                       # hooks.json + 12 shell scripts
+└── templates/       (12)        # artifact templates (incl. scope-gate, approval-packet)
 ```
 
 ## Related reading
