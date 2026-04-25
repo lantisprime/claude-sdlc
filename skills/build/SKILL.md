@@ -1,6 +1,16 @@
 ---
 name: build
 description: Use this skill during Phase 4 implementation whenever Claude is about to write or modify code. Validates the work item (requirement ID for new builds, issue ticket for fixes, signed CR for change requests), enforces surgical-edit discipline against the plan's in-scope list, validates code against the tech spec and architecture, validates frontend output against UX specs, and generates unit tests ONLY for functions actually modified in the diff. Coordinates with the surgical-edit, minimal-code, and security-review skills. Triggered by any Edit/Write tool call when a plan file exists.
+config_requirements:
+  - key: formatter.command
+    required: false
+    on_skip: skip_format_step
+  - key: linter.command
+    required: false
+    on_skip: skip_lint_step
+  - key: test_runner.command
+    required: false
+    on_skip: skip_test_execution
 ---
 
 # Build (Phase 4)

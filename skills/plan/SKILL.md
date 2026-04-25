@@ -1,6 +1,13 @@
 ---
 name: plan
 description: Use this skill at the START of every coding task — new builds, bug fixes, and change requests. Classifies the work item, validates it against project scope, produces a high-level estimate, proposes a technology stack, and checks stack compatibility. Writes a plan artifact to .claude/sdlc/plans/ that every downstream phase and hook depends on. Must run before any Edit, Write, or code-generation tool call. Trigger this skill whenever the user says "implement", "fix", "add", "change", "build", "refactor", or references a ticket/requirement ID — even if the request seems small.
+config_requirements:
+  - key: tracker.type
+    required: false
+    on_skip: degrade_to_req_id_only
+  - key: tracker.project
+    required: false
+    on_skip: skip_project_validation
 ---
 
 # Plan (Phase 1)

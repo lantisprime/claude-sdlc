@@ -435,6 +435,7 @@ Cross-cutting skills — triggered by context across phases:
 
 | Command | Purpose |
 |---|---|
+| [/configure](commands/configure.md) | Guided config setup — replaces manual tools.json editing; auto-invoked on fresh install and when config is missing |
 | [/start](commands/start.md) | Front door — guided intake, fix-fast eligibility check, hands off to /plan |
 | [/plan](commands/plan.md) | Phase 1 — scope, classify, estimate |
 | [/analyze](commands/analyze.md) | Phase 2 — requirements with REQ IDs |

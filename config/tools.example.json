@@ -45,6 +45,21 @@
     "_observability_values": "grafana | datadog | cloudwatch | null",
     "_ux_tool_values": "figma | null"
   },
+  "tracker": {
+    "_comment": "Issue tracker connection. type matches the integrations.issue_tracker value. project is the project key (Jira), repo slug (GitHub/GitLab), or team ID (Linear). auth_token goes in config/tools.local.json — never here.",
+    "type": null,
+    "host": null,
+    "project": null,
+    "_type_values": "github | gitlab | jira | linear | null"
+  },
+  "approvals": {
+    "_comment": "Multi-team sign-off config. Leave block absent or set roles to [] for single-signer projects. share_path and git_repo are mutually exclusive transport options — set one or neither.",
+    "roles": [],
+    "share_path": null,
+    "git_repo": null,
+    "_roles_example": ["security", "product", "compliance"],
+    "_transport_values": "none | network-share (share_path) | central-git (git_repo)"
+  },
   "artifact_format_fallback": "markdown",
   "_artifact_format_options": "markdown | json",
   "display": {

@@ -1,6 +1,13 @@
 ---
 name: gate-signoff
 description: Use this skill to capture a human phase-gate sign-off through chat rather than requiring the user to manually edit the gate markdown file. Prompts the user with the artifact path, collects a work-item URL (REQ / ticket / CR) as the non-trivial acknowledgment, validates the URL shape against the ticket system configured in `config/tools.json`, and writes the signed gate file at `.claude/sdlc/gates/<phase>-<task-slug>.md`. Invoked at the end of `/plan`, `/analyze`, `/design`, `/build`, `/test`, and `/support`. Deliberately NOT invoked by `/deploy` or `/fix-fast` — those still require the human to open and edit the gate file by hand. `/docs` has no dedicated gate file and does not invoke this skill.
+config_requirements:
+  - key: tracker.type
+    required: false
+    on_skip: accept_any_url
+  - key: tracker.host
+    required: false
+    on_skip: skip_host_validation
 ---
 
 # Gate Sign-off

@@ -12,6 +12,21 @@ This document is the authoritative reference for the 8-phase workflow the plugin
 6. **Graceful degradation.** Missing Git, ticketing, or observability? The plugin writes markdown (or JSON) artifacts locally and surfaces the gap in the phase summary — never silently skips.
 7. **Stack-agnostic.** Tool choices are placeholders in `config/tools.json`. Leave any value as `null` to skip that check.
 
+## Configuration
+
+The plugin reads `config/tools.json` (version-controlled) and `config/tools.local.json` (secrets, gitignored). Use `/configure` to set both up without manually editing files.
+
+**Four-layer model:**
+
+| Layer | When | Behavior |
+|---|---|---|
+| 0 | Fresh install: no config, no plans, no gates, inside a git repo | `env-detect.sh` instructs Claude to invoke `/configure` before the first task; wizard completes with an offer to run `/start` |
+| 1 | Config exists but some tool commands are null | SessionStart warn only — commands that need them will auto-prompt |
+| 2 | Command invoked; its `config_requirements` declares a missing key | Auto-invoke `/configure --needs <keys>`, resume original command on success |
+| 3 | `config/tools.json` is not valid JSON | Refuse Edit/Write; instruct user to run `/configure` for a rebuild-with-backup |
+
+Skills declare their config dependencies via `config_requirements` frontmatter. `/configure --check` validates current config without writing anything. See `config/tools.example.json` for the full schema.
+
 ## The artifact tree
 
 The plugin writes into `.claude/sdlc/` in the consuming repo:
