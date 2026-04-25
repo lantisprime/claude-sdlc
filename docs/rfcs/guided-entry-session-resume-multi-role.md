@@ -381,9 +381,7 @@ Questions that must be answered before the corresponding PR lands. Each lists a 
 The material-edit prompt fires when a save touches the `In-scope files` field of a signed plan. "Touches" is underspecified: does adding a file count? Removing one? Reordering? Renaming a path the linter reformatted? Each choice trades false-positive rate (annoying the user) against false-negative rate (a material change slips through unversioned).
 
 - **Proposal:** material change = the *set* of in-scope files changes (additions or removals). Pure reordering does not trigger. Path rename detected via git rename heuristics (or the user confirms on prompt) counts as set-preserving, not material. This keeps the prompt quiet on cosmetic edits while firing on the cases that matter for `gate_hash` (accepted RFC §6.5) consistency.
-- **Answer:** *(pending — resolve before PR 4 implementation)*
-
-Similar sub-questions for `In-scope functions`, `Out-of-scope`, and `Classification` may surface during implementation; resolve them with the same set-vs-ordering framing if they do.
+- **Answer (resolved 2026-04-25):** Accept proposal as written. Additionally, `Classification` changes are always material — any change to the classification field triggers re-sign regardless of set-vs-ordering framing, because classification determines which hooks fire and what the gate certifies. `In-scope functions` and `Out-of-scope` follow the same set-vs-ordering rule as `In-scope files`.
 
 ## Pending discussions
 
