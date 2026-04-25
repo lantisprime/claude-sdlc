@@ -97,14 +97,27 @@ A bounded subprocess with narrow write scope (`scope-drafts/` only). Its job is 
 
 A read-and-inject skill. Invoked by `/plan` in v1. Cross-phase reuse (`/analyze`, `/design`) is deferred — see §11.
 
-**New directory at plugin root:**
+**Two-source lookup (plugin + project).** The skill resolves domain files from two locations, evaluated in this order:
+
+1. **Project-level `domains/`** — `domains/` at the root of the consuming repo. User-owned; takes precedence over plugin files. Company-specific, proprietary, or regulated-industry knowledge lives here.
+2. **Plugin-level `domains/`** — `domains/` at the plugin install root. Broadly applicable seeds maintained by the plugin (payments, auth, and future additions).
+
+Both `_index.json` files are merged at match time; project rules are evaluated before plugin rules. A project-level file with the same `slug` as a plugin file overrides it entirely. Absent project `domains/` → plugin-only lookup. Both absent → `domain: unknown`, proceed without injection.
+
+**New directories:**
 ```
-domains/
-├── _index.json          # keyword + stack → domain slug
-├── _schema.md           # required shape for domain files
-├── payments.md          # seed
-├── auth.md              # seed
-└── ...
+<plugin-root>/
+└── domains/
+    ├── _index.json          # plugin-level keyword + stack rules
+    ├── _schema.md           # required shape for all domain files
+    ├── payments.md          # seed
+    └── auth.md              # seed
+
+<consuming-repo>/
+└── domains/                 # optional — user-maintained, takes precedence
+    ├── _index.json          # merged with plugin rules; project rules evaluated first
+    ├── insurance.md         # example user-authored domain file
+    └── payments.md          # optional: overrides plugin seed for this project
 ```
 
 **Domain file shape:**
@@ -173,6 +186,91 @@ The user-facing surface is unchanged: same `/plan` command, same gate ritual.
 
 The reduction is load *shifting* from open-ended authoring to closed-form answering. First-time setup costs slightly more in exchange for better scope quality from day one. Gap questions are advisory by default. Questions marked `required: true` produce a warn-level flag — not a hard block — so teams can tune signal level without hard-stopping legitimate work.
 
+### 3.5 Domain file authoring
+
+Domain knowledge already exists somewhere — internal wikis, regulatory guidance PDFs, architecture decision records, Confluence or Notion pages. The authoring flow lets users point at that material or answer guided questions to produce a valid domain file in `domains/` of their consuming repo.
+
+**Trigger.** When `/plan` runs `domain-expert` and no domain match is found, the skill offers: *"No domain file found matching this project. Create one now? [Y/n]"* — entering the authoring flow inline, without a separate command. Users can also trigger it directly by saying "add a domain file for insurance" or "create a domain expert for healthcare."
+
+**Note on the no-new-commands principle.** The authoring flow is surfaced from within `/plan` on miss, and via natural language — no new command to memorize. If `/configure` is extended in a future PR (guided-entry RFC PR 8) to cover domain management, this flow may migrate there. For v1, inline offer on miss is the entry point.
+
+**Two paths:**
+
+#### Path A — Source-driven (file, URL, or pasted text)
+
+Uses the same ingest pipeline as `scope-ingest`:
+
+1. Parse source to plain-text blocks with provenance
+2. Map extracted content to schema sections (Glossary, NFRs, Regulatory concerns, etc.)
+3. Identify `Scope must address` items and `Questions plan must answer` candidates from the source
+4. Emit a draft at `domains/<slug>.md` with a provenance footer on each extracted item
+5. Show extraction confidence per section; flag sections where the source was thin
+6. Human reviews, trims, and corrects — then the file is active
+
+The provenance footer ("extracted from: `<source>`, §2.3") lets the human see what was inferred vs. what was explicit. It is stripped from the final file on save if the human confirms the section is accurate.
+
+#### Path B — Guided Q&A (no source material)
+
+A structured interview that walks through the schema sections in order. Questions are closed-form where possible; the human is never asked "describe your domain."
+
+**Step 1 — Identity** *(required frontmatter)*
+
+| Question | Config written |
+|---|---|
+| What slug should identify this domain? (e.g. `insurance`, `healthcare`) | `slug:` |
+| Who owns this domain file — team or person responsible for keeping it accurate? | `owner:` |
+| Which roles typically sign off on work in this domain? Optional — pick from the 9-role set or leave blank. (security / product / compliance / sre / legal / privacy / architecture / qa / ba) | `suggested_roles:` |
+
+**Step 2 — Regulatory landscape** *(populates `## Regulatory concerns`)*
+
+| Question | Purpose |
+|---|---|
+| Which compliance frameworks apply to this domain? (e.g. PCI-DSS, GDPR, HIPAA, SOX, ISO 27001, NAIC) — list any that are relevant | Seed the regulatory section |
+| For each framework named: what is the most important constraint it places on engineering decisions in this domain? (one sentence per framework) | Keeps entries concrete, not generic |
+
+If none: section is omitted.
+
+**Step 3 — Scope requirements** *(populates `## Scope must address`)*
+
+| Question | Purpose |
+|---|---|
+| What must a project scope document cover to be considered valid for this domain? List the key areas — these become the gaps the skill checks `scope.md` against. | Core of the section |
+| Are there data residency, data classification, or retention requirements that scope must declare? | Common omission in scopes |
+| Are there external systems, third-party vendors, or integrations that scope must name? | Dependency surface |
+
+**Step 4 — Gap questions** *(populates `## Questions plan must answer`)*
+
+Two sub-questions, asked separately:
+
+*Required questions (mark `required: true` — produce a warn-level flag when unanswered):*
+> "What are the 1–3 questions that, if left unanswered, would make the plan untrustworthy? These will produce visible warnings at plan-gate time."
+
+*Advisory questions (no tag — surfaced but not flagged):*
+> "What are 2–5 important questions to surface that don't necessarily void the plan, but help engineers think through the domain?"
+
+Each question is entered as free text. The skill formats them as bullet points in the file. `(required: true)` is appended inline to the required ones.
+
+**Step 5 — Optional sections** *(progressive disclosure)*
+
+The skill asks Y/n for each optional section. For each Y, asks a targeted sub-question rather than "write this section."
+
+| Section | Offer condition | Sub-question asked |
+|---|---|---|
+| `## Glossary` | Always offered | "List terms in this domain that engineers outside it often misunderstand (term: one-sentence definition)." |
+| `## Typical NFRs` | Always offered | "What non-functional requirements apply to almost every project in this domain? (e.g. latency, availability, audit trail)" |
+| `## Common pitfalls` | Always offered | "What mistakes recur in this domain and aren't obvious to someone new? List 2–5." |
+| `## Stack notes` | Offered if user mentioned specific frameworks in earlier steps | "Are there framework or library considerations specific to this domain that engineers should know?" |
+| `## Security hotspots` | Always offered | "Where are security errors most likely to occur in this domain? Be specific — list the surface areas, not generic advice." |
+
+**Step 6 — Review and save**
+
+The skill renders the assembled draft and asks:
+> "Here is the draft domain file for `<slug>`. Review it, then confirm to save to `domains/<slug>.md` — or type `edit` to adjust any section before saving."
+
+On save: the file is written to the project-level `domains/<slug>.md`. The skill adds it to `domains/_index.json` if any keywords were mentioned. On next `/plan`, `domain-expert` will find and match it.
+
+**Fallback.** If the user declines the authoring flow at any step, the current `/plan` invocation proceeds with `domain: unknown` — no injection. The offer does not repeat until the next session (suppressed via `.claude/sdlc/hints.jsonl`, same mechanism as PR 10 next-step hints).
+
 ## 4. Domain file schema
 
 The `domains/_schema.md` file defines the contract all domain files must follow. Implementers write it before writing the first seed file so the seed validates the schema rather than defines it.
@@ -226,7 +324,8 @@ Rationale: the artifact format is identical to phase gate files; the reconciler 
 ## 7. Architectural decisions
 
 - **Agent for `scope-ingest`, skill for `domain-expert`.** Agent when expensive isolated work justifies the subprocess cost and restricting write scope via instructions is the right architectural choice. Skill when it is a lightweight read-and-inject operation. Agents cost more tokens per invocation; this is a resource tradeoff, not a cosmetic distinction.
-- **No new commands.** Cognitive load lives at the command level. `/plan` stays the single entry point. Both capabilities hang off it internally.
+- **No new commands for authoring.** Domain file authoring is triggered inline from `/plan` on a domain miss, and via natural language — no new command to memorize. This preserves the principle that cognitive load lives at the command level while still providing a guided path.
+- **Two-source lookup, local-first.** Project-level `domains/` takes precedence over plugin-level. Projects can override plugin seeds for their context without forking the plugin. Same-slug files don't merge content; the local file wins entirely.
 - **`scope.md` is a derived, validated artifact — not an authoring target.** This lets the plugin accept any source format: the human points at material, the agent derives, the human validates and signs.
 - **Gap report, not draft.** A draft invites rubber-stamping. A gap report forces targeted answers. The load reduction happens here, not in automation.
 - **Provenance footer required.** Every scope bullet traces to its source span. Without this, fabrication in the normalization step is undetectable at sign-off.
@@ -264,7 +363,7 @@ No improvement percentages committed here. Baseline first, interpret later.
 
 ## 11. Non-goals
 
-- Adding a `/scope` command or any other user-visible command
+- Adding a `/scope` or `/domain` command — authoring is triggered inline from `/plan` on domain miss; no new command to memorize
 - Auto-writing `scope.md` without human review and sign-off
 - Multi-domain matching in v1 (top-1 match; human can override)
 - Scope regeneration policy when source document updates (observe v1 behavior first)
@@ -295,19 +394,20 @@ No improvement percentages committed here. Baseline first, interpret later.
 Sequencing follows the principle: validate the schema before building consumers; build the skill before the agent; wire them into `/plan` last.
 
 - [x] ~~Resolve OQ-SCOPE-1~~ — resolved 2026-04-25: pseudo-phase gate for v1 (see §6)
-- [ ] Write `domains/_schema.md` — the contract all domain files must follow
-- [ ] Write `domains/payments.md` seed file
-- [ ] Write `domains/auth.md` seed file
-- [ ] Write `domains/_index.json` with keyword + stack rules for payments and auth
-- [ ] Build `domain-expert` skill — reads `_index.json`, matches, injects `## Domain context` into plan artifact
-- [ ] Dry-run `domain-expert` against 3–5 past plan artifacts to validate gap question quality
+- [x] ~~Write `domains/_schema.md`~~ — done 2026-04-25
+- [x] ~~Write `domains/payments.md` seed file~~ — done 2026-04-25
+- [x] ~~Write `domains/auth.md` seed file~~ — done 2026-04-25
+- [x] ~~Write `domains/_index.json` with keyword + stack rules for payments and auth~~ — done 2026-04-25
+- [ ] Build `domain-expert` skill — two-source lookup (project + plugin `domains/`), merges `_index.json` files (project rules first), matches against scope + stack, injects `## Domain context` into plan artifact; on miss, offers inline authoring flow (§3.5)
+- [ ] Build domain file authoring flow (§3.5) — Path A (source-driven ingest) and Path B (guided Q&A, 6 steps); writes to project `domains/<slug>.md`; updates project `_index.json` with any named keywords
+- [ ] Dry-run `domain-expert` + authoring flow against 3–5 past plan artifacts to validate gap question quality and Q&A UX
 - [ ] Build `scope-ingest` agent — markdown + plain text parsers first; PDF in a follow-up; DOCX/PPTX/URL as a separate scoped change
 - [ ] Add `scope-drafts/` to the artifact tree in `.claude/sdlc/`
 - [ ] Modify `skills/plan/SKILL.md` — wire in Step 2 (scope-ingest invocation) and Step 3 (domain-expert injection)
 - [ ] Write scope gate file template (`templates/scope-gate.md`) with `## Required sign-offs` block and `gate_hash` field (sha256 of content above `## Required sign-offs`, per accepted RFC §6.5)
 - [ ] Add scope gate check to `hooks/plan-gate.sh`
 - [ ] Dry-run end-to-end on one real project: source → draft → sign → plan → domain inject → gate
-- [ ] Documentation pass: README "Scope setup" section; `docs/SDLC.md` Phase 1 update; `docs/GLOSSARY.md` entries for new terms (scope draft, provenance footer, domain context, gap questions, and the OQ-SCOPE-1 resolved term for the scope gate — "pseudo-phase gate" or "scope gate artifact" per whichever answer is chosen)
+- [ ] Documentation pass: README "Scope setup" section + "Adding domain files" guide; `docs/SDLC.md` Phase 1 update; `docs/GLOSSARY.md` entries for new terms (scope draft, provenance footer, domain context, gap questions, scope gate, domain miss, two-source lookup)
 
 ---
 
