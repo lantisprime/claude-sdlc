@@ -83,6 +83,8 @@ None are mandatory — leave `null` to skip — but the plugin is more valuable 
 
 Run these once per repo that will use the plugin.
 
+> **New to the plugin?** After completing Steps 1–3 below, run `/start` — it walks you through six intake questions, checks fix-fast eligibility, and hands off to `/plan`. Experienced users can skip straight to `/plan`.
+
 ### Step 1 — Install the plugin
 
 From inside Claude Code in your project repo:
@@ -93,7 +95,17 @@ From inside Claude Code in your project repo:
 
 See Claude Code's plugin docs for the current flow.
 
-### Step 2 — Copy the tools config
+### Step 2 — Configure tools for your stack
+
+The easiest path is the guided setup wizard:
+
+```
+/configure
+```
+
+`/configure` walks through each tool slot, auto-detects what's already available in your repo, and writes `config/tools.json`. It's also invoked automatically on first install when no `tools.json` is found.
+
+Alternatively, configure by hand:
 
 ```bash
 cp config/tools.example.json config/tools.json
@@ -191,6 +203,8 @@ Before you start a *task*, the plugin assumes:
 | **A work item reference** (REQ ID, ticket URL, or signed CR path) | Build phase and beyond | Pasted at gate sign-off; degraded mode accepts `no ticket REQ-<n>` |
 | **A UX intent file** | Frontend work only, Phase 2 onward | **A plain-text description is enough** — create `.claude/sdlc/architecture/ux/<task-slug>.md` and write what the UI should do (e.g. `Make the submit button red on hover`). Formal mockups (Figma link, screenshot, wireframe) also work but are not required. Even a tiny CSS-only task needs this file — but creating it takes 30 seconds. |
 | **API spec + reachable endpoint** *(or acknowledgment to use a mock)* | Only if the task integrates with an external API | Spec file path + base URL. If unreachable, the `api-integration` skill asks you to choose a mock runner (MSW / Prism / WireMock) |
+
+**Plan versioning:** every plan artifact carries `Version:` and `Status:` frontmatter fields. When you make a material change to a signed plan (scope, files, estimate), the plugin increments the version and archives the previous copy as `<slug>.v<N>.md` alongside the live file — so the audit trail stays intact. Minor corrections (typos, formatting) don't trigger a version bump. You'll see the version number in the plan header when you review.
 
 **Your commitment per task:** review the artifact at each of the 8 gates. The plugin will ask for a fresh sign-off every time. Rubber-stamping defeats the point.
 
@@ -514,6 +528,10 @@ Chat sign-off is not a blind write. Before the gate file is saved, the `gate-sig
 5. **Rubber-stamp filter.** Bare `yes`, `ok`, `lgtm`, `approved`, or emoji are rejected outright.
 
 **Retry behavior:** if a check fails, the skill re-asks once with the same prompt. After a second failure, it stops and asks the human what to do — it does not guess or loosen the rule.
+
+### Next-step hints
+
+After every phase gate is written, the skill appends a `## Next step hint` block to its output — a short, context-aware suggestion for what to run next (e.g. "Run `/analyze` to produce requirements" or "All gates are signed — run `/deploy`"). These are informational only; they don't change behavior or block anything. You can ignore them if you already know your next step.
 
 ### Downstream enforcement (why gates can't be forged)
 
@@ -1198,6 +1216,7 @@ You'll interact with hooks implicitly — they fire on Claude's tool calls, not 
 | `bash-safety.sh` | PreToolUse Bash | Warn | "Warning: command contains `rm -rf` — confirm intent." |
 | `format-on-write.sh` | PostToolUse | — | Silent — runs your formatter on changed files. |
 | `env-detect.sh` | SessionStart | — | Silent — writes `.claude/sdlc/env.json`. |
+| `session-plan-check.sh` | SessionStart | — | Surfaces any in-flight tasks and personalized sign-off hints at the start of each Claude Code session. |
 | `token-tracker.sh` | Stop | — | Silent — only if `token_tracking.enabled: true`. |
 
 **Warnings are warnings** — they surface the signal and let you decide. They don't escalate to blocks on their own.
@@ -1205,6 +1224,14 @@ You'll interact with hooks implicitly — they fire on Claude's tool calls, not 
 ---
 
 ## 9. Troubleshooting
+
+### "I want to see what tasks are in-flight and what needs signing"
+
+Run `/status`. It shows the current task state, phase progress, and any gates that are unsigned — read-only, no side effects.
+
+### "I don't know which command to run next"
+
+Run `/help` for the full command reference, or `/help <command>` (e.g. `/help build`) for detail on a specific phase.
 
 ### "`plan-gate.sh` keeps blocking my edits"
 
@@ -1262,6 +1289,8 @@ Set `token_tracking.enabled: true` in `config/tools.json`. After each Stop, chec
 
 ## Where to go next
 
+- **Check in-flight work:** `/status` — read-only view of task state and pending sign-offs
+- **Command reference:** `/help` or `/help <command>` for per-command detail
 - **Full phase reference:** [docs/SDLC.md](SDLC.md)
 - **Review processes (code, test cases, test scripts):** [docs/review-processes.md](review-processes.md)
 - **Design-intent notes (and anti-patterns):** [CLAUDE.md](../CLAUDE.md)
