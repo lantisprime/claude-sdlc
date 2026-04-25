@@ -194,6 +194,13 @@ See [`skills/domain-expert/AUTHORING.md`](skills/domain-expert/AUTHORING.md) for
 
 From inside a repo that has this plugin installed:
 
+**New users — start here:**
+```bash
+/start
+# six intake questions → fix-fast eligibility check → hands off to /plan
+```
+
+**Experienced users — skip straight to plan:**
 ```bash
 /plan "Add rate-limit headers to the public API"
 # writes .claude/sdlc/plans/<slug>.md — classification, scope, estimate, tech stack
@@ -428,6 +435,7 @@ Cross-cutting skills — triggered by context across phases:
 
 | Command | Purpose |
 |---|---|
+| [/start](commands/start.md) | Front door — guided intake, fix-fast eligibility check, hands off to /plan |
 | [/plan](commands/plan.md) | Phase 1 — scope, classify, estimate |
 | [/analyze](commands/analyze.md) | Phase 2 — requirements with REQ IDs |
 | [/design](commands/design.md) | Phase 3 — architecture + tech specs |
