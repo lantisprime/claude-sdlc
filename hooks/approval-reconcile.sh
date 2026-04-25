@@ -313,6 +313,46 @@ if [ -n "$_git_repo" ] && [ "$_git_repo" != "null" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Tier 3: MCP connector transport (sync before reconciliation loop)
+# Connector operation contract is deferred (RFC §3.7). When approvals.mcp.connector
+# is set, sign-offs are queued as .mcp entries and Claude is prompted to sync via
+# the named connector. Actual MCP calls are Claude's responsibility after reading
+# the hook output. Queue entries persist until the connector confirms sync and
+# removes them.
+# ---------------------------------------------------------------------------
+
+_mcp_connector=""
+if command -v jq >/dev/null 2>&1 && [ -f "config/tools.json" ]; then
+  _mcp_connector=$(jq -r '.approvals.mcp.connector // empty' config/tools.json 2>/dev/null || true)
+fi
+
+if [ -n "$_mcp_connector" ] && [ "$_mcp_connector" != "null" ]; then
+  _mcp_queued=0
+
+  # Queue any sign-offs not yet marked for MCP sync
+  if [ -d "$SIGNOFFS_DIR" ]; then
+    mkdir -p "$QUEUE_DIR"
+    while IFS= read -r -d '' sf; do
+      so_name=$(basename "$sf")
+      qf="$QUEUE_DIR/$so_name.mcp"
+      [ -f "$qf" ] || touch "$qf"
+    done < <(find "$SIGNOFFS_DIR" -maxdepth 1 -name "*.md" \
+               -not -name ".gitkeep" -not -name "*.conflict.md" -print0 2>/dev/null)
+  fi
+
+  # Drain: count pending MCP sync entries and emit prompt for Claude
+  if [ -d "$QUEUE_DIR" ]; then
+    while IFS= read -r -d '' qf; do
+      _mcp_queued=$(( _mcp_queued + 1 ))
+    done < <(find "$QUEUE_DIR" -maxdepth 1 -name "*.mcp" -print0 2>/dev/null)
+  fi
+
+  if [ "$_mcp_queued" -gt 0 ]; then
+    echo "[approval-reconcile] MCP connector '$_mcp_connector' configured — $_mcp_queued sign-off(s) queued for MCP transport. Connector contract is deferred; check your MCP connector docs for sync semantics." >&2
+  fi
+fi
+
+# ---------------------------------------------------------------------------
 # Step 1: check for leftover merge markers in existing APPROVALS.md
 # ---------------------------------------------------------------------------
 

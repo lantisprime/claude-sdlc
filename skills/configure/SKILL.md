@@ -76,10 +76,12 @@ Ask one at a time. Do not front-load.
 > A) None — all signers commit directly to this repo
 > B) Network share — a shared folder path
 > C) Central git repo — a separate git repo URL
-> D) Defer — decide later
+> D) MCP connector — a connector loaded in your Claude Code session
+> E) Defer — decide later
 
-**Q7 — Share path or repo URL** *(only if Q6 = B or C)*
-> Enter the \<network share path | central git repo URL>:
+**Q7 — Share path, repo URL, or connector name** *(only if Q6 = B, C, or D)*
+> Enter the \<network share path | central git repo URL | MCP connector name>:
+> *(For MCP: connector contract is deferred — RFC §3.7. Enter a placeholder name now or choose E to decide later.)*
 
 **Q8 — Session sign-off hints** *(only if Q4 = Y)*
 > Show personalized sign-off hints at session start? (Y/n — default Y)
@@ -161,6 +163,7 @@ On A: copy `config/tools.json` to `config/tools.json.bak`, delete `config/tools.
 | Q5 roles | `approvals.roles` | `tools.json` |
 | Q6+Q7 network share | `approvals.share_path` | `tools.json` |
 | Q6+Q7 central git | `approvals.git_repo` | `tools.json` |
+| Q6+Q7 MCP connector | `approvals.mcp.connector` | `tools.json` |
 | Q8 hints | `display.session_signoff_hints` | `tools.json` |
 
 ## References

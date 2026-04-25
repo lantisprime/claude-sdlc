@@ -53,13 +53,17 @@
     "_type_values": "github | gitlab | jira | linear | null"
   },
   "approvals": {
-    "_comment": "Multi-team sign-off config. Leave block absent or set roles to [] for single-signer projects. share_path and git_repo are mutually exclusive transport options — set one or neither.",
+    "_comment": "Multi-team sign-off config. Leave block absent or set roles to [] for single-signer projects. share_path, git_repo, and mcp.connector are mutually exclusive transport options — set one or none.",
     "roles": [],
     "share_path": null,
     "git_repo": null,
     "_git_repo_note": "git_repo: URL of a dedicated central approvals git repo (e.g. git@github.com:org/approvals.git). Sign-offs are stored as flat .md files at the repo root. Git auth (SSH key, credential helper, GIT_ASKPASS, etc.) must be configured out-of-band — the reconciler does not manage credentials.",
+    "mcp": {
+      "connector": null,
+      "_connector_note": "Name of the MCP connector to use for tier 3 sign-off transport (RFC §3.7). Set to the connector name when a connector ships. The reconciler queues sign-offs and emits a sync prompt for Claude to act on. Connector operation contract is deferred — see docs/rfcs/multi-team-approval.md §3.7."
+    },
     "_roles_example": ["security", "product", "compliance"],
-    "_transport_values": "none | network-share (share_path) | central-git (git_repo)"
+    "_transport_values": "none | network-share (share_path) | central-git (git_repo) | mcp (mcp.connector)"
   },
   "artifact_format_fallback": "markdown",
   "_artifact_format_options": "markdown | json",
