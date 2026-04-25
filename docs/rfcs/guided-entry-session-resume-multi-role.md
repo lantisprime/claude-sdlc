@@ -405,7 +405,7 @@ Each preset bundles matching `approvals.roles` and `approvals.share_path`/`appro
 
 **Cognitive-load impact: high** — turns "design your role vocabulary" into "pick your situation."
 
-**Open coordination question:** this overlaps with the plan-phase scope-ingest discussion (see `docs/rfcs/notes/plan-phase-scope-ingest-discussion.md`) on whether "workflow templates" and "domain files" are the same artifact. Resolve before building either.
+**Resolved (2026-04-25): keep orthogonal.** Workflow presets (this section) configure sign-off mechanics — they are pure config bundled at `/configure` Q5. Domain files (`domains/payments.md` etc.) inject domain knowledge — they are pure content maintained by domain owners. The two serve different purposes and have different stewards. Advisory bridge: domain file schema gains optional `suggested_roles: []`; plan skill surfaces it at plan-time as context but does not enforce or override `approvals.roles`. Both can now build independently. Coordination gate lifted.
 
 ### B. Back/cancel navigation in interactive flows
 

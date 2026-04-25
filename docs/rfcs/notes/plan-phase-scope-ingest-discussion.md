@@ -71,6 +71,7 @@ domains/
 slug: payments
 last_reviewed: 2026-03-15
 owner: <team-or-person>
+suggested_roles: []
 ---
 # Payments
 
@@ -85,6 +86,8 @@ owner: <team-or-person>
 ```
 
 The `last_reviewed` + `owner` frontmatter is load-bearing — without it, domain files rot silently.
+
+The `suggested_roles` field is optional. When present, the plan skill surfaces these at plan-time as advisory context ("this domain typically involves compliance sign-off") but does not enforce or override `approvals.roles`. Absent field and empty list are equivalent — no advisory prompt fires.
 
 **Matching logic (3-tier, in order):**
 1. Explicit `domain:` tag in `scope.md` frontmatter → authoritative
@@ -136,11 +139,19 @@ The load reduction isn't "Claude writes it for you." It's **load shifting from o
 
 **Reshape:** either assign a synthetic REQ-ID (e.g., `REQ-SCOPE-<project>`) or carve out a named exception. Don't silently invent a parallel pattern — that's exactly the drift the accepted RFC prevents.
 
+**Resolution (2026-04-25):** Assign synthetic REQ-ID `REQ-SCOPE-<project-slug>`. Sign-off filename follows the accepted convention: `sign-offs/REQ-SCOPE-<slug>-product.md` (using default role `product`). No named exception needed.
+
 **2. Single-signer assumption.** Proposal wrote "human signs scope" in the singular. With the 9-role set and multi-team approval as accepted policy, certain domains probably need multi-role scope sign-off (payments: product + compliance + security). Current position: default single-role, with domain files declaring when multi-role is required. Needs the 9-role list to resolve.
+
+**Resolution (2026-04-25):** Default signer role is `product`. Drop tentative label `scope-owner` — not in the accepted 9-role vocabulary. Domain files may declare `suggested_roles: [product, compliance, security]` for regulated domains; plan skill surfaces this advisory at plan-time but does not auto-require multi-role sign-off.
 
 **3. Transport ladder.** Proposal assumed chat sign-off as default. Accepted RFC defines Tiers 0–3. Can't say which tier scope sign-off belongs to without reading the ladder. Deferred.
 
+**Resolution (2026-04-25):** Same transport ladder as other sign-offs. Tier 0 (local, authoritative) only for v1. Teams that already use `approvals.share_path` or `approvals.git_repo` for phase sign-offs can use the same keys for scope — no new config.
+
 **4. `APPROVALS.md` reconciler.** Proposal didn't mention it. Scope sign-off output needs to emit something the reconciler can parse. Format constraint unresolved.
+
+**Resolution (2026-04-25):** Scope gate file at `.claude/sdlc/gates/scope-<project>.md` with a `## Required sign-offs` block — same shape as phase gate files per accepted RFC §3.2. Reconciler reads it identically; no new format. Scope acts as a pseudo-phase gate: the sign-off must be present before the first `/plan` builds its plan artifact. Remaining open: whether "pseudo-phase gate" is the right model or whether scope deserves a distinct artifact class. Deferred to scope-ingest RFC promotion.
 
 ### Overlaps with PR #1 (draft)
 
@@ -165,11 +176,11 @@ Untouched by either RFC:
 
 ### What I can't see from outside the repo
 
-Explicit: this analysis is partial without these.
+**All three items resolved 2026-04-25** by reading `multi-team-approval.md` in full and the reshaped `guided-entry-session-resume-multi-role.md`. Resolutions recorded in the four conflict entries above.
 
-1. Full text of `multi-team-approval.md` — needed to resolve sign-off filename, role assignment, transport tier, reconciler format.
-2. The 10-PR contents in PR #1 — unknown overlap surface.
-3. The 9-role set — determines scope sign-off role(s).
+~~1. Full text of `multi-team-approval.md` — needed to resolve sign-off filename, role assignment, transport tier, reconciler format.~~
+~~2. The 10-PR contents in PR #1 — unknown overlap surface.~~
+~~3. The 9-role set — determines scope sign-off role(s).~~
 
 ---
 
@@ -178,7 +189,7 @@ Explicit: this analysis is partial without these.
 - **Domain file curation process.** Who owns `domains/payments.md`? How are updates reviewed? Same discipline as skills, or lighter? Decide later.
 - **Scope regeneration policy.** When the source PDF updates to v4, what happens? Options: ignore / `/plan --refresh-scope` / warn on drift. Ship v1 without regeneration; observe.
 - **Multi-domain matching.** v1 matches top-1 domain; human can override to multi. v2 could auto-match multi. Don't build upfront.
-- **Workflow templates vs. domain files** (from PR #1 pending A). Unify or keep orthogonal. Decide before shipping domain-expert.
+- ~~**Workflow templates vs. domain files**~~ — **Resolved 2026-04-25 (keep orthogonal).** Workflow presets in `/configure` Q5 configure sign-off mechanics (`approvals.roles`, transport); domain files inject domain knowledge (glossary, NFRs, regulatory concerns, gap questions). Advisory bridge: optional `suggested_roles: []` in domain file frontmatter; plan skill surfaces it at plan-time but does not enforce or override `approvals.roles`. Both artifacts evolve independently with separate owners.
 - **Sign-off role naming.** Tentative "scope-owner"; waits on 9-role set confirmation.
 
 ---
@@ -230,6 +241,7 @@ Named so future reviewers can check:
 
 ## Next actions
 
-- Decide on workflow-templates-vs-domain-files unification before building seed domain files (coordinate with PR #1 pending A)
-- Read `multi-team-approval.md` in full; update this note's conflict section
-- Read PR #1's RFC body in full; update overlap section
+- ~~Decide on workflow-templates-vs-domain-files unification before building seed domain files~~ — resolved 2026-04-25; see Open questions above.
+- ~~Read `multi-team-approval.md` in full; update this note's conflict section~~ — done 2026-04-25.
+- ~~Read PR #1's RFC body in full; update overlap section~~ — done 2026-04-25.
+- **Promote this note to a formal RFC** — conflicts resolved, vocabulary aligned, approach stable. Next: draft `docs/rfcs/scope-ingest.md`. Remaining open: pseudo-phase-gate vs. new artifact class (see conflict 4 resolution).

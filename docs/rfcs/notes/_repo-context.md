@@ -3,7 +3,7 @@
 > **Purpose.** Paste or reference this file at the start of any new conversation about the repo so the assistant has accurate grounding without re-fetching everything. Keep it short and current. If a fact drifts, fix it here first.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-24 (post-reshape)
+**Last updated:** 2026-04-25 (Pending A resolved)
 
 ---
 
@@ -106,7 +106,7 @@ Frontend tasks halt in Phase 2 until some UX artifact exists at `.claude/sdlc/ar
   - Proposes 8 PRs layering UX surfaces over the accepted sign-off mechanism: 1 (`/status` with sign-off render), 2 (`/start`), 3 (SessionStart plan-check with opt-out personalization), 4 (plan versioning), 6 (approval packet as `evidence:` target), 8 (`/configure` with reshaped question bank), 9 (glossary + `/help` + unordered-parallel callout + message library), 10 (auto next-step hints).
   - **Dropped during reshape:** former PRs 5 (in-session chain) and 7 (commits-as-signatures) — both duplicated or conflicted with the accepted RFC's model. Companion note `guided-entry-pr7-degradation.md` marked `superseded`.
   - **Compensating additions (option-b):** PR 1 unordered sign-off state render, PR 3 opt-out historical-email personalization, PR 9 unordered-parallel callout — together recover most of the multi-role UX affordance without reopening the conflict.
-  - **Pending discussions (deferred):** A. Workflow templates (coordinate with scope-ingest discussion), B. Back/cancel navigation, C. Error-message audit, D. TodoWrite integration for long-running phases, E. Per-phase `/status` detail.
+  - **Pending discussions:** A. Workflow templates — **resolved 2026-04-25 (keep orthogonal; advisory `suggested_roles:` bridge in domain file schema)**. B–E deferred: B. Back/cancel navigation, C. Error-message audit, D. TodoWrite integration, E. Per-phase `/status` detail.
 
 ## Active discussions (not yet PR'd)
 
