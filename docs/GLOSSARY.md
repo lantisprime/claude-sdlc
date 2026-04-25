@@ -77,3 +77,31 @@ A per-field label the `scope-ingest` agent attaches to each field in a scope dra
 | `absent` | Source has no content for this field |
 
 Low-confidence fields get a `⚠️` header prefix in the draft. Absent fields are omitted entirely.
+
+---
+
+## Terms introduced in the guided-entry and multi-role RFC
+
+**Approval packet** — the bundle assembled by the `gate-signoff` skill for multi-team review: sign-off files, gate hash, and supporting evidence. Referenced in `sign-offs/<REQ-ID>-<role>.md` files and in gate summaries.
+
+**Config requirements** (`config_requirements:`) — frontmatter field in a skill declaring which `config/tools.json` keys the skill needs before it can run. Missing keys trigger Layer 2 auto-invoke of `/configure --needs <keys>`. Skills that need nothing set `config_requirements: []`.
+
+**Layer 0 / Layer 1 / Layer 2 / Layer 3** — the four states of the configure model, handled by `env-detect.sh` and the `configure` skill:
+- **Layer 0** — fresh install: no `config/tools.json`, no plans, no gates, inside a git repo. `env-detect.sh` sets `layer_0_pending: true` in `env.json` and instructs Claude to invoke `/configure`.
+- **Layer 1** — config exists but some tool commands are null. `SessionStart` warns only; commands that need those keys will prompt on demand.
+- **Layer 2** — a skill is invoked and its `config_requirements:` lists a key that is missing or null. `/configure --needs <keys>` is auto-invoked; the original command resumes on success.
+- **Layer 3** — `config/tools.json` is not valid JSON. `env-detect.sh` sets `config_corrupted: true` and blocks Edit/Write until the configure skill rebuilds or repairs the file.
+
+**Material change** — a plan edit that changes one or more of: Classification, In-scope files, In-scope functions, Out-of-scope, or Risks. Material changes to a signed plan trigger plan versioning. Non-material edits (prose, typos, added context) do not.
+
+**Plan version** — the `Version:` integer in a plan artifact. Starts at 1. Incremented by one each time a material change is made to a signed plan. Prior versions are archived as `<slug>.v<N>.md` with `Status: superseded`.
+
+**Role vocabulary** — the set of sign-off roles configured for a project via `approvals.roles` in `config/tools.json` (e.g. `["security", "product", "compliance", "sre"]`). Roles appear in gate files under `## Required sign-offs` and are matched against `sign-offs/<REQ-ID>-<role>.md` files.
+
+**Session sign-off hint** — the personalized prompt shown at `SessionStart` when the current user (matched by git email against historical `sign-offs/*.md` `signer:` lines) has pending sign-offs in the active gate. Controlled by `display.session_signoff_hints` in `config/tools.json`; set to `"off"` to suppress.
+
+**Sign-off file** — a markdown file at `sign-offs/<REQ-ID>-<role>.md` recording a single role's approval for a specific work item. The `gate-signoff` skill creates these; the `status` skill reads them to compute the sign-off state display.
+
+**Supersede** — to archive a signed plan by renaming it `<slug>.v<N>.md` (Status: superseded) and creating a fresh `<slug>.md` at Version N+1. Triggered when a material change is needed on a signed plan. Prior sign-offs remain on the archived file but do not carry forward to the new version.
+
+**Transport ladder** — the ordered fallback chain for sharing sign-off files across machines: central git repo → network share → signers commit directly to the project repo. Configured via `approvals.git_repo` and `approvals.share_path` in `config/tools.json`.

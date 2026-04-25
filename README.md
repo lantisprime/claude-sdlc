@@ -431,7 +431,7 @@ Cross-cutting skills — triggered by context across phases:
 | [gate-signoff](skills/gate-signoff/SKILL.md) | Captures phase sign-off via chat with a work-item URL as non-trivial acknowledgment |
 | [domain-expert](skills/domain-expert/SKILL.md) | Injects domain-specific gap questions, NFRs, and regulatory flags into the plan (payments, auth, and user-defined domains) |
 
-### Commands (11)
+### Commands (15)
 
 | Command | Purpose |
 |---|---|
@@ -445,6 +445,8 @@ Cross-cutting skills — triggered by context across phases:
 | [/deploy](commands/deploy.md) | Phase 6 — deployment record |
 | [/support](commands/support.md) | Phase 7 — observability wiring |
 | [/docs](commands/docs.md) | Phase 8 — SDLC docs + traceability |
+| [/status](commands/status.md) | Show in-flight task state and pending sign-offs (read-only) |
+| [/help](commands/help.md) | Plugin command reference; `/help <command>` for detail on a specific command |
 | [/review](commands/review.md) | Cross-cutting diff review (correctness + security) |
 | [/fix-fast](commands/fix-fast.md) | Compressed path for small bug fixes only (≤2 files, ≤50 LOC) |
 | [/token-review](commands/token-review.md) | Analyze per-phase token usage from the tracking log; surface optimization candidates |
@@ -461,7 +463,7 @@ Bounded subagents with narrow write scope — they propose; humans approve.
 | [observability](agents/observability.md) | Produces monitoring / alerts / runbooks | `.claude/sdlc/monitoring/` only |
 | [scope-ingest](agents/scope-ingest.md) | Parses source material into a provenance-traced scope draft | `.claude/sdlc/scope-drafts/` only |
 
-### Hooks (10)
+### Hooks (11)
 
 Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy documented above.
 
@@ -476,7 +478,8 @@ Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy do
 | [modified-code-test-gate.sh](hooks/modified-code-test-gate.sh) | Stop | Warn | Flags modified code without corresponding tests |
 | [bash-safety.sh](hooks/bash-safety.sh) | PreToolUse (Bash) | Warn | Flags risky shell patterns |
 | [format-on-write.sh](hooks/format-on-write.sh) | PostToolUse | — | Runs the configured formatter on written files |
-| [env-detect.sh](hooks/env-detect.sh) | SessionStart | — | Writes `.claude/sdlc/env.json` with detected integrations |
+| [env-detect.sh](hooks/env-detect.sh) | SessionStart | — | Writes `.claude/sdlc/env.json` with detected integrations; sets Layer 0/3 flags for the configure skill |
+| [session-plan-check.sh](hooks/session-plan-check.sh) | SessionStart | — | Shows in-flight task state and personalized sign-off hints at the start of each session |
 | [token-tracker.sh](hooks/token-tracker.sh) | Stop | — | Parses the session transcript; writes raw per-phase token counts to `token-log.json` / `token-history.jsonl`. Off by default; enabled via `config/tools.json` |
 
 ### Templates (11)
@@ -506,7 +509,7 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 ├── docs/SDLC.md                 # full phase reference
 ├── domains/                     # built-in domain knowledge seeds (payments, auth)
 ├── skills/          (15)        # 8 phase skills + 7 cross-cutting (incl. domain-expert)
-├── commands/        (11)        # one per checkpoint + /review + /fix-fast + /token-review
+├── commands/        (15)        # one per checkpoint + /status + /help + /review + /fix-fast + /token-review
 ├── agents/          (5)         # bounded subagents (incl. scope-ingest)
 ├── hooks/                       # hooks.json + 10 shell scripts
 └── templates/       (11)        # artifact templates (incl. scope-gate)
