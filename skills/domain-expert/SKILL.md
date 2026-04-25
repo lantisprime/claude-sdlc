@@ -1,6 +1,6 @@
 ---
 name: domain-expert
-description: Use this skill during /plan (between scope validation and writing the plan artifact) to inject domain-specific context, gap questions, and regulatory concerns into the plan. Triggers automatically when the plan skill detects a scope.md or task description containing domain-sensitive keywords (payment, stripe, checkout, billing, pci, authentication, oauth, jwt, mfa, login — and many others listed in domains/_index.json). Produces a ## Domain context section in the plan artifact. Also triggers when the human says "add domain context", "what are the domain concerns here", or "check domain rules".
+description: Use this skill during /plan (between scope validation and writing the plan artifact) to inject domain-specific context, gap questions, and regulatory concerns into the plan. Triggers automatically when the plan skill evaluates the task and scope.md against the domain registry in domains/_index.json using semantic judgment — no keyword list required. Produces a ## Domain context section in the plan artifact. Also triggers when the human says "add domain context", "what are the domain concerns here", or "check domain rules".
 ---
 
 # Domain Expert
@@ -11,7 +11,7 @@ Inject domain knowledge — gap questions, NFRs, regulatory flags, security hots
 
 Invoked by the `plan` skill between Step 2 (scope validation) and Step 3 (write the plan). It runs when any of the following are true:
 
-- The plan task description or `scope.md` matches a rule in the merged domain index (see **Domain lookup** below).
+- The plan task description or `scope.md` semantically matches a domain in the merged domain registry (see **Domain lookup** below).
 - The `scope.md` frontmatter contains an explicit `domain:` tag.
 - The human explicitly asks for domain context.
 
@@ -24,9 +24,9 @@ Two directories are checked, in this order:
 1. **Project-level** — `<repo-root>/domains/` (the consuming project's own domain files)
 2. **Plugin-level** — `<plugin-root>/domains/` (the plugin's built-in seeds)
 
-Each directory may contain `_index.json` (matching rules) and `<slug>.md` (domain content files).
+Each directory may contain `_index.json` (domain registry) and `<slug>.md` (domain content files).
 
-**Index merge:** Load both `_index.json` files. Append project rules before plugin rules — project rules are evaluated first. If both indices define rules for the same slug, project rules for that slug take precedence (the project's version is evaluated; plugin rules for that slug are skipped entirely).
+**Index merge:** Load both `_index.json` files. Append project domains before plugin domains — project entries are evaluated first. If both registries define an entry for the same slug, the project entry takes precedence (the project's version is used; the plugin entry for that slug is skipped entirely).
 
 **Content resolution:** When a slug is matched, look for `<slug>.md` in the project directory first. If found, use it exclusively. If not found, fall back to the plugin directory. There is no merging of content files — one file wins entirely.
 
@@ -43,22 +43,27 @@ Read `scope.md` frontmatter. If a `domain:` field is present and non-empty, that
 domain: payments
 ```
 
-**Tier 2 — Index rule match**
+**Tier 2 — Semantic judgment**
 
-Scan the task description and `scope.md` body against the merged `_index.json` rules. Each rule has:
+Load the merged domain registry (`_index.json` files, project-level first). For each entry you have a `slug` and a `description` of what that domain covers.
 
-- `slug` — the domain it maps to
-- `confidence` — `high`, `medium`, or `low`
-- `keywords` — list of terms to match. Single-word entries use whole-word matching; multi-word entries (e.g. `"access token"`, `"session management"`) are phrase-matched — the entire phrase must appear in the text, not any word in isolation. Case-insensitive in both cases.
-- `stacks` — list of stack/library names to match against the plan's technology stack section
+Apply overrides first:
+- If `overrides.force` names a slug, use that slug at `high` confidence. Skip evaluation.
+- If `overrides.exclude` lists a slug, skip that domain entirely.
 
-Rules are evaluated in order; first match at each confidence level wins. Confidence levels:
+Then assess whether the task description and `scope.md` body plausibly involve any remaining domain. Use your semantic understanding of the task's subject matter, the systems it touches, and the concerns it raises — not keyword scanning.
 
-| Confidence | Behavior |
-|---|---|
-| `high` | Proceed without confirmation. Write `## Domain context` using the matched domain file. |
-| `medium` | Ask the human to confirm before injecting: "I matched this task to the **payments** domain (medium confidence). Proceed with domain context injection?" On confirmation, proceed. On decline, treat as `unknown`. |
-| `low` | Always confirm before injecting, even when the threshold is low. |
+Assign confidence for the best-matching domain:
+
+| Confidence | When to assign | Behavior |
+|---|---|---|
+| `high` | The task clearly and primarily involves this domain — connection is unambiguous | Proceed without confirmation. Write `## Domain context`. |
+| `medium` | The task plausibly involves this domain but could reasonably not | Ask: "I matched this task to the **[domain]** domain (medium confidence). Proceed with domain context injection?" On confirm, proceed. On decline, treat as `unknown`. |
+| `low` | Weak or indirect connection | Always confirm before injecting. |
+
+Match at most one domain per plan. If the task spans two domains (e.g., "pay with passkeys" touches both payments and auth), pick the primary domain and note the secondary in the `## Domain context` block.
+
+If no domain is a reasonable match at any confidence level, proceed to Tier 3.
 
 **Tier 3 — No match**
 
@@ -156,7 +161,7 @@ On **A** or **B**, run the authoring flow (see `skills/domain-expert/AUTHORING.m
 ## Related
 
 - [`domains/_schema.md`](../../domains/_schema.md) — contract all domain files must follow
-- [`domains/_index.json`](../../domains/_index.json) — built-in matching rules
+- [`domains/_index.json`](../../domains/_index.json) — domain registry with semantic descriptions and optional force/exclude overrides
 - [`skills/domain-expert/AUTHORING.md`](./AUTHORING.md) — Path A (source ingest) and Path B (guided Q&A) authoring flows
 - [`skills/plan/SKILL.md`](../plan/SKILL.md) — the skill that invokes this one
 - [`docs/rfcs/scope-ingest.md`](../../docs/rfcs/scope-ingest.md) — design decisions behind this skill
