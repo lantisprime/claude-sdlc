@@ -19,7 +19,7 @@
 - Dropped PRs 5 + 7; kept + reworked PRs 1, 2, 3, 4, 6, 8, 9, 10.
 - Ship order: 1 → 2 → 3 → 4 → 8 → 9 → 6 → 10. Hard deps: PR 10 last, PR 4 before PR 6.
 - Compensating additions (option-b): PR 1 unordered pipe render, PR 3 historical-email heuristic, PR 9 unordered-parallel callout.
-- PR #1 marked ready-for-review 2026-04-25.
+- PR #1 merged to main 2026-04-25 by lantisprime (commit `d50f1e48`). RFC status updated to Accepted.
 
 ### Pending A: keep orthogonal (2026-04-25)
 

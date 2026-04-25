@@ -1,6 +1,6 @@
 # RFC: Guided Entry, Session Resume, and Approval UX
 
-**Status:** Draft — reshaped against accepted [multi-team-approval.md](./multi-team-approval.md); ready for review.
+**Status:** Accepted — 2026-04-25 by lantisprime. Merged via PR #1 (https://github.com/lantisprime/claude-sdlc/pull/1). Further changes require an amendment.
 **Author:** Charlton Ho
 **Target:** `lantisprime/claude-sdlc`
 **Date:** 2026-04-20

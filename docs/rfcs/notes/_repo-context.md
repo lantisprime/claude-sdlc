@@ -3,7 +3,7 @@
 > **Purpose.** Paste or reference this file at the start of any new conversation about the repo so the assistant has accurate grounding without re-fetching everything. Keep it short and current. If a fact drifts, fix it here first.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-25 (scope-ingest RFC reviewed + OQ-SCOPE-1 resolved)
+**Last updated:** 2026-04-25 (PR #1 merged — guided-entry RFC accepted)
 
 ---
 
@@ -98,15 +98,15 @@ Frontend tasks halt in Phase 2 until some UX artifact exists at `.claude/sdlc/ar
   - 9-role set (suggested vocabulary)
   - *(Full text not inlined here — read the RFC directly when details are needed.)*
 
+- **`docs/rfcs/guided-entry-session-resume-multi-role.md`** (accepted 2026-04-25, merged PR #1) — defines:
+  - 8 UX surface PRs layered over the accepted sign-off mechanism (ship order: 1 → 2 → 3 → 4 → 8 → 9 → 6 → 10)
+  - `/status` with unordered sign-off render, `/start`, SessionStart plan-check, plan versioning, approval packet, `/configure`, glossary + `/help`, auto next-step hints
+  - Pending discussions B–E deferred: back/cancel navigation, error-message audit, TodoWrite integration, per-phase `/status` detail
+  - OQ-1 open: PR 4 material-edit detection (resolve before PR 4 implementation)
+
 ## Open PRs
 
-- **PR #1** — *Draft: Guided-entry, session resume, and approval UX (reshaped)*
-  - Branch: `rfc/guided-entry-ux-draft`
-  - Status: draft, reshaped 2026-04-24 against accepted `multi-team-approval.md`; ready for review.
-  - Proposes 8 PRs layering UX surfaces over the accepted sign-off mechanism: 1 (`/status` with sign-off render), 2 (`/start`), 3 (SessionStart plan-check with opt-out personalization), 4 (plan versioning), 6 (approval packet as `evidence:` target), 8 (`/configure` with reshaped question bank), 9 (glossary + `/help` + unordered-parallel callout + message library), 10 (auto next-step hints).
-  - **Dropped during reshape:** former PRs 5 (in-session chain) and 7 (commits-as-signatures) — both duplicated or conflicted with the accepted RFC's model. Companion note `guided-entry-pr7-degradation.md` marked `superseded`.
-  - **Compensating additions (option-b):** PR 1 unordered sign-off state render, PR 3 opt-out historical-email personalization, PR 9 unordered-parallel callout — together recover most of the multi-role UX affordance without reopening the conflict.
-  - **Pending discussions:** A. Workflow templates — **resolved 2026-04-25 (keep orthogonal; advisory `suggested_roles:` bridge in domain file schema)**. B–E deferred: B. Back/cancel navigation, C. Error-message audit, D. TodoWrite integration, E. Per-phase `/status` detail.
+*(none)*
 
 ## Draft RFCs (not yet PR'd)
 
