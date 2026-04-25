@@ -67,15 +67,13 @@ sync_signoff() {
 
   if [ "$src_ts" = "$dst_ts" ]; then
     return 0
-  elif [[ "$src_ts" > "$dst_ts" ]] || [ -z "$dst_ts" ]; then
-    cp "$src" "$dst"
-    echo "[approval-reconcile] pushed $src_name (newer local)" >&2
-  else
-    # Remote is newer — create conflict files; manual resolution required
-    cp "$src" "${src%.md}.local.conflict.md"
-    cp "$dst" "${src%.md}.remote.conflict.md"
-    echo "[approval-reconcile] CONFLICT: $src_name — remote is newer; see .local.conflict.md / .remote.conflict.md" >&2
   fi
+
+  # Timestamps differ in either direction → preserve both; human resolves (RFC §6.7)
+  cp "$src" "${src%.md}.local.conflict.md"
+  cp "$dst" "${src%.md}.remote.conflict.md"
+  echo "[approval-reconcile] CONFLICT: $src_name — versions differ; see .local.conflict.md / .remote.conflict.md" >&2
+  return 1
 }
 
 # Sync one local sign-off file to a git staging area.
