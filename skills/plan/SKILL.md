@@ -43,7 +43,25 @@ See `skills/domain-expert/SKILL.md` for the full matching and output specificati
 
 ## Step 3 — Write the plan
 
-Write to `.claude/sdlc/plans/<task-slug>.md` using `templates/plan.md`. Required fields:
+**Version check (before writing).** If `.claude/sdlc/plans/<task-slug>.md` already exists and a signed plan gate (`gates/plan-<task-slug>.md`) exists for it, compare the intended new content against the current plan's material fields:
+
+- `Classification` (new-build / fix / change-request)
+- `In-scope files` list
+- `In-scope functions` list
+- `Out-of-scope` list
+- `Risks & rollback` section
+
+If any material field changed, do **not** write yet. Prompt the human with a narrative message that names the specific change and its consequence:
+
+> Changing Classification from `fix` to `new-build` will archive the current plan as v\<N\> (superseded). Your existing sign-off will not carry over to v\<N+1\>. Continue? [Y/n]
+
+On **yes**: read the current plan's `Version:` field (treat absent as 1 for legacy plans). Rename `<task-slug>.md` to `<task-slug>.v<N>.md` and set `Status: superseded` in the renamed file. Then write the new plan at `<task-slug>.md` with `Version: <N+1>` and `Status: draft`. Print: `Saved as v<N+1>. v<N> archived at plans/<task-slug>.v<N>.md (superseded).`
+
+On **no**: discard the changes to material fields and resume with the current plan unchanged.
+
+Non-material edits (prose, typos, formatting) pass silently — do not trigger this check.
+
+**Write** to `.claude/sdlc/plans/<task-slug>.md` using `templates/plan.md`. Required fields:
 
 - **Task ID & classification** (new-build / fix / CR + reference ID)
 - **Problem** (1–2 sentences)
@@ -54,6 +72,8 @@ Write to `.claude/sdlc/plans/<task-slug>.md` using `templates/plan.md`. Required
 - **Tests to add/update** (function-level — only modified code gets new tests)
 - **Risks & rollback**
 - **Estimate** (t-shirt size or story points; see `config/tools.json` for convention)
+- **Version** (start at 1; increment on each material edit of a signed plan)
+- **Status** (`draft` until plan gate is signed; `signed` after; `superseded` when replaced by a newer version)
 
 Keep it short. The plan is a contract, not a design doc — Phase 3 handles design.
 

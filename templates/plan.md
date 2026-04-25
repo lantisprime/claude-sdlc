@@ -5,6 +5,8 @@
 - **Reference:** REQ-xxx | ISSUE-xxx | CR-xxx
 - **Author:** <name>
 - **Created:** <YYYY-MM-DD>
+- **Version:** 1
+- **Status:** draft | signed | superseded
 - **Estimate:** <S/M/L/XL or story points>
 
 ## Problem

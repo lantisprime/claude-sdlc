@@ -25,13 +25,21 @@ if [ -d "$GATES" ]; then
 fi
 
 # --- Plan artifact check (block-level) ---
-if [ ! -d "$PLANS" ] || [ -z "$(ls -A "$PLANS" 2>/dev/null)" ]; then
+# Exclude versioned files (*.v1.md, *.v2.md, etc.) — superseded plans do not satisfy the gate.
+ACTIVE_PLAN=$(find "$PLANS" -maxdepth 1 -type f -name "*.md" ! -name "*.v[0-9]*.md" 2>/dev/null | head -1)
+
+if [ ! -d "$PLANS" ] || [ -z "$ACTIVE_PLAN" ]; then
   echo "[plan-gate] BLOCK: no plan artifact in $PLANS. Run /plan first." >&2
   exit 2
 fi
 
-# Require at least one plan updated in the last 24h (active task).
-if ! find "$PLANS" -type f -name "*.md" -mtime -1 | grep -q .; then
+# Warn if the active plan is marked superseded (versioning race: plan renamed but new version not yet written).
+if grep -qE "^\- \*\*Status:\*\* superseded" "$ACTIVE_PLAN" 2>/dev/null; then
+  echo "[plan-gate] WARN: active plan has Status: superseded. Run /plan to create the next version." >&2
+fi
+
+# Require at least one active plan updated in the last 24h.
+if ! find "$PLANS" -maxdepth 1 -type f -name "*.md" ! -name "*.v[0-9]*.md" -mtime -1 2>/dev/null | grep -q .; then
   echo "[plan-gate] WARN: no plan file modified in the last 24h. Confirm this task has an active plan." >&2
 fi
 

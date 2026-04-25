@@ -7,7 +7,8 @@ command -v git >/dev/null 2>&1 || exit 0
 [ -d .git ] || exit 0
 
 PLANS=".claude/sdlc/plans"
-PLAN=$(find "$PLANS" -type f -name "*.md" -printf "%T@ %p\n" 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2- || true)
+# Exclude versioned files (*.v1.md, *.v2.md, etc.) — scope check runs against the active plan only.
+PLAN=$(find "$PLANS" -maxdepth 1 -type f -name "*.md" ! -name "*.v[0-9]*.md" -printf "%T@ %p\n" 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2- || true)
 [ -z "${PLAN:-}" ] && exit 0
 
 # Extract in-scope files — lines under the "In-scope files" header, bullet-listed.

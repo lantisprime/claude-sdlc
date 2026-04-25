@@ -69,6 +69,8 @@ For fixes and CRs, Step 2 also validates the request against the original scope 
 **Gate:** `.claude/sdlc/gates/plan-<task-slug>.md`  
 **Scope gate (one-time per project):** `.claude/sdlc/gates/scope-<project>.md`
 
+**Plan versioning.** Plan artifacts carry `Version` and `Status` fields. When a material field (Classification, In-scope files, In-scope functions, Out-of-scope, Risks) changes on a *signed* plan, the skill prompts for confirmation, renames the current file to `<slug>.v<N>.md` (Status: superseded), and creates a fresh `<slug>.md` at Version N+1. Prior sign-offs remain on the archived file but do not satisfy the gate for the new version. Non-material edits (prose, typos) pass without versioning. Existing plans without a `Version` field are treated as v1 implicitly.
+
 ## Phase 2 — Analyze
 
 **Command:** `/analyze`  

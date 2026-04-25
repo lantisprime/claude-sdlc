@@ -17,7 +17,9 @@ This skill writes nothing. It never modifies any artifact.
 
 ## Step 1 — Identify the active plan
 
-Scan `.claude/sdlc/plans/*.md`. If the directory is absent or empty, print:
+Scan `.claude/sdlc/plans/*.md`, **excluding versioned files** (`*.v1.md`, `*.v2.md`, etc. — any file matching `*.v[0-9]*.md`). Versioned files are superseded archives; the active plan is always the unversioned `<slug>.md` file.
+
+If the directory is absent or no non-versioned files exist, print:
 
 ```
 No active task found.
@@ -26,7 +28,7 @@ Next: run /start or /plan to begin a task.
 
 and stop.
 
-If multiple plan files exist, use the most recently modified one.
+If multiple non-versioned plan files exist, use the most recently modified one.
 
 ## Step 2 — Identify the active gate
 
