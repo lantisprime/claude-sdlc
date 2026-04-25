@@ -23,11 +23,12 @@ Teams have legitimate needs for throwaway, exploratory code — spikes, prototyp
 | Principle | Tension |
 |---|---|
 | 1. Human in the lead | Neutral — any bypass is human-initiated |
-| 2. Plan before code | **Direct conflict.** A bypass skips the plan-gate. |
-| 3. Surgical edits | Neutral — spike code is not merged, so scope doesn't matter |
-| 4. Work-item traceability | **Direct conflict.** Spikes have no REQ ID by definition. |
-| 5. Graceful degradation | Aligned — bypass as "degrade to no-plugin" is consistent |
-| 6. Stack-agnostic | Neutral |
+| 2. Reduce cognitive load | **Tension (Option B).** A marker-file mode adds a new state the human must track — is spike mode active? did the pre-commit hook stamp these files? Options A, C, D are neutral. |
+| 3. Plan before code | **Direct conflict.** A bypass skips the plan-gate. |
+| 4. Surgical edits | Neutral — spike code is not merged, so scope doesn't matter |
+| 5. Work-item traceability | **Direct conflict.** Spikes have no REQ ID by definition. |
+| 6. Graceful degradation | Aligned — bypass as "degrade to no-plugin" is consistent |
+| 7. Stack-agnostic | Neutral |
 
 [CLAUDE.md](../../CLAUDE.md) is explicit: *"Don't add a 'quick fix' escape hatch that bypasses [work-item traceability]"* and *"I'll add a convenience path for small changes — that's what `/fix-fast` already is. Don't add a second one."* Any option on this item has to be evaluated against those constraints. This page surfaces the constraint; the decision is open.
 
@@ -36,7 +37,7 @@ Teams have legitimate needs for throwaway, exploratory code — spikes, prototyp
 | Option | Description | Surface area | Abuse risk |
 |---|---|---|---|
 | A | Docs-only: don't install the plugin for spike repos/branches (current) | Zero | Low |
-| B | `/spike` command that creates a time-bounded marker file; hooks allow edits while marker is live; a pre-commit hook refuses to merge files stamped during spike mode | High | Medium — teams may abuse the marker |
+| B | `/spike` command that creates a time-bounded marker file; hooks allow edits while marker is live; a pre-commit hook refuses to merge files stamped during spike mode | High | Medium — teams may abuse the marker; also conflicts with principle 2 (cognitive load: new mode state to track) |
 | C | `/spike` as a pure docs-pointer command — prints bypass guidance, no behavior change | Low | None |
 | D | Environment variable (`CLAUDE_SDLC_SPIKE=1`) that disables the plan-gate/work-item hooks for the session | Low | High — invisible once set |
 
@@ -70,13 +71,14 @@ Today, the workaround is either "do the brainstorming outside the plugin and com
 | Principle | Tension |
 |---|---|
 | 1. Human in the lead | Aligned — brainstorming is inherently human-led |
-| 2. Plan before code | Neutral — this is *pre*-plan, not instead-of-plan |
-| 3. Surgical edits | N/A — no code written during brainstorm |
-| 4. Work-item traceability | Aligned if a brainstorm session produces a candidate REQ set |
-| 5. Graceful degradation | Aligned — works entirely offline with markdown artifacts |
-| 6. Stack-agnostic | Aligned — no tool-specific logic |
+| 2. Reduce cognitive load | **Strongly aligned (Option A).** Directly addresses the friction of vague-input users who have nowhere to start. **Tension (Option B):** overloading `/analyze` makes it harder to know what the command does. |
+| 3. Plan before code | Neutral — this is *pre*-plan, not instead-of-plan |
+| 4. Surgical edits | N/A — no code written during brainstorm |
+| 5. Work-item traceability | Aligned if a brainstorm session produces a candidate REQ set |
+| 6. Graceful degradation | Aligned — works entirely offline with markdown artifacts |
+| 7. Stack-agnostic | Aligned — no tool-specific logic |
 
-**Notable:** this is the only item on this page that doesn't have a direct conflict with the core principles. Low risk of violating the plugin's design intent; high value.
+**Notable:** this is the only open item on this page without a direct conflict with any core principle. Principle 2 (cognitive load) actively favors resolving it. Low risk of violating the plugin's design intent; high value.
 
 ### Options considered
 
@@ -117,11 +119,12 @@ Today's workaround: stuff all required signatures into a single gate file and co
 | Principle | Tension |
 |---|---|
 | 1. Human in the lead | Aligned — every approval is still a human signature |
-| 2. Plan before code | Neutral |
-| 3. Surgical edits | Neutral |
-| 4. Work-item traceability | **Strongly aligned** — cross-team approval is exactly what audit wants |
-| 5. Graceful degradation | **Critical constraint.** Must work without a central system or network. |
-| 6. Stack-agnostic | Must remain so — can't hard-depend on GitHub PR reviews, Jira, etc. |
+| 2. Reduce cognitive load | **Strongly aligned.** The problem being solved *is* coordination overhead — the cognitive burden of tracking which teams have signed off. Solving this is a direct application of the principle. |
+| 3. Plan before code | Neutral |
+| 4. Surgical edits | Neutral |
+| 5. Work-item traceability | **Strongly aligned** — cross-team approval is exactly what audit wants |
+| 6. Graceful degradation | **Critical constraint.** Must work without a central system or network. |
+| 7. Stack-agnostic | Must remain so — can't hard-depend on GitHub PR reviews, Jira, etc. |
 
 No direct conflict. The challenge is operational (sync model) and scope (how much coordination machinery the plugin should own).
 
@@ -138,7 +141,7 @@ No direct conflict. The challenge is operational (sync model) and scope (how muc
 ### Next steps
 
 1. **Scope the demand.** Is this enterprise-only, or do mid-size teams hit it too? Enterprise can justify Option C/D; mid-size likely wants Option A.
-2. **Pick the degradation story first.** The plugin's principle 6 says missing infrastructure → local artifacts + surfaced gap. For multi-team approval, what's the local fallback? Probably: a gate file with unsigned blocks, plus a warning naming which teams haven't signed.
+2. **Pick the degradation story first.** The plugin's principle 7 says missing infrastructure → local artifacts + surfaced gap. For multi-team approval, what's the local fallback? Probably: a gate file with unsigned blocks, plus a warning naming which teams haven't signed.
 3. **Prototype Option A (multi-signature gate files)** — this is the minimum-surface-area version and doesn't require any cross-session coordination. If it's enough, we can stop there.
 4. **Define the approval artifact contract** — what does an "approval" file look like (REQ ID, signer, role, timestamp, gate reference)? The contract is reusable across Options A/B/C.
 5. **Research how other SDLC tools handle this** — specifically how they keep the audit trail coherent across teams.
@@ -150,9 +153,9 @@ No direct conflict. The challenge is operational (sync model) and scope (how muc
 
 | Item | Conflicts with a core principle? | Risk |
 |---|---|---|
-| 1. Spike bypass | Yes — Plan-before-code, Traceability | High. `CLAUDE.md` constrains the design space — see item 1. |
-| 2. Pre-plan brainstorm | No direct conflict | Low. Safest item of the three. |
-| 3. Multi-team approval | No direct conflict — aligns with traceability. Operational challenges only. Accepted RFC: [multi-team-approval.md](./multi-team-approval.md). | Medium. Over-design risk if scoped too broadly. |
+| 1. Spike bypass | Yes — Plan-before-code (#3), Traceability (#5); Tension with Cognitive load (#2) for Option B | High. `CLAUDE.md` constrains the design space — see item 1. |
+| 2. Pre-plan brainstorm | No direct conflict. Cognitive load (#2) actively favors resolution. | Low. Safest item of the three. |
+| 3. Multi-team approval | No direct conflict — aligns with traceability (#5) and cognitive load (#2). Operational challenges only. Accepted RFC: [multi-team-approval.md](./multi-team-approval.md). | Medium. Over-design risk if scoped too broadly. |
 
 ---
 
