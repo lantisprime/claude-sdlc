@@ -3,11 +3,11 @@
 > **Status:** current working state (overwritten each session)
 
 **Date:** 2026-04-25
-**Scope:** Key decisions from four sessions: guided-entry reshape, Pending A + scope-ingest conflicts, scope-ingest RFC promotion + review + OQ-SCOPE-1 resolution, domain-expert skill + authoring flow build.
+**Scope:** Six sessions cumulative. This session: scope-ingest v1 close-out — dry-run findings, domain-expert matching redesign (keywords → LLM semantic judgment), scope gate creation step in plan skill, USER-MANUAL docs pass.
 **Related:**
 - [`guided-entry-session-resume-multi-role.md`](../guided-entry-session-resume-multi-role.md) — PR #1 merged, RFC Accepted
-- [`scope-ingest.md`](../scope-ingest.md) — formal RFC draft, checklist items 1–9 complete
-- [`multi-team-approval.md`](../multi-team-approval.md) — accepted RFC; all constraints honored
+- [`scope-ingest.md`](../scope-ingest.md) — formal RFC; all checklist items complete ✅
+- [`multi-team-approval.md`](../multi-team-approval.md) — accepted RFC; implementation not yet started
 - PR #1: https://github.com/lantisprime/claude-sdlc/pull/1
 
 ---
@@ -51,16 +51,28 @@ Scope gate file at `.claude/sdlc/gates/scope-<project>.md` — same shape as pha
 
 `skills/domain-expert/SKILL.md` built with:
 - Two-source lookup: project `domains/` first (takes precedence), then plugin `domains/`
-- Index merge: project rules evaluated first; same-slug → project wins entirely
-- 3-tier matching: explicit `domain:` tag → index rule match (high/medium/low confidence) → `domain: unknown`
+- Index merge: project entries evaluated first; same-slug → project wins entirely
+- 3-tier matching: explicit `domain:` tag → LLM semantic judgment → `domain: unknown`
 - `## Domain context` block injected into plan artifact; `suggested_roles` advisory only; `required: true` = warn (⚠️), never block
 - Domain miss → offer authoring flow once per session; decline written to `hints.jsonl`
 
 `skills/domain-expert/AUTHORING.md` built with:
 - Path A: source-driven ingest (URL fetch → extract → draft → confirm → write + register)
-- Path B: guided Q&A (6 questions, one at a time); both paths end with re-run of domain lookup
+- Path B: guided Q&A (6 questions, one at a time); both paths end with re-run of domain lookup inline (no need to re-run `/plan`)
 
-`skills/plan/SKILL.md` updated: Step 2.5 inserted to invoke domain-expert between scope validation and plan write.
+`skills/plan/SKILL.md` updated: Step 2.5 (domain-expert) + Step 4.5 (scope gate creation, first task only).
+
+### Domain-expert matching: keywords → LLM semantic judgment (2026-04-25)
+
+`domains/_index.json` v2: replaced keyword/stacks rules array with a `domains` registry (slug + semantic description) and an optional `overrides` block (force/exclude). The domain-expert skill's Tier 2 now uses LLM semantic judgment against the registry descriptions rather than keyword scanning.
+
+**Why:** keyword lists are incomplete by design and require ongoing maintenance. The LLM already understands domain semantics. Dry-run immediately found gaps (`password`, `bcrypt`) that semantic judgment covers without any keyword additions. The `overrides` block preserves deterministic team-level control when needed.
+
+### Scope gate creation added to plan skill (2026-04-25)
+
+`skills/plan/SKILL.md` Step 4.5: after tech-stack validation, the plan skill drafts and signs the scope gate (`gates/scope-<project-slug>.md`) if it doesn't exist. Computes `gate_hash` at draft time, derives project slug from `scope.md project_name`, skips entirely on subsequent tasks where the gate is already signed.
+
+**Previously missing:** the USER-MANUAL described the scope gate as something `/plan` drafts, but the skill had no such instruction.
 
 ### Accepted-RFC constraints honored throughout
 
@@ -82,46 +94,45 @@ PR 4 material-edit detection for `In-scope files`. Proposal: set-change semantic
 
 B. Back/cancel navigation, C. Error-message audit, D. TodoWrite integration, E. Per-phase `/status` detail.
 
-### Scope-ingest implementation checklist — remaining items (RFC §14)
+### V2 scope gate followup note (file before closing scope-ingest RFC)
 
-Completed: items 1–9 (OQ-SCOPE-1 resolution, schema, seed files, index, domain-expert skill, authoring flow, plan/SKILL.md wiring).
+New artifact class for scope gates deferred to v2. Before closing the scope-ingest RFC, file a followup note in `docs/rfcs/notes/` referencing the 3-item v2 checklist in RFC §6: (a) `scope_gate` entry in `env.json` artifact registry, (b) rename convention, (c) reconciler branch.
 
-Remaining:
-- [ ] Dry-run domain-expert + authoring against 3–5 past plan artifacts
-- [ ] Build `scope-ingest` agent (markdown + plain text first)
-- [ ] Add `scope-drafts/` to artifact tree
-- [ ] Write `templates/scope-gate.md`
-- [ ] Add scope gate check to `hooks/plan-gate.sh`
-- [ ] End-to-end dry-run
-- [ ] Documentation pass
+### Multi-team approval — rollout step 1 (not yet started)
+
+Accepted RFC at [`multi-team-approval.md`](../multi-team-approval.md). Step 1: ship `templates/sign-off-multi.md`, `hooks/approval-reconcile.sh`, and the `## Required sign-offs` gate-file convention. Each subsequent step gated on adoption of the previous.
 
 ---
 
 ## Recommended next-session start
 
-**Primary: dry-run domain-expert skill against past plan artifacts (checklist item 8).**
+**Primary: file the v2 scope gate followup note, then start multi-team approval rollout step 1.**
 
-Pick 3–5 plan artifacts from real projects. For each, simulate what domain-expert would inject: does the `## Domain context` block add signal without noise? Are the gap questions relevant? Does the match logic fire correctly?
-
-After dry-run validation:
-1. Build `scope-ingest` agent (markdown + plain text first)
-2. Add `scope-drafts/` to artifact tree
-3. Then scope gate template + hook
-
-Also outstanding (lower priority): OQ-1 in guided-entry RFC, resolve before PR 4 implementation begins.
-
-### V2 reminder
-
-New artifact class for scope gates is deferred to v2. Before closing out v1 of scope-ingest, file a followup note referencing the 3-item v2 checklist in RFC §6. Don't let it get lost.
+1. Write `docs/rfcs/notes/scope-gate-v2-followup.md` — 3-item checklist, trigger conditions, no-data-migration note. Closes the scope-ingest RFC cleanly.
+2. Resolve OQ-1 in guided-entry RFC (set-change semantics for `In-scope files`) — required before PR 4 begins.
+3. Start multi-team approval rollout step 1: `templates/sign-off-multi.md` (extends existing `sign-off.md` with `role`, `transport`, `req_id`, `gate_hash` fields) + `hooks/approval-reconcile.sh` (PreToolUse + Stop, warn-not-block) + `## Required sign-offs` gate convention.
 
 ---
 
 ## Commits this session
 
-- `ba39520` — resolve Pending A, write back scope-ingest conflicts
-- `725bda4` — promote scope-ingest discussion note to formal RFC
-- `a9a0528` — apply second-opinion review findings (8 findings)
-- *(current session commit pending — domain-expert skill + authoring flow + plan/SKILL.md wiring)*
+- `7ae9fd5` — refactor(domain-expert): replace keyword matching with LLM semantic judgment
+- `9a77962` — feat(plan): add scope gate creation step + docs pass for scope-ingest v1
+
+## Scope-ingest checklist — final state
+
+All items complete ✅:
+- OQ-SCOPE-1 resolution, schema, seed files
+- `domains/_index.json` v2 — semantic registry
+- `domains/auth.md` + `domains/payments.md` — seed files
+- `skills/domain-expert/SKILL.md` + `AUTHORING.md`
+- `skills/plan/SKILL.md` — Step 2.5 (domain-expert) + Step 4.5 (scope gate)
+- `agents/scope-ingest.md`
+- `templates/scope-gate.md`
+- `hooks/plan-gate.sh` — scope gate check
+- `docs/GLOSSARY.md` — 9 new terms
+- `scope-drafts/` in artifact tree (SDLC.md + README.md)
+- `docs/USER-MANUAL.md` — §7.8 re-validate scenario, domain authoring re-entry, semantic judgment note
 
 ## Conventions reinforced
 
@@ -135,4 +146,4 @@ New artifact class for scope gates is deferred to v2. Before closing out v1 of s
 
 1. Paste `_repo-context.md` first
 2. Paste this file second
-3. Start with dry-run validation of domain-expert skill
+3. Start with v2 scope gate followup note (one small file), then OQ-1, then multi-team approval rollout step 1
