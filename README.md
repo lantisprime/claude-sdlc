@@ -117,6 +117,35 @@ git clone https://github.com/lantisprime/claude-sdlc.git
 
 See [Claude Code's plugin docs](https://docs.claude.com/en/docs/claude-code/plugins) for the current install flow — plugin distribution is still evolving.
 
+## Quick start
+
+> For a detailed walkthrough with scenarios, prerequisites, and exact user inputs at each step, see [docs/USER-MANUAL.md](docs/USER-MANUAL.md).
+
+From inside a repo that has this plugin installed:
+
+**New users — start here:**
+```bash
+/start
+# auto-detects stack · creates .enabled · drafts scope + plan · hands off to /plan
+```
+
+**Experienced users — skip straight to plan:**
+```bash
+/plan "Add rate-limit headers to the public API"
+# writes .claude/sdlc/plans/<slug>.md — classification, scope, estimate, tech stack
+# human reviews + signs; plan-gate.sh now permits edits
+
+/analyze    # requirements with stable REQ IDs
+/design     # architecture + tech specs
+/build      # code + unit tests — scoped strictly to plan
+/test       # execution report, defects
+/deploy     # deployment record
+/support    # observability wiring
+/docs       # docs, traceability matrix, changelog
+```
+
+Each command refuses to run until the prior phase's gate file exists and is signed.
+
 ## Configure for your stack
 
 **First time?** Run `/start` — it auto-detects your repo, CI, stack, and tracker, then writes `config/tools.json` for you as part of opt-in activation. You don't need to run `/configure` separately unless you want to customise beyond what auto-detection provides.
@@ -209,35 +238,6 @@ skip — don't ask again this session
 **Project-level files take precedence.** Put your domain files in `domains/` at the repo root. They are merged with the plugin's built-in seeds; any file with the same slug as a plugin seed overrides it entirely.
 
 See [`skills/domain-expert/AUTHORING.md`](skills/domain-expert/AUTHORING.md) for the full authoring flow.
-
-## Quick start
-
-> For a detailed walkthrough with scenarios, prerequisites, and exact user inputs at each step, see [docs/USER-MANUAL.md](docs/USER-MANUAL.md).
-
-From inside a repo that has this plugin installed:
-
-**New users — start here:**
-```bash
-/start
-# auto-detects stack · creates .enabled · drafts scope + plan · hands off to /plan
-```
-
-**Experienced users — skip straight to plan:**
-```bash
-/plan "Add rate-limit headers to the public API"
-# writes .claude/sdlc/plans/<slug>.md — classification, scope, estimate, tech stack
-# human reviews + signs; plan-gate.sh now permits edits
-
-/analyze    # requirements with stable REQ IDs
-/design     # architecture + tech specs
-/build      # code + unit tests — scoped strictly to plan
-/test       # execution report, defects
-/deploy     # deployment record
-/support    # observability wiring
-/docs       # docs, traceability matrix, changelog
-```
-
-Each command refuses to run until the prior phase's gate file exists and is signed.
 
 ## What the plugin generates
 
