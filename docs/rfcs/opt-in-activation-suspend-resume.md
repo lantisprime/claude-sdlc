@@ -42,12 +42,29 @@ This RFC proposes four coordinated changes:
 
 | Principle | How this RFC upholds it |
 |---|---|
-| **Human in the lead** | Opt-in means the developer actively chooses enforcement. Re-enable reconciliation puts the human in control of whether suspension-period changes are acceptable — Claude summarizes, human decides. |
+| **Human in the lead** | Opt-in means the developer actively chooses enforcement. Re-enable reconciliation puts the human in control of whether suspension-period changes are acceptable — Claude summarizes, human decides. New REQ IDs are proposed, not written, until the human signs them in `/plan`. |
 | **Reduce cognitive load** | `/start` absorbs configure by auto-detecting repo, CI, stack, and tracker. 6 intake questions collapse to 1. The developer sees detected values as facts, not prompts. |
-| **Plan before code** | `plan-gate.sh` still hard-blocks edits once enabled. The opt-in model does not weaken this — it defers it to when the developer has chosen to engage. |
+| **Plan before code** | `plan-gate.sh` still hard-blocks edits once enabled. The opt-in model defers enforcement to when the developer chooses to engage — see §3.1 for the governance boundary statement. |
 | **Surgical edits** | Not affected by this RFC. |
-| **Work-item traceability** | REQ ID supersession on re-enable preserves traceability. Old REQ IDs are marked superseded, not deleted. The audit chain is unbroken. |
-| **Graceful degradation** | Passive mode (not enabled) is graceful degradation by design. Suspended mode preserves all state and surfaces the gap clearly at session start. |
+| **Work-item traceability** | REQ ID supersession on re-enable preserves traceability. Old REQ IDs remain active until the human explicitly signs a new one. The audit chain is unbroken. |
+| **Graceful degradation** | Passive mode (not enabled) is graceful degradation by design. Suspended mode preserves all state and surfaces the gap clearly at session start. `secret-scan.sh` runs regardless of activation state — credential safety is not gated on opt-in. |
+
+---
+
+### 3.1 Governance Posture Declaration
+
+This RFC changes the enforcement boundary. That change must be stated plainly.
+
+**Before this RFC:** installing the plugin activates SDLC enforcement immediately. `env-detect.sh` instructs Claude to invoke `/configure` before the developer's first task. `plan-gate.sh` blocks edits from the first session.
+
+**After this RFC:** enforcement begins only after the developer runs `/start`. A fresh install is passive — no hooks fire, no gates block.
+
+**This is an intentional product tradeoff for adoption**, not a governance relaxation. The following constraints ensure enforcement is not weakened where it matters:
+
+1. **Once enabled, enforcement is identical to the pre-RFC model.** No gate is removed. No block is relaxed. `plan-gate.sh` is as strict as before.
+2. **`secret-scan.sh` is always-on.** Credential scanning runs regardless of `.enabled` state. Secrets are a safety concern, not an SDLC ceremony.
+3. **Suspension is an auditable event, not an escape hatch.** It requires a stated reason, logs a window entry, and shows all active plans and unsigned gates before proceeding. The enforcement gap is always visible.
+4. **Re-enable restores full enforcement posture.** The human must sign a new REQ ID in `/plan` before the old one is retired. No phase is silently skipped on re-enable.
 
 ---
 
@@ -71,7 +88,17 @@ Every enforcement hook gains a one-liner guard immediately after `set -euo pipef
 [ -f ".claude/sdlc/.enabled" ] || exit 0
 ```
 
-This covers all 11 enforcement hooks. SessionStart hooks (`env-detect.sh`, `session-plan-check.sh`) have different logic — they show contextual messages rather than silently exiting.
+**Exception — `secret-scan.sh`:** this hook does **not** receive the `.enabled` guard. It runs on every `Edit`/`Write`/`MultiEdit` call regardless of activation state. A developer who hasn't opted in can still accidentally commit a secret; credential scanning is a safety baseline, not SDLC ceremony.
+
+**Suspended-state messaging:** hooks that are warn-type (exit 0, stderr output) should distinguish between "not yet enabled" and "suspended." When `.claude/sdlc/.suspended` exists, warn-type hooks emit a contextual line before exiting:
+
+```
+[SDLC] Workflow suspended — <check-name> check is paused.
+```
+
+This makes the enforcement gap visible rather than silent.
+
+SessionStart hooks (`env-detect.sh`, `session-plan-check.sh`) have different logic — they show contextual messages rather than silently exiting.
 
 ### 4.3 Session state matrix
 
@@ -223,16 +250,20 @@ Create `.claude/sdlc/plans/<slug>.md` with:
   Tracker: GitHub Issues → owner/my-app
 
   config/tools.json              → written
-  .claude/sdlc/scope.md          → created
-  .claude/sdlc/plans/login.md    → REQ-001 drafted
+  .claude/sdlc/scope.md          → created  [draft — review in /plan]
+  .claude/sdlc/plans/login.md    → REQ-001  [draft — review in /plan]
+    classification: new-build              [suggested]
+    estimate:       medium                 [suggested]
+    in-scope files: 3 heuristic matches    [suggested — confirm in /plan]
 
 Hooks now active:
   ✓ plan-gate        — blocks edits without a signed plan
-  ✓ secret-scan      — catches credentials before they're written
+  ✓ secret-scan      — catches credentials before they're written (always-on)
   ✓ diff-scope-check — warns if edits drift outside REQ-001 scope
   ✓ bash-safety      — flags destructive shell commands
 
 Next: review the plan below, then run /plan to sign it.
+All [draft] and [suggested] fields require your confirmation in /plan before they are authoritative.
 ```
 
 Plan displayed inline. Handoff to `/plan` for review and sign-off.
@@ -243,18 +274,37 @@ Plan displayed inline. Handoff to `/plan` for review and sign-off.
 
 ### 6.1 Suspend flow
 
-1. Check for in-flight work — warn if active unsigned gates exist:
+1. **Hard-block if not enabled:** if `.enabled` is absent, print `[SDLC] Workflow is not enabled — nothing to suspend.` and exit. Do not proceed.
+
+2. **Require a suspension reason** (hard-block if empty):
    ```
-   Warning: add-login-page has an unsigned build gate.
-   Suspending will pause enforcement but not clear this state.
+   Reason for suspension (required): _
+   ```
+
+3. **Show active plans and unsigned gates:**
+   ```
+   Active plans:
+     REQ-001  add-login-page  [build gate unsigned]
+     REQ-000  scope-setup     [signed — all phases complete]
+
+   Warning: REQ-001 has an unsigned build gate.
+   Suspending will pause enforcement. The gate remains open until you re-enable and complete it.
    Proceed? [Y/n]
    ```
-2. Run `suspend-snapshot.sh` — hash and encrypt governance artifacts
-3. Rename `.claude/sdlc/.enabled` → `.claude/sdlc/.suspended`
-4. Confirm:
+
+4. Run `suspend-snapshot.sh` — hash and encrypt governance artifacts.
+
+5. **Log suspension window entry** to `token-tracker.sh` (or append to `.claude/sdlc/.suspension-log.jsonl` if token-tracker is absent):
+   ```json
+   {"event": "suspend", "at": "2026-04-26T14:32:00Z", "reason": "<reason>", "active_plans": ["REQ-001"]}
    ```
-   [SDLC] Workflow suspended. Snapshot saved.
-   Run /start to re-enable.
+
+6. Rename `.claude/sdlc/.enabled` → `.claude/sdlc/.suspended`.
+
+7. Confirm:
+   ```
+   [SDLC] Workflow suspended. Snapshot saved. Enforcement paused.
+   Suspension logged. Run /start to re-enable.
    ```
 
 ### 6.2 Snapshot: what gets hashed
@@ -296,9 +346,24 @@ openssl enc -aes-256-cbc -pbkdf2 \
 ```
 
 **Key management:**
-- On first suspend: generate 32-byte random key, store as `suspension_key` in `config/tools.local.json` (already gitignored)
-- On subsequent suspends: reuse existing key
-- Fallback if `openssl` absent: warn developer, store plain manifest with a SHA-256 self-hash for basic tamper detection
+- On every suspend: generate a new 32-byte random key. Rotate unconditionally — never reuse a previous key.
+- Store the current key as `suspension_key` in `config/tools.local.json` (already gitignored). Overwrite any previous value.
+- Key expiry: if the stored key is older than 90 days (compare `suspended_at` in manifest), treat decryption as failed.
+- On decryption failure (expired key, missing key, or corrupted snapshot): fall back to plain-manifest mode. Display prominently:
+  ```
+  [SDLC] WARNING: Snapshot decryption failed. Tamper detection is degraded.
+  Proceeding with plain-manifest comparison only.
+  Continue with weakened integrity check? [Y/n]
+  ```
+  Hard-block if the developer enters `n`. Do not silently proceed.
+
+**Fallback if `openssl` absent:**
+```
+[SDLC] WARNING: openssl not found. Suspension snapshot will use plain SHA-256 manifest.
+Tamper detection is weaker — changes to governance files may go undetected.
+Continue with weakened integrity check? [Y/n]
+```
+Hard-block if the developer enters `n`. Never silently accept the weaker fallback.
 
 **Snapshot location:** `.claude/sdlc/.suspension-snapshot.enc`
 
@@ -322,13 +387,20 @@ Different path from fresh install — skips the config wizard entirely. Config a
 ### 7.2 Snapshot verification
 
 1. Read `suspension_key` from `config/tools.local.json`
-2. Decrypt `.suspension-snapshot.enc`
+2. Decrypt `.suspension-snapshot.enc` (apply key expiry and failure handling per §6.3)
 3. Recompute SHA-256 for every file in the manifest
 4. Classify differences:
-   - Governance artifact changed → reconciliation required
-   - In-scope source file changed → scope drift, noted
-   - File in manifest no longer exists → flagged
-   - New governance files not in manifest → flagged
+
+   | Change | Severity | Action |
+   |---|---|---|
+   | Governance artifact modified | High | Reconciliation required |
+   | Sign-off file removed | High | Reconciliation required — treat same as governance change |
+   | In-scope source: >20% size change OR >5 files changed | High | Escalate to reconciliation required |
+   | In-scope source: below threshold | Low | Scope drift note only |
+   | File in manifest no longer exists | High | Flagged — reconciliation required |
+   | New governance files not in manifest | High | Flagged — reconciliation required |
+
+   Removed sign-offs are governance changes. A missing sign-off file is not equivalent to a minor source edit — it means a previously approved gate was invalidated during the suspension window.
 
 ### 7.3 Re-examination
 
@@ -361,18 +433,25 @@ Changes summary:
 Are these changes acceptable? [Y/n]
 ```
 
-**If Y — REQ supersession:**
+**If Y — REQ supersession proposed (not written yet):**
 ```
-  REQ-001 marked superseded.
-  REQ-002 created → .claude/sdlc/plans/login-page.md
-    (Supersedes: REQ-001, amended after suspension 2026-04-26T14:55:00Z)
+  Proposed: supersede REQ-001 → REQ-002.
 
-  Workflow re-enabled. Run /plan to review and sign REQ-002.
+  REQ-001 remains active. REQ-002 has not been written.
+
+  To confirm:
+    1. Run /plan — Claude will draft REQ-002 for your review.
+    2. Sign REQ-002 in /plan as you would any new plan.
+    3. REQ-001 is marked superseded only after REQ-002 is signed.
+
+  Workflow re-enabled. Enforcement is active but plan-gate will
+  require a signed plan — sign REQ-002 in /plan before editing.
 ```
 
-- Old plan file: `Status: superseded` header added, file renamed to `login-page.v1.md`
-- New plan file: `login-page.md` with REQ-002, `Supersedes: REQ-001` field
-- Snapshot file deleted
+- Claude does **not** write the new plan file at this step. REQ-002 is created only when the developer runs `/plan` and signs it.
+- `/plan` receives the reconciliation context and pre-fills REQ-002 fields from REQ-001 + suspension diff.
+- On REQ-002 sign-off: old plan file gets `Status: superseded` header and is renamed `login-page.v1.md`. New `login-page.md` contains REQ-002 with `Supersedes: REQ-001` field.
+- Snapshot file deleted only after REQ-002 is signed.
 
 **If N:**
 ```
@@ -382,17 +461,19 @@ Are these changes acceptable? [Y/n]
 
 `.suspended` marker remains. Snapshot preserved.
 
-**No governance changes (source drift only):**
+**No governance changes (source drift below threshold):**
 ```
 [SDLC] Resuming after suspension — no governance changes detected.
 
-  Source files modified during suspension: 3
-  (scope drift noted — run /status to review)
+  Source files modified during suspension: 2  [below escalation threshold]
+  ⚠ Suspension drift pending review — run /status to see affected files.
 
   Workflow re-enabled.
 ```
 
 No new REQ ID. Resume from prior state. Snapshot deleted.
+
+`/status` surfaces `⚠ suspension drift pending review` as a sticky item until the developer explicitly acknowledges it. The drift does not block work, but it remains visible in every `/status` output until reviewed.
 
 ### 7.5 REQ ID supersession rules
 
@@ -421,7 +502,7 @@ No new REQ ID. Resume from prior state. Snapshot deleted.
 | `hooks/diff-scope-check.sh` | Enabled guard |
 | `hooks/adjacent-function-detector.sh` | Enabled guard |
 | `hooks/format-on-write.sh` | Enabled guard |
-| `hooks/secret-scan.sh` | Enabled guard |
+| `hooks/secret-scan.sh` | **No enabled guard** — always-on regardless of activation state |
 | `hooks/modified-code-test-gate.sh` | Enabled guard |
 | `hooks/phase-gate.sh` | Enabled guard |
 | `hooks/token-tracker.sh` | Enabled guard |
@@ -441,13 +522,13 @@ No new REQ ID. Resume from prior state. Snapshot deleted.
 
 ## 9. Open Questions
 
-1. **`secret-scan.sh` always-on?** There is an argument that credential scanning should be active regardless of the `.enabled` state — a developer who hasn't opted in can still accidentally commit a secret. Counter-argument: the opt-in model should be clean and symmetric. Deferred for a follow-up RFC.
+1. ~~**`secret-scan.sh` always-on?**~~ **Resolved:** `secret-scan.sh` is always-on. No `.enabled` guard. See §3.1 and §4.2.
 
-2. **`openssl` absence fallback.** The plain-manifest + self-hash fallback is weaker than AES-256. Should we require `openssl` and block suspend if absent, or accept the weaker fallback silently? Current proposal: warn clearly, proceed with weak fallback.
+2. ~~**`openssl` absence fallback.**~~ **Resolved:** weak fallback requires explicit `[Y/n]` confirmation. Never silently proceeds. Developer can hard-block by entering `n`. See §6.3.
 
-3. **Token tracker gap.** `token-tracker.sh` has no record of work done during suspension. Should suspend log a "suspension window" entry in the token log so the gap is visible? Low priority, noted here for completeness.
+3. ~~**Token tracker gap.**~~ **Resolved:** suspension logs a window entry to `token-tracker.sh` or `.suspension-log.jsonl`. Required, not optional. See §6.1.
 
-4. **Can `/suspend` be run before `/start`?** Currently meaningless — if `.enabled` doesn't exist, there's nothing to suspend. Proposal: if developer runs `/suspend` before `/start`, print "Workflow is not enabled — nothing to suspend." and exit.
+4. ~~**Can `/suspend` be run before `/start`?**~~ **Resolved:** `/suspend` hard-blocks if `.enabled` is absent. Error: `[SDLC] Workflow is not enabled — nothing to suspend.` See §6.1.
 
 5. **Re-examination depth.** The reconciliation summary is generated by Claude reading current artifacts. On large projects with many plan files this could be slow. Consider a file-count heuristic to warn the developer of expected wait time.
 
