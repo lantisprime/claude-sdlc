@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-- claude-sdlc is an opinionated gate-keeper for Claude Code: plan before edit, surgical scope, signed gates, local-first artifacts.
+- claude-sdlc is a governance layer around Claude Code: plan before edit, surgical scope, signed gates, local-first artifacts.
 - It fits enterprise environments because it produces a traceable paper trail and never advances without a human signature — not because it is a stepping stone to removing humans.
 - The human-in-the-lead rule is load-bearing. Experiments with automated gates belong in a separate project, not in the core plugin.
 - Concrete wins: plan-bounded edits reduce PR churn, token tracking surfaces expensive loops, gate files serve as audit evidence, and graceful degradation means zero new infrastructure is required to pilot it.
@@ -44,7 +44,7 @@ Four mechanisms, each tied to a specific repo feature.
 
 **Bounded token usage.** With `token_tracking.enabled: true` in `config/tools.json`, the Stop hook writes per-phase token counts to `token-log.json` and `token-history.jsonl`. The `/token-review` command surfaces phases with anomalous usage, which is typically the signature of a runaway fix-this-test loop. Teams can set internal budgets per phase and catch expensive patterns before they show up on an invoice.
 
-**Earlier catch of scope drift.** The Build skill is scoped to plan-listed files, and `diff-scope-check.sh` warns on out-of-scope edits. Catching drift at write-time rather than at PR-review-time avoids the most expensive category of rework: a nominally-approved change that turns out to touch three unrelated modules.
+**Earlier catch of scope drift.** The Build skill is scoped to plan-listed files, and `diff-scope-check.sh` warns on out-of-scope edits. Catching drift at write-time rather than at PR-review-time avoids a costly category of rework: a nominally-approved change that turns out to touch three unrelated modules.
 
 **No new infrastructure to adopt.** The plugin runs with no external dependencies. `env-detect.sh` probes for Git, CI, issue trackers, and MCP servers on session start, and whatever is absent degrades to local markdown. Teams can pilot claude-sdlc in a single repo without waiting on InfoSec approval for new services.
 

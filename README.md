@@ -1,7 +1,9 @@
 # SDLC Plugin for Claude Code
-An 8-phase SDLC gatekeeper that forces Claude Code to ask for your signature before writing a single line. Stop unprompted refactors and enforce traceablity.
+A governance layer for AI-assisted software delivery. Plan, scope, approve, build, test, release — with human sign-off at every gate.
 
 ## Why this exists
+
+claude-sdlc is a **governance layer for AI-assisted software delivery**. It wraps the coding agent and gates every phase of the SDLC: plan, scope, approve, build, test, release.
 
 Claude Code is fast. Sometimes too fast. This plugin trades a little velocity for a lot of discipline:
 
@@ -9,6 +11,16 @@ Claude Code is fast. Sometimes too fast. This plugin trades a little velocity fo
 - No file touched that isn't listed in the plan.
 - No phase advanced without a human signature.
 - No build merged without a traceable work item (REQ ID, ticket, or signed CR).
+
+It earns its place for teams that need to answer:
+
+- Was there an approved plan before code changed?
+- Was the change within scope?
+- Which requirement does this code satisfy?
+- Who signed off, and against what?
+- What changed after approval?
+
+Most AI coding tools help write code, or review it after. claude-sdlc controls the work *before* code is written, and traces it to release. **Who it's for:** teams shipping software under audit, regulation, or formal change control — financial services, healthcare, government, telco, regulated SaaS, internal enterprise platforms, and consulting delivery.
 
 If any of that sounds like friction you don't want — this plugin is not for you, and that's fine. Specifically, **don't use this plugin for**:
 
