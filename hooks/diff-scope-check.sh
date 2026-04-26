@@ -13,11 +13,16 @@ command -v git >/dev/null 2>&1 || exit 0
 
 PLANS=".claude/sdlc/plans"
 # Exclude versioned files (*.v1.md, *.v2.md, etc.) — scope check runs against the active plan only.
-PLAN=$(find "$PLANS" -maxdepth 1 -type f -name "*.md" ! -name "*.v[0-9]*.md" -printf "%T@ %p\n" 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2- || true)
+PLAN=$(find "$PLANS" -maxdepth 1 -type f -name "*.md" ! -name "*.v[0-9]*.md" 2>/dev/null \
+  | while IFS= read -r f; do
+      printf '%s\t%s\n' \
+        "$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null || echo 0)" "$f"
+    done \
+  | sort -rn | head -1 | cut -f2- || true)
 [ -z "${PLAN:-}" ] && exit 0
 
 # Extract in-scope files — lines under the "In-scope files" header, bullet-listed.
-IN_SCOPE=$(awk '/^##?\s*In-scope files/{flag=1; next} /^##? /{flag=0} flag && /^[-*]/{gsub(/^[-*] +/,""); print}' "$PLAN" | tr -d '`' | awk '{print $1}')
+IN_SCOPE=$(awk '/^##?[[:space:]]*In-scope files/{flag=1; next} /^##?[[:space:]]/{flag=0} flag && /^[-*]/{gsub(/^[-*] +/,""); print}' "$PLAN" | tr -d '`' | awk '{print $1}')
 
 CHANGED=$(git diff --name-only 2>/dev/null; git diff --cached --name-only 2>/dev/null)
 CHANGED=$(echo "$CHANGED" | sort -u | grep -v '^\.claude/sdlc/' || true)

@@ -34,7 +34,6 @@ teardown() {
 }
 
 @test "@integration: passes when modified file is in plan scope" {
-  if [[ "$(uname)" == "Darwin" ]]; then skip "find -printf not supported on macOS"; fi
   sdlc_workspace "$TEST_DIR"
   enable_workflow "$TEST_DIR"
   add_active_plan "$TEST_DIR"
@@ -49,7 +48,6 @@ teardown() {
 }
 
 @test "@integration: warns when modified file is not in plan scope" {
-  if [[ "$(uname)" == "Darwin" ]]; then skip "find -printf not supported on macOS"; fi
   sdlc_workspace "$TEST_DIR"
   enable_workflow "$TEST_DIR"
   add_active_plan "$TEST_DIR"

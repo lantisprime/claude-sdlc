@@ -31,8 +31,7 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
-@test "passes when plan has Classification: new-build [linux]" {
-  if [[ "$(uname)" == "Darwin" ]]; then skip "find -printf not supported on macOS"; fi
+@test "passes when plan has Classification: new-build" {
   sdlc_workspace "$TEST_DIR"
   enable_workflow "$TEST_DIR"
   add_active_plan "$TEST_DIR"
@@ -40,8 +39,7 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
-@test "blocks when plan missing Classification [linux]" {
-  if [[ "$(uname)" == "Darwin" ]]; then skip "find -printf not supported on macOS"; fi
+@test "blocks when plan missing Classification" {
   sdlc_workspace "$TEST_DIR"
   enable_workflow "$TEST_DIR"
   add_plan_no_classification "$TEST_DIR"
@@ -50,8 +48,7 @@ teardown() {
   [[ "$output" =~ "BLOCK" ]]
 }
 
-@test "blocks CR plan when sign-off file is absent [linux]" {
-  if [[ "$(uname)" == "Darwin" ]]; then skip "find -printf not supported on macOS"; fi
+@test "blocks CR plan when sign-off file is absent" {
   sdlc_workspace "$TEST_DIR"
   enable_workflow "$TEST_DIR"
   add_cr_plan "$TEST_DIR"
@@ -60,8 +57,7 @@ teardown() {
   [[ "$output" =~ "BLOCK" ]]
 }
 
-@test "passes CR plan when sign-off file exists [linux]" {
-  if [[ "$(uname)" == "Darwin" ]]; then skip "find -printf not supported on macOS"; fi
+@test "passes CR plan when sign-off file exists" {
   sdlc_workspace "$TEST_DIR"
   enable_workflow "$TEST_DIR"
   add_cr_plan "$TEST_DIR"

@@ -13,10 +13,15 @@ command -v git >/dev/null 2>&1 || exit 0
 [ -d .git ] || exit 0
 
 PLANS=".claude/sdlc/plans"
-PLAN=$(find "$PLANS" -type f -name "*.md" -printf "%T@ %p\n" 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2- || true)
+PLAN=$(find "$PLANS" -type f -name "*.md" 2>/dev/null \
+  | while IFS= read -r f; do
+      printf '%s\t%s\n' \
+        "$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null || echo 0)" "$f"
+    done \
+  | sort -rn | head -1 | cut -f2- || true)
 [ -z "${PLAN:-}" ] && exit 0
 
-IN_SCOPE_FNS=$(awk '/^##?\s*In-scope functions/{flag=1; next} /^##? /{flag=0} flag && /^[-*]/{gsub(/^[-*] +/,""); print}' "$PLAN" | tr -d '`')
+IN_SCOPE_FNS=$(awk '/^##?[[:space:]]*In-scope functions/{flag=1; next} /^##?[[:space:]]/{flag=0} flag && /^[-*]/{gsub(/^[-*] +/,""); print}' "$PLAN" | tr -d '`')
 
 # Parse @@ ... @@ hunk headers — the trailing context usually names the function.
 MODIFIED_FNS=$(git diff -U0 --function-context 2>/dev/null \

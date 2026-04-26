@@ -8,7 +8,12 @@ PLANS=".claude/sdlc/plans"
 [ -d "$PLANS" ] || exit 0
 
 # Find the most recently modified plan file.
-PLAN=$(find "$PLANS" -type f -name "*.md" -printf "%T@ %p\n" 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2- || true)
+PLAN=$(find "$PLANS" -type f -name "*.md" 2>/dev/null \
+  | while IFS= read -r f; do
+      printf '%s\t%s\n' \
+        "$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null || echo 0)" "$f"
+    done \
+  | sort -rn | head -1 | cut -f2- || true)
 [ -z "${PLAN:-}" ] && exit 0
 
 # Classification line must exist.
