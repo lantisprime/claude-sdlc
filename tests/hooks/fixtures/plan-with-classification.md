@@ -1,7 +1,6 @@
 # Plan: test-task
 
-- **Classification:** new-build
-- **Status:** active
+Classification: new-build
 
 ## In-scope files
 - src/foo.js

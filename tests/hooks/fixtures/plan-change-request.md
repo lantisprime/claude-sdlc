@@ -1,8 +1,7 @@
 # Plan: cr-task
 
-- **Classification:** change-request
-- **Status:** active
-- **CR Reference:** CR-001
+Classification: change-request
+CR Reference: CR-001
 
 ## In-scope files
 - src/foo.js
