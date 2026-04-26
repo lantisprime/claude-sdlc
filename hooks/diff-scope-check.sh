@@ -2,6 +2,10 @@
 # diff-scope-check.sh — PostToolUse hook for Edit/Write.
 # Compares git diff against the plan's In-scope files list.
 set -euo pipefail
+if [ -f ".claude/sdlc/.suspended" ]; then
+  echo "[SDLC] Workflow suspended — diff-scope check is paused." >&2
+  exit 0
+fi
 [ -f ".claude/sdlc/.enabled" ] || exit 0
 
 command -v git >/dev/null 2>&1 || exit 0

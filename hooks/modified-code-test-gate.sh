@@ -2,6 +2,10 @@
 # modified-code-test-gate.sh — Stop hook.
 # Warns if modified functions don't have a corresponding test update in the same session.
 set -euo pipefail
+if [ -f ".claude/sdlc/.suspended" ]; then
+  echo "[SDLC] Workflow suspended — modified-code-test check is paused." >&2
+  exit 0
+fi
 [ -f ".claude/sdlc/.enabled" ] || exit 0
 
 command -v git >/dev/null 2>&1 || exit 0

@@ -7,6 +7,10 @@
 # Always exits 0 (warn, never block — per RFC §3.3).
 
 set -euo pipefail
+if [ -f ".claude/sdlc/.suspended" ]; then
+  echo "[SDLC] Workflow suspended — approval-reconcile check is paused." >&2
+  exit 0
+fi
 [ -f ".claude/sdlc/.enabled" ] || exit 0
 
 GATES_DIR=".claude/sdlc/gates"

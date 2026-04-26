@@ -3,6 +3,10 @@
 # Uses `git diff` function-context hunk headers to detect modified functions.
 # Flags functions not declared in the plan's "In-scope functions" list.
 set -euo pipefail
+if [ -f ".claude/sdlc/.suspended" ]; then
+  echo "[SDLC] Workflow suspended — adjacent-function check is paused." >&2
+  exit 0
+fi
 [ -f ".claude/sdlc/.enabled" ] || exit 0
 
 command -v git >/dev/null 2>&1 || exit 0

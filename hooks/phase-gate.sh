@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # phase-gate.sh — Stop hook. Reminds the user that ending a phase requires a gate file.
 set -euo pipefail
+if [ -f ".claude/sdlc/.suspended" ]; then
+  echo "[SDLC] Workflow suspended — phase-gate check is paused." >&2
+  exit 0
+fi
 [ -f ".claude/sdlc/.enabled" ] || exit 0
 
 GATES=".claude/sdlc/gates"

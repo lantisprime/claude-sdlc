@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # format-on-write.sh — PostToolUse hook. Runs the configured formatter.
 set -euo pipefail
+if [ -f ".claude/sdlc/.suspended" ]; then
+  echo "[SDLC] Workflow suspended — format-on-write check is paused." >&2
+  exit 0
+fi
 [ -f ".claude/sdlc/.enabled" ] || exit 0
 
 CONFIG="config/tools.json"

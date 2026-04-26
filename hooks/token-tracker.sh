@@ -11,6 +11,10 @@
 # missing, when the transcript cannot be resolved, or when no usage entries
 # are found.
 set -euo pipefail
+if [ -f ".claude/sdlc/.suspended" ]; then
+  echo "[SDLC] Workflow suspended — token-tracker check is paused." >&2
+  exit 0
+fi
 [ -f ".claude/sdlc/.enabled" ] || exit 0
 
 command -v jq >/dev/null 2>&1 || exit 0
