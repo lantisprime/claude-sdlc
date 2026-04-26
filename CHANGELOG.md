@@ -2,6 +2,27 @@
 
 All notable changes to claude-sdlc are documented here.
 
+## [1.1.0] — 2026-04-26
+
+### Bug fixes
+
+- **`find -printf` portability** ([#7](https://github.com/lantisprime/claude-sdlc/issues/7)) — `hooks/adjacent-function-detector.sh`, `hooks/diff-scope-check.sh`, and `hooks/work-item-validation.sh` used `find -printf "%T@ %p\n"` to sort plan files by mtime. `-printf` is a GNU find extension not available on macOS BSD find. Replaced with a portable `stat -f %m` (BSD) / `stat -c %Y` (GNU) fallback loop.
+- **`awk \s` not supported on macOS nawk** ([#11](https://github.com/lantisprime/claude-sdlc/issues/11)) — `diff-scope-check.sh` and `adjacent-function-detector.sh` used `\s` in awk regex patterns to match the header whitespace in `## In-scope files` / `## In-scope functions`. macOS ships BWK/nawk, which treats `\s` as a literal character, so `IN_SCOPE` and `IN_SCOPE_FNS` were always empty on macOS — every file and function triggered a false warning. Replaced with POSIX `[[:space:]]`.
+- **`adjacent-function-detector.sh` pipefail on empty diff** ([#8](https://github.com/lantisprime/claude-sdlc/issues/8)) — `grep` exited 1 when `git diff` produced no output, killing the script via `pipefail` before the empty-check guard. Added `|| true`.
+
+### Tests
+
+- **Automated test suite added** — 58 bats-core tests covering all hooks (unit + integration). Closes the gap noted in `CLAUDE.md`. CI runs on Ubuntu via GitHub Actions.
+- **Test fixture format fixed** ([#9](https://github.com/lantisprime/claude-sdlc/issues/9)) — fixtures used markdown-bold `**Classification:**` syntax; hook regex expected plain `Classification:`. Fixed fixture files.
+- **Integration test setup fixed** ([#10](https://github.com/lantisprime/claude-sdlc/issues/10)) — missing `mkdir -p src/` before writing test files caused integration tests to pass vacuously. Fixed.
+
+### Documentation
+
+- **Prerequisites section added to README** — new section above Install covering Claude Code (required; plugin has no standalone runtime), bash (Windows: Git Bash or WSL2), and Git (recommended for scope/diff hooks).
+- **User Manual prerequisites updated** — section 1 now includes a Windows platform note and expanded Claude Code and bash rows.
+
+---
+
 ## [1.0.0] — 2026-04-26
 
 Initial public release. claude-sdlc is a governance layer for AI-assisted software delivery — an 8-phase SDLC workflow with human sign-off at every gate, plan-before-code enforcement, surgical-edit discipline, and full work-item traceability.
