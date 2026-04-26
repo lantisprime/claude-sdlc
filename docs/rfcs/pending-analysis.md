@@ -149,6 +149,45 @@ No direct conflict. The challenge is operational (sync model) and scope (how muc
 
 ---
 
+## 4. `secret-scan.sh` — always-on or opt-in?
+
+> **Raised by:** `docs/rfcs/opt-in-activation-suspend-resume.md` §9, OQ-1
+
+### Problem
+
+The opt-in activation RFC gates all enforcement hooks behind a `.claude/sdlc/.enabled` marker. A developer who hasn't run `/start` gets no blocking, no warnings — the plugin is invisible. This is the intended default.
+
+`secret-scan.sh` is an enforcement hook on `PostToolUse Edit|Write|MultiEdit`. Under the RFC it would be silenced until the developer opts in. A developer who installs the plugin but never runs `/start` could accidentally commit credentials, and the hook would not fire.
+
+The question is whether credential scanning is a governance feature (opt-in, like the rest) or a safety feature (always-on, independent of plugin state).
+
+### Tension with core principles
+
+| Principle | Tension |
+|---|---|
+| 1. Human in the lead | Aligned either way — opt-in was a human choice |
+| 2. Reduce cognitive load | **Tension (always-on).** If the hook fires when the developer thought the plugin was inactive, it's surprising. |
+| 5. Work-item traceability | Neutral |
+| 6. Graceful degradation | **Aligned (always-on).** Catching a secret is strictly safer than not catching it. |
+
+Opt-in model principle: the RFC's stated goal is that an unactivated plugin is *invisible*. An always-on `secret-scan.sh` breaks that contract. But credential exposure is a different category of harm than scope drift or missing plans.
+
+### Options considered
+
+| Option | Description | Consistency | Safety |
+|---|---|---|---|
+| A | Opt-in (symmetric with all other hooks) — `secret-scan.sh` gets the enabled guard, fires only after `/start` | Fully consistent with RFC model | Developer unprotected until opt-in |
+| B | Always-on — `secret-scan.sh` does not get the enabled guard, fires regardless of activation state | Exception to the opt-in contract | Developer protected from day 1 |
+| C | Warn-only always-on — `secret-scan.sh` always fires but only warns (stderr, exit 0) when not enabled; blocks (exit 2) only when enabled | Partial exception; softer surprise | Protected but not blocked |
+
+### Next steps
+
+1. Decide the framing: is secret scanning a governance feature or a safety baseline? The answer drives the option.
+2. If Option B or C: document the exception explicitly in `hooks/hooks.json` and `CLAUDE.md` so future contributors don't "fix" it back to opt-in.
+3. If Option A: add a note to the install docs that the secret scan is inactive until `/start` is run.
+
+---
+
 ## Summary: alignment with core principles
 
 | Item | Conflicts with a core principle? | Risk |
@@ -156,12 +195,13 @@ No direct conflict. The challenge is operational (sync model) and scope (how muc
 | 1. Spike bypass | Yes — Plan-before-code (#3), Traceability (#5); Tension with Cognitive load (#2) for Option B | High. `CLAUDE.md` constrains the design space — see item 1. |
 | 2. Pre-plan brainstorm | No direct conflict. Cognitive load (#2) actively favors resolution. | Low. Safest item of the three. |
 | 3. Multi-team approval | No direct conflict — aligns with traceability (#5) and cognitive load (#2). Operational challenges only. Accepted RFC: [multi-team-approval.md](./multi-team-approval.md). | Medium. Over-design risk if scoped too broadly. |
+| 4. secret-scan always-on | Tension — opt-in contract (RFC model) vs. safety baseline (graceful degradation #6). | Low-medium. Decision is binary; consequence of the wrong choice is either a surprising hook fire or an unprotected developer. |
 
 ---
 
 ## Process for items on this page
 
-- **Status today:** items 1 and 2 are open. Item 3 (multi-team approval) is closed — accepted RFC at [multi-team-approval.md](./multi-team-approval.md).
+- **Status today:** items 1, 2, and 4 are open. Item 3 (multi-team approval) is closed — accepted RFC at [multi-team-approval.md](./multi-team-approval.md).
 - **When an item is ready to decide,** it moves into a short RFC-style write-up (a new file under `docs/rfcs/`) with a single recommended option and a sign-off.
 - **When an item is decided,** this page is updated with the decision + a link to the implementation work.
 - **When an item is rejected,** the rejection and its reason stay on this page — a rejected item is still useful context for future contributors.

@@ -135,6 +135,14 @@
       "update_triggers": []
     },
     {
+      "path": "docs/rfcs/opt-in-activation-suspend-resume.md",
+      "title": "Opt-in Activation, Suspend/Resume RFC",
+      "status": "draft",
+      "role": "rfc",
+      "description": "Opt-in activation model (.enabled marker with hook guards), enhanced /start absorbing configure wizard (auto-detect repo/CI/stack/tracker), /suspend with SHA-256 + AES-256 encrypted snapshot, re-enable reconciliation with REQ ID supersession.",
+      "update_triggers": []
+    },
+    {
       "path": "docs/rfcs/pending-analysis.md",
       "title": "Pending Analysis",
       "status": "active",
@@ -192,6 +200,21 @@
       "implemented": [
         "docs/SDLC.md",
         "docs/USER-MANUAL.md",
+        "docs/ideas/capabilities.md",
+        "docs/rfcs/notes/README.md"
+      ]
+    },
+    "docs/rfcs/opt-in-activation-suspend-resume": {
+      "rfc_status": "draft",
+      "accepted": [
+        "docs/rfcs/pending-analysis.md",
+        "docs/rfcs/notes/README.md",
+        "docs/ideas/capabilities.md"
+      ],
+      "implemented": [
+        "docs/SDLC.md",
+        "docs/USER-MANUAL.md",
+        "docs/GLOSSARY.md",
         "docs/ideas/capabilities.md",
         "docs/rfcs/notes/README.md"
       ]

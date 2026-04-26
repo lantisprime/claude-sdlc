@@ -3,7 +3,7 @@
 > **Purpose.** Paste or reference this file at the start of any new conversation about the repo so the assistant has accurate grounding without re-fetching everything. Keep it short and current. If a fact drifts, fix it here first.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-25 (PR #1 merged — guided-entry RFC accepted)
+**Last updated:** 2026-04-26 (RFC drafted — opt-in activation + suspend/resume)
 
 ---
 
@@ -37,10 +37,10 @@ Each phase writes a gate file at `.claude/sdlc/gates/<phase>-<slug>.md`. The nex
 
 ## Current capability counts
 
-- **Commands:** 11 (8 phase + `/review` + `/fix-fast` + `/token-review`)
+- **Commands:** 12 (8 phase + `/review` + `/fix-fast` + `/token-review` + `/suspend`)
 - **Skills:** 14 (8 phase + 6 cross-cutting: `scoping`, `surgical-edit`, `minimal-code`, `security-review`, `api-integration`, `gate-signoff`)
 - **Agents:** 4 (`architect`, `test-designer`, `security-reviewer`, `observability`) — bounded write scope, propose-only
-- **Hooks:** 10 registered in `hooks/hooks.json` (+ optional `token-tracker.sh`)
+- **Hooks:** 10 registered in `hooks/hooks.json` (+ optional `token-tracker.sh`; + `suspend-snapshot.sh` planned per opt-in RFC)
 - **Templates:** 10
 
 ## Hook severity model
@@ -111,6 +111,8 @@ Frontend tasks halt in Phase 2 until some UX artifact exists at `.claude/sdlc/ar
 ## Draft RFCs (not yet PR'd)
 
 - **Scope ingest + domain expert** — `docs/rfcs/scope-ingest.md` (promoted 2026-04-25, second-opinion review applied). Proposes `scope-ingest` agent + `domain-expert` skill hanging off `/plan`. All conflicts and open questions resolved. OQ-SCOPE-1 resolved: pseudo-phase gate for v1; new artifact class deferred to v2 (trigger: post-ship operator confusion or reconciler divergence). Implementation checklist unblocked — start with `domains/_schema.md` + seed files.
+
+- **Opt-in activation, suspend/resume** — `docs/rfcs/opt-in-activation-suspend-resume.md` (drafted 2026-04-26). Proposes: opt-in `.enabled` marker with hook guards across all 11 enforcement hooks; enhanced `/start` absorbing configure wizard (auto-detect repo/CI/stack/tracker, max 2 prompts); `/suspend` command with SHA-256 + AES-256 encrypted governance snapshot; re-enable reconciliation flow (Claude re-examines plans, summarises changes, generates new REQ ID to supersede old on acceptance). OQ-1 open: whether `secret-scan.sh` should remain always-on regardless of enabled state (tracked in `pending-analysis.md` item 4).
 
 ## Anti-patterns the repo explicitly guards against
 

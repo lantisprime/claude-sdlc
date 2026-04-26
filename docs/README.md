@@ -23,7 +23,8 @@ This file is the authoritative index for everything under `docs/`. Its primary j
 | [rfcs/scope-ingest.md](rfcs/scope-ingest.md) | Scope Ingest & Domain Expert RFC | implemented | rfc | Defines scope-ingest agent and domain-expert skill; all checklist items complete |
 | [rfcs/multi-team-approval.md](rfcs/multi-team-approval.md) | Multi-team Approval RFC | implemented | rfc | All 5 steps shipped: approval-reconcile.sh, sign-off-multi.md, Required sign-offs block, APPROVALS.md, network-share sync (tier 1), git transport (tier 2), MCP connector stub (tier 3) |
 | [rfcs/guided-entry-session-resume-multi-role.md](rfcs/guided-entry-session-resume-multi-role.md) | Guided Entry, Session Resume, Multi-role RFC | implemented | rfc | All 10 PRs shipped: /status, /start, session hook, plan versioning, /configure, /help + glossary, approval-packet, next-hints, docs sync |
-| [rfcs/pending-analysis.md](rfcs/pending-analysis.md) | Pending Analysis | active | tracker | Open design questions: items 1–2 open (deferred), item 3 closed/accepted |
+| [rfcs/opt-in-activation-suspend-resume.md](rfcs/opt-in-activation-suspend-resume.md) | Opt-in Activation, Suspend/Resume RFC | draft | rfc | Opt-in activation model (.enabled marker), enhanced /start absorbing configure wizard, /suspend with SHA-256 + AES-256 snapshot, re-enable reconciliation with REQ ID supersession |
+| [rfcs/pending-analysis.md](rfcs/pending-analysis.md) | Pending Analysis | active | tracker | Open design questions: items 1–2 open (deferred), item 3 closed/accepted, item 4 open (secret-scan always-on) |
 | [rfcs/notes/README.md](rfcs/notes/README.md) | RFC Notes Index | active | notes-index | Index and naming conventions for all RFC companion notes in this directory |
 
 ---
@@ -85,6 +86,7 @@ Derived from `_index.json` update_triggers. A stale `implemented` column against
 | [rfcs/scope-ingest.md](rfcs/scope-ingest.md) | **implemented** | GLOSSARY.md, rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
 | [rfcs/multi-team-approval.md](rfcs/multi-team-approval.md) | **implemented** (all 5 steps shipped) | GLOSSARY.md, rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, claude-sdlc-enterprise-adoption.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
 | [rfcs/guided-entry-session-resume-multi-role.md](rfcs/guided-entry-session-resume-multi-role.md) | **implemented** | rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
+| [rfcs/opt-in-activation-suspend-resume.md](rfcs/opt-in-activation-suspend-resume.md) | **draft** | rfcs/pending-analysis.md, rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
 
 ---
 
