@@ -34,12 +34,14 @@ For the concise overview, read [README.md](../README.md). For the authoritative 
 
 **These must exist before the plugin can be useful. Without them, either the plugin refuses to advance a phase or it degrades to local-only artifacts.**
 
+> **Platform note:** macOS and Linux users have everything they need from a standard install. **Windows users** must run Claude Code inside [Git Bash](https://git-scm.com/downloads) (included with Git for Windows) or WSL2 — the hooks are bash scripts and will not run in cmd or PowerShell.
+
 ### Hard prerequisites (plugin will not work without these)
 
 | Requirement | Why | How to check |
 |---|---|---|
-| Claude Code installed | The plugin is a Claude Code plugin — it has no standalone runtime | `claude --version` |
-| POSIX shell + `bash` | All 10 hooks are bash scripts | `bash --version` |
+| Claude Code installed | The plugin is a Claude Code plugin — it has no standalone runtime; all commands, skills, and hooks run inside a Claude Code session | `claude --version` |
+| POSIX shell + `bash` | All hooks are bash scripts. **Windows:** use Git Bash or WSL2. | `bash --version` |
 | The plugin loaded in your repo | Via `/plugin` — see [README install section](../README.md#install) | `/plugin list` inside Claude Code |
 | `.claude/sdlc/scope.md` **or** willingness to point at source material | Phase 1 (`/plan`) validates against it. On first run, the [`scope-ingest`](../agents/scope-ingest.md) agent turns a README, brief, or `.md`/`.txt` source into a draft for you to review, promote, and sign. Fallback: type a one-paragraph statement in chat. | `cat .claude/sdlc/scope.md` |
 | `config/tools.json` exists (copy of `tools.example.json`) | Every skill and hook reads tool commands from here; missing file means no formatter/linter/tests run | `ls config/tools.json` |

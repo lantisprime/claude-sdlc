@@ -106,6 +106,16 @@ flowchart TB
 
 Commands load skills, skills delegate to bounded subagents and write artifacts shaped by templates. Hooks intercept every tool call — blocking on severe issues, warning otherwise — and parse the artifacts back on later calls. `config/tools.json` keeps the plugin stack-agnostic.
 
+## Prerequisites
+
+This plugin runs inside Claude Code — it has no standalone runtime.
+
+| Requirement | Notes |
+|---|---|
+| **Claude Code** | Required. [Install Claude Code](https://docs.anthropic.com/en/docs/claude-code). All commands, skills, and hooks run inside a Claude Code session. |
+| **Bash** | macOS and Linux: built-in. **Windows:** [Git Bash](https://git-scm.com/downloads) (included with Git for Windows) or WSL2 — all hooks are bash scripts and will not run in cmd or PowerShell. |
+| **Git** _(recommended)_ | Required for scope-check and diff hooks. The plugin degrades gracefully without it, but file-scope and function-scope enforcement is skipped. |
+
 ## Install
 
 Clone the repo and install as a local plugin:
