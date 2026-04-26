@@ -8,11 +8,11 @@ claude-sdlc is a **governance layer for AI-assisted software delivery**. It wrap
 Claude Code is fast. Sometimes too fast. This plugin trades a little velocity for a lot of discipline:
 
 - No code written before a plan exists.
-- No file touched that isn't listed in the plan.
+- No file touched that is not listed in the plan.
 - No phase advanced without a human signature.
 - No build merged without a traceable work item (REQ ID, ticket, or signed CR).
 
-It earns its place for teams that need to answer:
+It serves teams that need to answer:
 
 - Was there an approved plan before code changed?
 - Was the change within scope?
@@ -20,18 +20,18 @@ It earns its place for teams that need to answer:
 - Who signed off, and against what?
 - What changed after approval?
 
-Most AI coding tools help write code, or review it after. claude-sdlc controls the work *before* code is written, and traces it to release. **Who it's for:** teams shipping software under audit, regulation, or formal change control — financial services, healthcare, government, telco, regulated SaaS, internal enterprise platforms, and consulting delivery.
+Most AI coding tools help write code, or review it after. claude-sdlc controls the work *before* code is written, and traces it to release. **Who it's for:** teams shipping software under audit, regulation, or formal change control — financial services, healthcare, government, telecommunications, regulated SaaS, internal enterprise platforms, and consulting delivery.
 
-If any of that sounds like friction you don't want — this plugin is not for you, and that's fine. Specifically, **don't use this plugin for**:
+If any of that adds friction you would rather avoid, this plugin is not for you. Specifically, **do not use this plugin for**:
 
 - Spikes, prototypes, or exploratory work you plan to throw away
 - Solo-developer or early-stage-startup work optimizing for speed over traceability
-- Research and prototyping where iteration speed is the whole point
-- Tasks where no clear requirements exist yet (you'll hit Phase 2's halt repeatedly)
+- Research and prototyping where iteration speed is the primary goal
+- Tasks where no clear requirements exist yet (Phase 2 will halt repeatedly)
 
 See [docs/when-not-to-use.md](docs/when-not-to-use.md) for the full list.
 
-For how this fits an enterprise engineering org — role shifts, cost mechanics, audit evidence, and what stays human-in-the-lead — see [docs/claude-sdlc-enterprise-adoption.md](docs/claude-sdlc-enterprise-adoption.md).
+For how this fits an enterprise engineering organization — role shifts, cost mechanics, audit evidence, and what stays human-in-the-lead — see [docs/claude-sdlc-enterprise-adoption.md](docs/claude-sdlc-enterprise-adoption.md).
 
 ## Core principles
 
