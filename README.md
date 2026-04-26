@@ -111,6 +111,10 @@ Commands load skills, skills delegate to bounded subagents and write artifacts s
 Clone the repo and install as a local plugin:
 
 ```bash
+# pin to the latest stable release (recommended)
+git clone --branch v1.0.0 https://github.com/lantisprime/claude-sdlc.git
+
+# or clone main for the latest unreleased changes
 git clone https://github.com/lantisprime/claude-sdlc.git
 # then, from your project repo, load it via Claude Code's /plugin command
 ```
