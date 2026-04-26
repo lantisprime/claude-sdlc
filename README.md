@@ -35,12 +35,12 @@ For how this fits an enterprise engineering organization — role shifts, cost m
 
 ## Core principles
 
-These are load-bearing. The plugin is built around them; changes that violate them usually feel like simplifications but aren't.
+Each principle below is essential. The plugin is built around them; changes that violate them usually feel like simplifications but aren't.
 
 1. **Human in the lead, always.** Subagents and hooks never advance a phase on their own.
-2. **Reduce cognitive load.** Artifacts, prompts, and gate summaries surface the essential signal, not everything knowable. Every new field, hook output, or subagent earns its place by shrinking what the human must hold in their head.
+2. **Reduce cognitive load.** Artifacts, prompts, and gate summaries surface the essential signal, not everything knowable. Every new field, hook output, or subagent must justify itself by shrinking what the human must hold in their head.
 3. **Plan before code.** `plan-gate.sh` blocks `Edit`/`Write` when no plan exists for the task.
-4. **Surgical edits.** Only plan-listed files and functions are modified. Adjacent functions are never touched. "While I'm here" cleanups are a footgun.
+4. **Surgical edits.** Only plan-listed files and functions are modified. Adjacent functions are never touched. "While I'm here" cleanups are a known failure mode.
 5. **Work-item traceability.** Every build references a REQ ID (new work), a ticket (bug), or a signed change request (scope change).
 6. **Graceful degradation.** No Git? No ticket system? No observability platform? The plugin writes local markdown/JSON artifacts and surfaces the gap. It never silently skips a check.
 7. **Stack-agnostic.** Formatter, linter, test runner, scanners — all live in `config/tools.json`. Nothing is hardcoded.
@@ -175,7 +175,7 @@ Per the *graceful degradation* principle, the plugin never silently skips a chec
 | **Development-time APIs** | `api-integration` warns and offers to scaffold a mock (MSW / Prism / WireMock / typed fixture) — never silently stubs. |
 | **MCP servers (none wired)** | Each MCP-routed system falls to its next tier — Jira → local ticket, Grafana → local markdown, Figma → human-provided link or local UX artifact. |
 
-> **Sharp edge:** Frontend tasks halt until a UX artifact exists — but any form works (Figma, PDF, screenshots, wireframes, or a written description). This is the only place the plugin blocks on missing external inputs. Everything else degrades to local files. **Backend-only tasks skip the UX track entirely** — no halt in Phase 2, no UX conformance in Phase 5.
+> **One hard rule:** Frontend tasks halt until a UX artifact exists — but any form works (Figma, PDF, screenshots, wireframes, or a written description). This is the only place the plugin blocks on missing external inputs. Everything else degrades to local files. **Backend-only tasks skip the UX track entirely** — no halt in Phase 2, no UX conformance in Phase 5.
 
 ## Scope setup
 
@@ -241,7 +241,7 @@ Each command refuses to run until the prior phase's gate file exists and is sign
 
 ## What the plugin generates
 
-To be clear about what Claude actually produces as you move through the phases — **this plugin generates code and tests, not just documentation**:
+What Claude actually produces as you move through the phases — **this plugin generates code and tests, not just documentation**:
 
 | Artifact | Phase | Produced by | Where it lands |
 |---|---|---|---|
@@ -324,7 +324,7 @@ Paste the URL of the REQ / ticket / CR you're approving against, or
 type `no ticket REQ-<n>, …` for degraded mode.
 ```
 
-You paste e.g. `https://linear.app/acme/issue/PROJ-1234`. Claude writes the gate file with your raw acknowledgment quoted verbatim, plus an ISO-8601 timestamp. A bare `yes` / `ok` / `lgtm` is rejected — the URL (or REQ-ID list) is the non-trivial acknowledgment that makes the signature auditable.
+You paste e.g. `https://linear.app/acme/issue/PROJ-1234`. Claude writes the gate file with your raw acknowledgment quoted verbatim, plus an ISO-8601 timestamp. A bare `yes` / `ok` / `lgtm` is rejected — the URL (or REQ-ID list) is the substantive acknowledgment that makes the signature auditable.
 
 **Manual sign-off** — required for `/deploy` and `/fix-fast`. Deploy has blast radius; fix-fast bundles three phases into one mini-gate. Both cases force you to open the gate file and edit it yourself — Claude will not capture the signature via chat.
 
@@ -360,7 +360,7 @@ If a task doesn't fit, run the full phases. There is no second shortcut.
 
 ## Hook strictness: block vs. warn
 
-The plugin distinguishes two severities deliberately:
+The plugin distinguishes two severities:
 
 - **Block (exit 2)** — refuses the tool call. Used only when the consequence is severe: no plan at all, unsigned CR, confirmed secret found.
 - **Warn (stderr, exit 0)** — surfaces the signal; lets the human decide. Scope drift, adjacent-function edits, test-scope mismatches.
@@ -375,7 +375,7 @@ Multi-team sign-offs are **opt-in per gate** — removing the `## Required sign-
 
 ## Review processes
 
-Three artifacts get first-class review treatment: **code**, **test cases**, and **test scripts**. All three share the same shape — scoped to the `git diff`, traced to a REQ ID, and human-signed at a gate.
+Three artifacts have dedicated review processes: **code**, **test cases**, and **test scripts**. All three share the same shape — scoped to the `git diff`, traced to a REQ ID, and human-signed at a gate.
 
 | Artifact | When reviewed | Primary checks | Blocks on |
 |---|---|---|---|
@@ -457,7 +457,7 @@ Cross-cutting skills — triggered by context across phases:
 | [minimal-code](skills/minimal-code/SKILL.md) | Discourages speculative abstractions, unused branches, and feature creep |
 | [security-review](skills/security-review/SKILL.md) | Reviews the current diff for OWASP-class issues; runs as part of `/review` |
 | [api-integration](skills/api-integration/SKILL.md) | Verifies API spec + endpoint reachability; offers a mock if unreachable |
-| [gate-signoff](skills/gate-signoff/SKILL.md) | Captures phase sign-off via chat with a work-item URL as non-trivial acknowledgment |
+| [gate-signoff](skills/gate-signoff/SKILL.md) | Captures phase sign-off via chat with a work-item URL as substantive acknowledgment |
 | [domain-expert](skills/domain-expert/SKILL.md) | Injects domain-specific gap questions, NFRs, and regulatory flags into the plan (payments, auth, and user-defined domains) |
 
 Utility / navigation skills:

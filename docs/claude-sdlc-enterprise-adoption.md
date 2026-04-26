@@ -4,7 +4,7 @@
 
 - claude-sdlc is a governance layer around Claude Code: plan before edit, surgical scope, signed gates, local-first artifacts.
 - It fits enterprise environments because it produces a traceable paper trail and never advances without a human signature — not because it is a stepping stone to removing humans.
-- The human-in-the-lead rule is load-bearing. Experiments with automated gates belong in a separate project, not in the core plugin.
+- The human-in-the-lead rule cannot be relaxed. Experiments with automated gates belong in a separate project, not in the core plugin.
 - Outcomes for teams: plan-bounded edits reduce PR churn, token tracking surfaces expensive loops, gate files serve as audit evidence, and graceful degradation means zero new infrastructure is required to pilot it.
 
 ## 1. What the plugin actually does
@@ -20,9 +20,9 @@ The blocking hooks establish trust:
 
 Phase-prerequisite enforcement sits in the commands themselves: `/build`, `/test`, and the rest declare the required prior gate file at the top of each command definition. The separately-named `phase-gate.sh` is an advisory Stop hook, not a blocker — it emits a reminder on session end if no gate file has been updated in the last two hours. It does not refuse any tool call.
 
-The remaining hooks — `diff-scope-check.sh`, `adjacent-function-detector.sh`, `modified-code-test-gate.sh` — are warnings. They surface signals to the human without halting work. This distinction is deliberate and documented in the repo: scope detection uses git hunk headers, which are imperfect, and silent blocking would stop legitimate edits. Anyone evaluating the plugin for Information Security review should read these as "audit trail plus guidance," not as hard containment.
+The remaining hooks — `diff-scope-check.sh`, `adjacent-function-detector.sh`, `modified-code-test-gate.sh` — are warnings. They surface signals to the human without halting work. This distinction is documented in the repo: scope detection uses git hunk headers, which are imperfect, and silent blocking would stop legitimate edits. Anyone evaluating the plugin for Information Security review should read these as "audit trail plus guidance," not as hard containment.
 
-Every phase writes markdown artifacts under `.claude/sdlc/`. Gate files record the signer's pasted work-item URL and an ISO-8601 timestamp. A bare "yes," "ok," or "lgtm" is rejected. The URL is the non-trivial acknowledgment that makes the signature auditable.
+Every phase writes markdown artifacts under `.claude/sdlc/`. Gate files record the signer's pasted work-item URL and an ISO-8601 timestamp. A bare "yes," "ok," or "lgtm" is rejected. The URL is the substantive acknowledgment that makes the signature auditable.
 
 ## 2. How roles change when a team adopts it
 
@@ -60,7 +60,7 @@ The items below are not implemented in the core repo. They are prioritized based
 
 **Schema-first enforcement.** An optional `schema-validation.sh` hook that, for projects with an OpenAPI or Protobuf definition, blocks Phase 4 edits that drift from the contract established in Phase 3. Opt-in per project; off by default.
 
-**A separate repo for automated-judge experiments.** Some users have asked about replacing human gate sign-off with an LLM judge. This does not belong in claude-sdlc. The core plugin's "human in the lead, always" rule is load-bearing, and weakening it would change what the tool is. Teams wanting to experiment with automated gates can do so in a sibling repo that inherits the artifact contracts but replaces the signer. Any such repo will need its own audit architecture — an immutable judge-decision log, a secondary auditor process, and a rollback path when the auditor detects drift. That is a large enough problem to deserve its own project, not a feature flag on this one.
+**A separate repo for automated-judge experiments.** Some users have asked about replacing human gate sign-off with an LLM judge. This does not belong in claude-sdlc. The core plugin's "human in the lead, always" rule cannot be relaxed; weakening it would change what the tool is. Teams wanting to experiment with automated gates can do so in a sibling repo that inherits the artifact contracts but replaces the signer. Any such repo will need its own audit architecture — an immutable judge-decision log, a secondary auditor process, and a rollback path when the auditor detects drift. That is a large enough problem to deserve its own project, not a feature flag on this one.
 
 ## What this article is not
 
