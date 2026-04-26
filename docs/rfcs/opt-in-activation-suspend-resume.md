@@ -1,6 +1,6 @@
 # RFC: Opt-in Activation, Enhanced /start, and Suspend/Resume with Integrity Verification
 
-**Status:** Accepted — 2026-04-26 by Charlton Ho (author). Further changes require an amendment recorded in the sign-off block at the bottom.  
+**Status:** Implemented — 2026-04-26 accepted by Charlton Ho; all four components shipped (opt-in activation, enhanced /start, /suspend + suspend-snapshot.sh, re-enable reconciliation).  
 **Date:** 2026-04-26  
 **Touches:** hooks (13), skills (2 modified + 1 new), commands (1 modified + 1 new)
 

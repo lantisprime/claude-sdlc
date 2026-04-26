@@ -105,3 +105,17 @@ Low-confidence fields get a `⚠️` header prefix in the draft. Absent fields a
 **Supersede** — to archive a signed plan by renaming it `<slug>.v<N>.md` (Status: superseded) and creating a fresh `<slug>.md` at Version N+1. Triggered when a material change is needed on a signed plan. Prior sign-offs remain on the archived file but do not carry forward to the new version.
 
 **Transport ladder** — the ordered fallback chain for sharing sign-off files across machines: central git repo → network share → signers commit directly to the project repo. Configured via `approvals.git_repo` and `approvals.share_path` in `config/tools.json`.
+
+---
+
+## Terms introduced in the opt-in activation and suspend/resume RFC
+
+**`.enabled` marker** — the opt-in activation file at `.claude/sdlc/.enabled`. All enforcement hooks check for its presence and exit 0 (no-op) when it is absent. Created by `/start` during opt-in activation. Renamed to `.suspended` by `/suspend`; renamed back to `.enabled` by `/start` on re-enable.
+
+**`.suspended` marker** — the suspension-state file at `.claude/sdlc/.suspended`. Present when the workflow has been explicitly paused via `/suspend`. Wins over `.enabled` if both somehow exist — `/start` treats its presence as the suspended path regardless.
+
+**Opt-in activation** — the model in which the plugin is fully passive (no hooks fire, no warnings) until the developer explicitly runs `/start`. Trades immediate friction on install for deliberate commitment to the workflow. The `.enabled` marker is the activation signal.
+
+**Suspension snapshot** — the AES-256-encrypted file at `.claude/sdlc/.suspension-snapshot.enc`, produced by `hooks/suspend-snapshot.sh` during `/suspend`. Contains SHA-256 hashes, sizes, and modification times for all governance artifacts and in-scope source files at the moment of suspension. Used by the re-enable path to detect tampering or drift during the suspension window. Falls back to a plain SHA-256 manifest when `openssl` is absent (with explicit user confirmation).
+
+**Re-enable reconciliation** — the PATH B flow in `/start` that fires when `.suspended` is present. Decrypts the suspension snapshot, performs a two-pass comparison (stat then sha256) against current files, classifies changes by severity (HIGH when governance files changed or source drift exceeds 20% / 5 files; LOW for minor source drift), presents per-plan reconciliation prompts, and proposes REQ supersession for HIGH-severity plans. The human signs the superseding plan in `/plan`; only then is the old REQ marked superseded.

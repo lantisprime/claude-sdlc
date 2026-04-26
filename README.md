@@ -107,13 +107,15 @@ See [Claude Code's plugin docs](https://docs.claude.com/en/docs/claude-code/plug
 
 ## Configure for your stack
 
-The easiest way is to run the guided setup wizard:
+**First time?** Run `/start` — it auto-detects your repo, CI, stack, and tracker, then writes `config/tools.json` for you as part of opt-in activation. You don't need to run `/configure` separately unless you want to customise beyond what auto-detection provides.
+
+**Already activated and need to adjust settings:**
 
 ```bash
 /configure
 ```
 
-`/configure` walks you through each tool slot, auto-detects what's available, and writes `config/tools.json` for you. It's also invoked automatically on fresh installs when no `tools.json` exists.
+`/configure` walks you through each tool slot and rewrites `config/tools.json`. It's also auto-invoked when a skill detects a missing required key (Layer 2).
 
 Alternatively, copy the example config and fill it in by hand:
 
@@ -205,7 +207,7 @@ From inside a repo that has this plugin installed:
 **New users — start here:**
 ```bash
 /start
-# six intake questions → fix-fast eligibility check → hands off to /plan
+# auto-detects stack · creates .enabled · drafts scope + plan · hands off to /plan
 ```
 
 **Experienced users — skip straight to plan:**
@@ -419,7 +421,7 @@ Details in [`docs/SDLC.md`](docs/SDLC.md).
 
 ## Capabilities reference
 
-### Skills (19)
+### Skills (20)
 
 Phase skills — one per checkpoint:
 
@@ -454,8 +456,9 @@ Utility / navigation skills:
 | [start](skills/start/SKILL.md) | Front-door intake — six guided questions, fix-fast eligibility check, hands off to plan |
 | [status](skills/status/SKILL.md) | Read-only task state — renders in-flight work and pending sign-offs |
 | [help](skills/help/SKILL.md) | Command reference; `/help <command>` for detail on a specific command |
+| [suspend](skills/suspend/SKILL.md) | Pauses enforcement — snapshots governance artifacts, logs the reason, switches `.enabled` → `.suspended` |
 
-### Commands (15)
+### Commands (16)
 
 | Command | Purpose |
 |---|---|
@@ -473,6 +476,7 @@ Utility / navigation skills:
 | [/help](commands/help.md) | Plugin command reference; `/help <command>` for detail on a specific command |
 | [/review](commands/review.md) | Cross-cutting diff review (correctness + security) |
 | [/fix-fast](commands/fix-fast.md) | Compressed path for small bug fixes only (≤2 files, ≤50 LOC) |
+| [/suspend](commands/suspend.md) | Pause SDLC enforcement — snapshot governance state, log reason, switch to suspended mode |
 | [/token-review](commands/token-review.md) | Analyze per-phase token usage from the tracking log; surface optimization candidates |
 
 ### Agents (5)
@@ -493,7 +497,7 @@ Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy do
 
 | Hook | Event | Severity | What it does |
 |---|---|---|---|
-| [plan-gate.sh](hooks/plan-gate.sh) | PreToolUse (Edit/Write) | **Block** / Warn | Blocks edits when no plan exists; warns when `scope.md` or the scope gate is absent |
+| [plan-gate.sh](hooks/plan-gate.sh) | PreToolUse (Edit/Write) | **Block** / Warn | No-op until `.enabled` exists; then blocks edits when no plan exists; warns when `scope.md` or the scope gate is absent |
 | [work-item-validation.sh](hooks/work-item-validation.sh) | PreToolUse | **Block** | Requires a valid REQ ID, ticket, or signed CR |
 | [secret-scan.sh](hooks/secret-scan.sh) | PreToolUse | **Block** | Blocks writes containing confirmed secrets |
 | [phase-gate.sh](hooks/phase-gate.sh) | PreToolUse (commands) | **Block** | Refuses a phase command until the prior gate is signed |
@@ -535,10 +539,10 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 ├── config/tools.example.json    # copy to tools.json and fill in
 ├── docs/SDLC.md                 # full phase reference
 ├── domains/                     # built-in domain knowledge seeds (payments, auth)
-├── skills/          (19)        # 8 phase + 7 cross-cutting (incl. domain-expert) + 4 utility (configure, start, status, help)
-├── commands/        (15)        # one per checkpoint + /status + /help + /review + /fix-fast + /token-review
+├── skills/          (20)        # 8 phase + 7 cross-cutting (incl. domain-expert) + 5 utility (configure, start, status, help, suspend)
+├── commands/        (16)        # one per checkpoint + /status + /help + /review + /fix-fast + /token-review + /suspend
 ├── agents/          (5)         # bounded subagents (incl. scope-ingest)
-├── hooks/                       # hooks.json + 13 shell scripts
+├── hooks/                       # hooks.json + 14 shell scripts (incl. suspend-snapshot.sh, skill-invoked)
 └── templates/       (13)        # artifact templates (incl. scope-gate, approval-packet, sign-off-multi)
 ```
 

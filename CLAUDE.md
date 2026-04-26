@@ -67,11 +67,11 @@ sdlc-plugin/
 ├── README.md                   # quick-start for users of the plugin
 ├── docs/SDLC.md                # full phase reference
 ├── config/tools.example.json   # placeholders — users copy to tools.json
-├── skills/      (12)           # 8 phase skills + 4 cross-cutting
-├── commands/    (10)           # one per checkpoint + /review + /fix-fast
-├── agents/      (4)            # bounded subagents
-├── hooks/                      # hooks.json + 9 shell scripts
-└── templates/   (10)           # artifact templates
+├── skills/      (20)           # 8 phase + 7 cross-cutting (incl. domain-expert) + 5 utility (configure, start, status, help, suspend)
+├── commands/    (16)           # one per checkpoint + /status + /help + /review + /fix-fast + /token-review + /suspend
+├── agents/      (5)            # bounded subagents (incl. scope-ingest)
+├── hooks/                      # hooks.json + 14 shell scripts (incl. suspend-snapshot.sh, skill-invoked)
+└── templates/   (13)           # artifact templates
 ```
 
 ## Key files by "why they matter"

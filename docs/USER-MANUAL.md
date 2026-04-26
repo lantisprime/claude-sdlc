@@ -23,6 +23,8 @@ For the concise overview, read [README.md](../README.md). For the authoritative 
     - [7.6 External API integration (mock fallback)](#76-scenario-f--external-api-integration-mock-fallback)
     - [7.7 Pre-written plan / RFC intake](#77-scenario-g--pre-written-plan--rfc-intake)
     - [7.8 Scope re-validate (task doesn't fit current scope.md)](#78-scenario-h--scope-re-validate-task-doesnt-fit-current-scopemd)
+    - [7.9 First-time opt-in activation (`/start`)](#79-scenario-i--first-time-opt-in-activation-start)
+    - [7.10 Suspend and resume (`/suspend`)](#710-scenario-j--suspend-and-resume-suspend)
 8. [Hook behavior reference](#8-hook-behavior-reference)
 9. [Troubleshooting](#9-troubleshooting)
 
@@ -83,7 +85,7 @@ None are mandatory — leave `null` to skip — but the plugin is more valuable 
 
 Run these once per repo that will use the plugin.
 
-> **New to the plugin?** After completing Steps 1–3 below, run `/start` — it walks you through six intake questions, checks fix-fast eligibility, and hands off to `/plan`. Experienced users can skip straight to `/plan`.
+> **New to the plugin?** Steps 1–2 below are the only manual steps. Everything else — config, scope, plan draft — is handled automatically by `/start` in Step 2.
 
 ### Step 1 — Install the plugin
 
@@ -95,39 +97,29 @@ From inside Claude Code in your project repo:
 
 See Claude Code's plugin docs for the current flow.
 
-### Step 2 — Configure tools for your stack
+### Step 2 — Run `/start` to activate
 
-The easiest path is the guided setup wizard:
+```
+/start
+```
+
+`/start` is the single entry point for a fresh repo. It handles config, activation, and task intake in one flow — no need to run `/configure` first. Full walkthrough in [Scenario 7.9](#79-scenario-i--first-time-opt-in-activation-start). In brief:
+
+- **Config auto-detect (Step 0):** silently detects VCS, CI, stack, and tracker from the repo. Shows detected values as facts. Asks at most 3 prompts (tracker confirm, token, project slug). Writes `config/tools.json` and `config/tools.local.json` only on your confirmation.
+- **Activation (Step 1):** creates `.claude/sdlc/.enabled`. All enforcement hooks are now live.
+- **Task intake (Step 2):** one prompt — *"What are you building or fixing?"* Auto-classifies, checks fix-fast eligibility.
+- **Artifact generation (Step 3):** creates `scope.md` (draft) and a plan artifact from your description. All auto-filled fields are marked `[suggested]` — you confirm them in `/plan`.
+- **Summary (Step 4):** prints what was armed (repo, CI, stack, tracker, hooks active) and hands off to `/plan`.
+
+If you want to **customise** beyond auto-detection (add a Jira token, set a coverage threshold, change the formatter command), run `/configure` afterward. It is no longer the first step.
+
+### Step 3 — (Optional) Customise with `/configure`
 
 ```
 /configure
 ```
 
-`/configure` walks through each tool slot, auto-detects what's already available in your repo, and writes `config/tools.json`. It's also invoked automatically on first install when no `tools.json` is found.
-
-Alternatively, configure by hand:
-
-```bash
-cp config/tools.example.json config/tools.json
-# edit config/tools.json — fill in commands for your stack
-```
-
-### Step 3 — Let `env-detect.sh` run
-
-It fires on `SessionStart` automatically. The first session after install writes `.claude/sdlc/env.json`:
-
-```json
-{
-  "vcs": "git",
-  "vcs_host": "github",
-  "issue_tracker": "github",
-  "ci": "github-actions",
-  "observability": null,
-  "ux_tool": null
-}
-```
-
-Review this file. Anything `null` that you *do* have wired up — add it to the `integrations` block in `config/tools.json` to override.
+Use this when auto-detection misses something or you need to adjust defaults. Also auto-invoked when a skill detects a missing required key (Layer 2). Reads and rewrites `config/tools.json` in place.
 
 ### Step 4 — Produce a scope statement (`scope-ingest` flow)
 
@@ -1298,6 +1290,260 @@ Then have each reviewer copy [`templates/sign-off-multi.md`](../templates/sign-o
 ### "I want to see token usage per phase"
 
 Set `token_tracking.enabled: true` in `config/tools.json`. After each Stop, check `.claude/sdlc/token-log.json` (last run) and `.claude/sdlc/token-history.jsonl` (rolling log). Run `/token-review` for an analysis.
+
+---
+
+### 7.9 Scenario I — First-time opt-in activation (`/start`)
+
+**Situation:** you've just installed the plugin into a repo. No `config/tools.json`, no `.enabled`, no `scope.md`. You want to start a task.
+
+---
+
+**You:**
+```
+/start
+```
+
+**Plugin (Step 0 — config auto-detect, silent):**
+- Detects `.git` → `vcs: "git"`; `git remote get-url origin` → `github.com/acme/gateway`
+- Detects `.github/workflows/` → `ci: "github-actions"`
+- Detects `go.mod` → `language: "go"`; `golangci-lint` in `Makefile` → `lint.command`
+
+Displays detected values as facts, then asks:
+
+```
+Issue tracker (inferred: GitHub Issues — acme/gateway) — correct? [Y/n/override]
+```
+
+**You:** `Y`
+
+```
+Paste your GitHub token (stored in config/tools.local.json, never committed).
+Skip with Enter to omit: _
+```
+
+**You:** *(paste token or Enter to skip)*
+
+**Plugin** shows a diff of the proposed `config/tools.json` and `config/tools.local.json`:
+
+```
+config/tools.json will be written:
+  formatter:    { "command": "gofmt -w" }
+  linter:       { "command": "golangci-lint run" }
+  test_runner:  { "command": "go test ./..." }
+  tracker:      { "host": "github.com", "slug": "acme/gateway" }
+  ...
+
+Confirm? [Y/n]
+```
+
+**You:** `Y`
+
+**Plugin (Step 1):**
+```bash
+mkdir -p .claude/sdlc && touch .claude/sdlc/.enabled
+```
+Hooks are now live.
+
+**Plugin (Step 2 — task intake):**
+```
+What are you building or fixing — one sentence.
+> _
+```
+
+**You:**
+```
+Add X-RateLimit-* response headers to the public API gateway
+```
+
+**Plugin:** classifies as `new-build`. Checks fix-fast eligibility — not eligible (new feature). Proceeds to artifact generation.
+
+**Plugin (Step 3 — artifact generation):**
+- Creates `.claude/sdlc/scope.md` (draft):
+  ```
+  ## Summary
+  Add X-RateLimit-* response headers to the public API gateway
+  ## In scope
+  - gateway/ [suggested]
+  ## Out of scope
+  - Anything not mentioned above
+  **Status:** draft — review and confirm in /plan
+  ```
+- Creates `.claude/sdlc/plans/rate-limit-headers.md` with:
+  - `REQ-ID: REQ-001`
+  - `Classification: new-build [suggested]`
+  - `In-scope files: gateway/middleware/ [suggested]`
+  - `Estimate: medium [suggested]`
+
+**Plugin (Step 4 — "what this armed" summary):**
+```
+[SDLC] Workflow enabled.
+
+  Repo:    github.com/acme/gateway
+  CI:      github-actions
+  Stack:   go / golangci-lint / go test
+  Tracker: GitHub Issues → acme/gateway
+
+  config/tools.json              → written
+  .claude/sdlc/scope.md          → created  [draft — review in /plan]
+  .claude/sdlc/plans/rate-limit-headers.md → REQ-001  [draft — review in /plan]
+    classification: new-build             [suggested]
+    estimate:       medium                [suggested]
+    in-scope files: gateway/middleware/   [suggested — confirm in /plan]
+
+Hooks now active:
+  ✓ plan-gate        — blocks edits without a signed plan
+  ✓ secret-scan      — catches credentials before they're written (always-on)
+  ✓ diff-scope-check — warns if edits drift outside scope
+  ✓ bash-safety      — flags destructive shell commands
+
+Next: review the plan below, then run /plan to sign it.
+All [draft] and [suggested] fields require your confirmation in /plan before they are authoritative.
+```
+
+**Plugin** displays the plan artifact inline. You run `/plan` to review, fill any gaps, and sign the gate.
+
+---
+
+### 7.10 Scenario J — Suspend and resume (`/suspend`)
+
+**Situation:** you're mid-task on the rate-limit headers feature (Build gate unsigned). A production incident lands. You need to work outside the SDLC workflow for a few hours, then come back.
+
+---
+
+#### Part 1 — Suspending
+
+**You:**
+```
+/suspend
+```
+
+**Plugin (Step 2 — reason prompt):**
+```
+Reason for suspension (required): _
+```
+
+**You:**
+```
+Production incident P1-4421 — working outside SDLC workflow for incident response
+```
+
+**Plugin (Step 3 — show active plans):**
+```
+Active plans:
+  REQ-001  rate-limit-headers  [build gate unsigned]
+
+Warning: REQ-001 has an unsigned build gate.
+Suspending will pause enforcement. The gate remains open until you re-enable and complete it.
+Proceed? [Y/n]
+```
+
+**You:** `Y`
+
+**Plugin (Step 4 — snapshot):** runs `hooks/suspend-snapshot.sh suspend`:
+- Hashes all governance files (plans, gates, sign-offs, scope.md, config/tools.json) and in-scope source files listed in the plan
+- Encrypts the manifest with AES-256 (openssl) → `.claude/sdlc/.suspension-snapshot.enc`
+- Stores the key in `config/tools.local.json` (gitignored; adds to `.gitignore` if missing)
+
+**Plugin (Step 5 — log):** appends to `.claude/sdlc/.suspension-log.jsonl`:
+```json
+{"event":"suspend","at":"2026-04-26T14:32:10Z","reason":"Production incident P1-4421 — working outside SDLC workflow for incident response","active_plans":["REQ-001"]}
+```
+
+**Plugin (Step 6 — switch marker):**
+```
+[SDLC] Workflow suspended. Snapshot saved. Enforcement paused.
+Suspension logged. Run /start to re-enable.
+```
+
+*You handle the incident. While suspended, plan-gate.sh and other hooks are no-ops — you can edit freely. You end up touching `gateway/middleware/ratelimit.go` (the in-scope file) and also add a new helper `gateway/middleware/error.go` (out-of-scope).*
+
+---
+
+#### Part 2 — Re-enabling (clean case)
+
+If you had touched *nothing* in the governance files and only made minor source changes, `/start` would show:
+
+```
+[SDLC] Resuming after suspension — no governance changes detected.
+
+  Source files modified during suspension: 1  [below escalation threshold]
+  ⚠ Suspension drift pending review — run /status to see affected files.
+
+  Workflow re-enabled.
+```
+
+The snapshot is deleted and `.suspended` → `.enabled`. Enforcement is back.
+
+---
+
+#### Part 2 (actual) — Re-enabling with HIGH-severity changes
+
+You touched both a source file and added an out-of-scope file (`gateway/middleware/error.go` is a new governance-tracked source entry added during suspension). This triggers a HIGH-severity reconciliation.
+
+**You:**
+```
+/start
+```
+
+**Plugin (PATH B — re-enable):**
+
+Calls `suspend-snapshot.sh verify` → decrypts snapshot → two-pass compare (stat, then sha256) → finds:
+- `gateway/middleware/ratelimit.go`: modified (size changed)
+- `gateway/middleware/error.go`: new file (not in snapshot)
+
+Groups by REQ-001 → severity HIGH (new governance-tracked file).
+
+```
+━━ REQ-001  rate-limit-headers  [HIGH] ━━━━━━━━━━━━━━━━━━━━━
+  Files modified during suspension:
+    gateway/middleware/ratelimit.go  (modified)
+    gateway/middleware/error.go      (new — not in original plan scope)
+
+  Re-examining requirements...
+
+  Changes summary:
+    • gateway/middleware/ratelimit.go: expanded from 85 → 140 lines
+    • gateway/middleware/error.go: new file, 55 lines (outside REQ-001 scope of 2 files)
+    • No governance artifacts changed
+
+  Accept changes to REQ-001? [Y/n]
+```
+
+**You:** `Y`
+
+**Plugin:**
+```
+  Proposed: supersede REQ-001 → REQ-002.
+
+  REQ-001 remains active. REQ-002 has not been written.
+
+  To confirm:
+    1. Run /plan — Claude will draft REQ-002 for your review.
+    2. Sign REQ-002 in /plan as you would any new plan.
+    3. REQ-001 is marked superseded only after REQ-002 is signed.
+
+[SDLC] Workflow re-enabled. Enforcement is active.
+plan-gate will require a signed plan before editing — sign the superseding REQ in /plan.
+```
+
+`.suspended` → `.enabled`. You run `/plan` to draft and sign REQ-002, which expands scope to include `error.go` and increments the version. REQ-001 is archived as `rate-limit-headers.v1.md` (Status: superseded) once you sign REQ-002.
+
+---
+
+#### What if you decline reconciliation?
+
+If you type `n` at the "Accept changes?" prompt:
+
+```
+  REQ-001 rejected. Workflow stays suspended.
+
+  Revert these files and run /start to try again:
+    gateway/middleware/ratelimit.go
+    gateway/middleware/error.go
+```
+
+`.suspended` remains. The snapshot is preserved. You revert the files and run `/start` again.
 
 ---
 

@@ -3,7 +3,7 @@
 > **Purpose.** Paste or reference this file at the start of any new conversation about the repo so the assistant has accurate grounding without re-fetching everything. Keep it short and current. If a fact drifts, fix it here first.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-26 (RFC drafted — opt-in activation + suspend/resume)
+**Last updated:** 2026-04-26 (all RFCs implemented — opt-in activation, suspend/resume, scope-ingest, guided-entry, multi-team approval)
 
 ---
 
@@ -31,17 +31,17 @@ An 8-phase SDLC plugin for Claude Code that gates every coding task behind plann
 7. Support — `/support`
 8. Docs — `/docs` (cross-cutting)
 
-Plus: `/review` (cross-cutting diff review), `/fix-fast` (bug-only shortcut, ≤2 files, ≤50 LOC), `/token-review` (phase token usage).
+Plus: `/review` (cross-cutting diff review), `/fix-fast` (bug-only shortcut, ≤2 files, ≤50 LOC), `/token-review` (phase token usage), `/configure` (stack setup wizard), `/start` (opt-in activation + task intake + re-enable reconciliation), `/status` (read-only task state), `/help` (command reference), `/suspend` (pause enforcement with governance snapshot).
 
 Each phase writes a gate file at `.claude/sdlc/gates/<phase>-<slug>.md`. The next phase refuses to start until the prior gate is signed.
 
 ## Current capability counts
 
-- **Commands:** 12 (8 phase + `/review` + `/fix-fast` + `/token-review` + `/suspend`)
-- **Skills:** 14 (8 phase + 6 cross-cutting: `scoping`, `surgical-edit`, `minimal-code`, `security-review`, `api-integration`, `gate-signoff`)
-- **Agents:** 4 (`architect`, `test-designer`, `security-reviewer`, `observability`) — bounded write scope, propose-only
-- **Hooks:** 10 registered in `hooks/hooks.json` (+ optional `token-tracker.sh`; + `suspend-snapshot.sh` planned per opt-in RFC)
-- **Templates:** 10
+- **Commands:** 16 (8 phase + `/review` + `/fix-fast` + `/token-review` + `/suspend` + `/configure` + `/start` + `/status` + `/help`)
+- **Skills:** 20 (8 phase + 7 cross-cutting: `scoping`, `surgical-edit`, `minimal-code`, `security-review`, `api-integration`, `gate-signoff`, `domain-expert` + 5 utility: `configure`, `start`, `status`, `help`, `suspend`)
+- **Agents:** 5 (`architect`, `test-designer`, `security-reviewer`, `observability`, `scope-ingest`) — bounded write scope, propose-only
+- **Hooks:** 13 registered in `hooks/hooks.json` + `suspend-snapshot.sh` (skill-invoked by `/suspend`, not an event hook)
+- **Templates:** 13 (incl. `scope-gate`, `approval-packet`, `sign-off-multi`)
 
 ## Hook severity model
 
@@ -65,10 +65,15 @@ Warnings are not auto-blockers-in-waiting. The adjacent-function detector uses g
 ├── tickets/
 ├── change-requests/
 ├── sign-offs/              # per accepted RFC, one file per signer
+├── approval-packets/       # compiled reviewer summaries for multi-team sign-offs
 ├── gates/                  # phase gate files
 ├── defects/
 ├── deployments/
 ├── monitoring/
+├── .enabled                # opt-in activation marker (created by /start)
+├── .suspended              # suspension marker (created by /suspend)
+├── .suspension-log.jsonl   # append-only log of suspend/resume events
+├── .suspension-snapshot.enc  # AES-256 encrypted governance snapshot (during suspension)
 └── docs/
 ```
 
@@ -89,30 +94,25 @@ All MCP-mediated changes are propose-only.
 
 Frontend tasks halt in Phase 2 until some UX artifact exists at `.claude/sdlc/architecture/ux/<task-slug>.md`. Any form counts: Figma link, PDF mockups, screenshots, hand-drawn wireframes, or a written description. Backend-only tasks skip the UX track entirely.
 
-## Accepted RFCs
+## Implemented RFCs
 
-- **`docs/rfcs/multi-team-approval.md`** (accepted 2026-04-19) — defines:
-  - Sign-off files at `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md` (one file per signer)
-  - `APPROVALS.md` reconciler artifact
-  - Transport ladder Tier 0–3 (how approvals arrive)
-  - 9-role set (suggested vocabulary)
-  - *(Full text not inlined here — read the RFC directly when details are needed.)*
+All four RFCs are fully implemented as of 2026-04-26.
 
-- **`docs/rfcs/guided-entry-session-resume-multi-role.md`** (accepted 2026-04-25, merged PR #1) — defines:
-  - 8 UX surface PRs layered over the accepted sign-off mechanism (ship order: 1 → 2 → 3 → 4 → 8 → 9 → 6 → 10)
-  - `/status` with unordered sign-off render, `/start`, SessionStart plan-check, plan versioning, approval packet, `/configure`, glossary + `/help`, auto next-step hints
-  - Pending discussions B–E deferred: back/cancel navigation, error-message audit, TodoWrite integration, per-phase `/status` detail
-  - OQ-1 open: PR 4 material-edit detection (resolve before PR 4 implementation)
+- **`docs/rfcs/multi-team-approval.md`** (implemented) — sign-off files at `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md`; `APPROVALS.md` reconciler; transport ladder Tier 0–3; `approval-reconcile.sh` hook; `sign-off-multi.md` + `approval-packet.md` templates.
+
+- **`docs/rfcs/scope-ingest.md`** (implemented) — `scope-ingest` agent (writes only to `scope-drafts/`); `domain-expert` skill (domain context injection, gap questions, NFRs); `scope-gate.md` template; pseudo-phase scope gate; two-source domain lookup; domain authoring paths A and B.
+
+- **`docs/rfcs/guided-entry-session-resume-multi-role.md`** (implemented) — `/status`, `/start`, `/configure`, `/help`; `session-plan-check.sh` hook; plan versioning; approval packets; auto next-step hints (`_shared/next-hint.sh` + `hints.jsonl` fade-after-3); glossary.
+
+- **`docs/rfcs/opt-in-activation-suspend-resume.md`** (implemented) — opt-in `.enabled` marker; hooks guard on `.enabled`; enhanced `/start` (PATH A: config auto-detect + scope + plan draft; PATH B: re-enable reconciliation with snapshot verify + REQ supersession); `/suspend` with `suspend-snapshot.sh` (AES-256, plain fallback); `.suspension-log.jsonl`; `secret-scan.sh` always-on regardless of activation state.
 
 ## Open PRs
 
 *(none)*
 
-## Draft RFCs (not yet PR'd)
+## Draft RFCs
 
-- **Scope ingest + domain expert** — `docs/rfcs/scope-ingest.md` (promoted 2026-04-25, second-opinion review applied). Proposes `scope-ingest` agent + `domain-expert` skill hanging off `/plan`. All conflicts and open questions resolved. OQ-SCOPE-1 resolved: pseudo-phase gate for v1; new artifact class deferred to v2 (trigger: post-ship operator confusion or reconciler divergence). Implementation checklist unblocked — start with `domains/_schema.md` + seed files.
-
-- **Opt-in activation, suspend/resume** — `docs/rfcs/opt-in-activation-suspend-resume.md` (drafted 2026-04-26). Proposes: opt-in `.enabled` marker with hook guards across all 11 enforcement hooks; enhanced `/start` absorbing configure wizard (auto-detect repo/CI/stack/tracker, max 2 prompts); `/suspend` command with SHA-256 + AES-256 encrypted governance snapshot; re-enable reconciliation flow (Claude re-examines plans, summarises changes, generates new REQ ID to supersede old on acceptance). OQ-1 open: whether `secret-scan.sh` should remain always-on regardless of enabled state (tracked in `pending-analysis.md` item 4).
+*(none — all accepted RFCs are now implemented)*
 
 ## Anti-patterns the repo explicitly guards against
 

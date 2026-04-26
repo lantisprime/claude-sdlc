@@ -16,6 +16,8 @@ This document is the authoritative reference for the 8-phase workflow the plugin
 
 The plugin reads `config/tools.json` (version-controlled) and `config/tools.local.json` (secrets, gitignored). Use `/configure` to set both up without manually editing files.
 
+**Opt-in activation.** All enforcement hooks guard on the presence of `.claude/sdlc/.enabled`. The plugin is passive (no blocking, no warnings) until that marker exists. Run `/start` to activate: it auto-detects your stack, writes `config/tools.json`, creates `.enabled`, and drafts `scope.md` and a plan artifact in a single flow. Existing repos that already have gates and plans are unaffected — the `.enabled` marker is created on the first `/start` call.
+
 **Four-layer model:**
 
 | Layer | When | Behavior |
@@ -60,6 +62,10 @@ The plugin writes into `.claude/sdlc/` in the consuming repo:
 ├── deployments/<date>-<task-slug>.md
 ├── monitoring/<task-slug>/
 ├── followups/<task-slug>.md
+├── .enabled                    # opt-in activation marker (created by /start)
+├── .suspended                  # suspension marker (created by /suspend, consumed by /start re-enable)
+├── .suspension-log.jsonl       # append-only log of suspend/resume events with reasons
+├── .suspension-snapshot.enc    # AES-256 encrypted governance snapshot (present during suspension window)
 └── docs/
     ├── index.md
     └── traceability.md
@@ -182,6 +188,24 @@ Refreshes the artifact index, the requirements traceability matrix, the architec
 - **`surgical-edit`** — called by `build` on every Edit/Write. The heart of the "only touch code that needs modifying" rule.
 - **`minimal-code`** — called by `build`. YAGNI, KISS, DRY-when-it-actually-repeats. Prefer editing over creating. Prefer a function over a class.
 - **`security-review`** — called by `build` and `/review`. Scoped to the current diff, not the whole codebase.
+
+## Opt-in activation and suspension
+
+Three workflow states, driven by marker files under `.claude/sdlc/`:
+
+| State | Marker | Plugin behaviour |
+|---|---|---|
+| **Passive** | neither `.enabled` nor `.suspended` | All enforcement hooks exit 0 — no blocking, no warnings. Fresh install default. |
+| **Enabled** | `.enabled` present | Full enforcement active — plan-gate blocks, hooks warn/block as configured. |
+| **Suspended** | `.suspended` present | Enforcement paused; governance state snapshot preserved for re-enable reconciliation. |
+
+**Activating:** `/start` creates `.enabled` (after config auto-detect and artifact generation). Once enabled, enforcement is live for all subsequent tool calls.
+
+**Suspending:** `/suspend` requires a stated reason, shows active plans with unsigned gates, runs `suspend-snapshot.sh` to hash and AES-256-encrypt governance + in-scope source files, logs the window entry to `.suspension-log.jsonl`, then renames `.enabled` → `.suspended`. Enforcement is paused immediately.
+
+**Re-enabling:** `/start` on a suspended repo runs PATH B — calls `suspend-snapshot.sh verify` to decrypt and compare current files against the snapshot, classifies changes by severity (HIGH: governance files changed; LOW: source drift only), presents per-plan reconciliation prompts, and proposes REQ supersession for HIGH-severity plans. The human signs the superseding plan in `/plan` before the old REQ is marked superseded. Low-severity drift surfaces in `/status` without blocking.
+
+`secret-scan.sh` is always-on regardless of the `.enabled` marker — credential safety is not gated on opt-in.
 
 ## The fix-fast path
 
