@@ -34,10 +34,12 @@ teardown() {
 }
 
 @test "@integration: passes when modified file is in plan scope" {
+  if [[ "$(uname)" == "Darwin" ]]; then skip "find -printf not supported on macOS"; fi
   sdlc_workspace "$TEST_DIR"
   enable_workflow "$TEST_DIR"
   add_active_plan "$TEST_DIR"
   init_git_repo "$TEST_DIR"
+  mkdir -p "$TEST_DIR/src"
   echo "initial" > "$TEST_DIR/src/foo.js"
   git -C "$TEST_DIR" add . && git -C "$TEST_DIR" commit -q -m "init"
   echo "changed" >> "$TEST_DIR/src/foo.js"
@@ -47,10 +49,12 @@ teardown() {
 }
 
 @test "@integration: warns when modified file is not in plan scope" {
+  if [[ "$(uname)" == "Darwin" ]]; then skip "find -printf not supported on macOS"; fi
   sdlc_workspace "$TEST_DIR"
   enable_workflow "$TEST_DIR"
   add_active_plan "$TEST_DIR"
   init_git_repo "$TEST_DIR"
+  mkdir -p "$TEST_DIR/src"
   echo "initial" > "$TEST_DIR/src/bar.js"
   git -C "$TEST_DIR" add . && git -C "$TEST_DIR" commit -q -m "init"
   echo "changed" >> "$TEST_DIR/src/bar.js"
