@@ -2,6 +2,7 @@
 # diff-scope-check.sh — PostToolUse hook for Edit/Write.
 # Compares git diff against the plan's In-scope files list.
 set -euo pipefail
+[ -f ".claude/sdlc/.enabled" ] || exit 0
 
 command -v git >/dev/null 2>&1 || exit 0
 [ -d .git ] || exit 0

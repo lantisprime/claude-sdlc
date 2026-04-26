@@ -2,6 +2,7 @@
 # plan-gate.sh — PreToolUse hook for Edit/Write. Blocks edits with no plan artifact.
 # Also warns when scope.md is absent or the scope gate has not been signed.
 set -euo pipefail
+[ -f ".claude/sdlc/.enabled" ] || exit 0
 
 PLANS=".claude/sdlc/plans"
 GATES=".claude/sdlc/gates"

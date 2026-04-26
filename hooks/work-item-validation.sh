@@ -2,6 +2,7 @@
 # work-item-validation.sh — PreToolUse hook for Edit/Write.
 # Ensures the active plan references a valid work item (REQ / ticket / signed CR).
 set -euo pipefail
+[ -f ".claude/sdlc/.enabled" ] || exit 0
 
 PLANS=".claude/sdlc/plans"
 [ -d "$PLANS" ] || exit 0

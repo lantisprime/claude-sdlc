@@ -2,6 +2,7 @@
 # session-plan-check.sh — SessionStart hook. Surfaces in-flight SDLC work.
 # Runs alongside env-detect.sh. Writes nothing. Blocks nothing. Exit 0 always.
 set -euo pipefail
+[ -f ".claude/sdlc/.enabled" ] || exit 0
 
 SDLC_DIR=".claude/sdlc"
 PLANS="$SDLC_DIR/plans"
@@ -84,7 +85,7 @@ fi
 
 # --- No plans directory or empty ---
 if [ ! -d "$PLANS" ] || [ -z "$(ls -A "$PLANS" 2>/dev/null)" ]; then
-  echo "[session] No active task. Run /start to begin."
+  echo "[SDLC] Workflow enabled. Run /plan to start your first task."
   exit 0
 fi
 
@@ -99,7 +100,7 @@ while IFS= read -r plan_file; do
 done < <(find "$PLANS" -maxdepth 1 -name "*.md" ! -name "*.v[0-9]*.md" 2>/dev/null | sort)
 
 if [ "$slug_count" -eq 0 ]; then
-  echo "[session] No active task. Run /start to begin."
+  echo "[SDLC] Workflow enabled. Run /plan to start your first task."
   exit 0
 fi
 

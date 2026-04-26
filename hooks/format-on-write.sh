@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # format-on-write.sh — PostToolUse hook. Runs the configured formatter.
 set -euo pipefail
+[ -f ".claude/sdlc/.enabled" ] || exit 0
 
 CONFIG="config/tools.json"
 [ -f "$CONFIG" ] || exit 0

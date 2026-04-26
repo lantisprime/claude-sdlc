@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # secret-scan.sh — PostToolUse hook. Runs the configured secret scanner and blocks on findings.
 set -euo pipefail
+# No .enabled guard — credential scanning runs regardless of activation state (RFC §4.2).
 
 CONFIG="config/tools.json"
 [ -f "$CONFIG" ] || exit 0

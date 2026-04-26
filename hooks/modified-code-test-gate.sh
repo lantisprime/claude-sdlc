@@ -2,6 +2,7 @@
 # modified-code-test-gate.sh — Stop hook.
 # Warns if modified functions don't have a corresponding test update in the same session.
 set -euo pipefail
+[ -f ".claude/sdlc/.enabled" ] || exit 0
 
 command -v git >/dev/null 2>&1 || exit 0
 [ -d .git ] || exit 0

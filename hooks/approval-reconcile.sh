@@ -7,6 +7,7 @@
 # Always exits 0 (warn, never block — per RFC §3.3).
 
 set -euo pipefail
+[ -f ".claude/sdlc/.enabled" ] || exit 0
 
 GATES_DIR=".claude/sdlc/gates"
 SIGNOFFS_DIR=".claude/sdlc/sign-offs"

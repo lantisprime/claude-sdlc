@@ -11,6 +11,7 @@
 # missing, when the transcript cannot be resolved, or when no usage entries
 # are found.
 set -euo pipefail
+[ -f ".claude/sdlc/.enabled" ] || exit 0
 
 command -v jq >/dev/null 2>&1 || exit 0
 

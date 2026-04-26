@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # bash-safety.sh — PreToolUse hook for Bash. Blocks obvious footguns without explicit confirmation.
 set -euo pipefail
+[ -f ".claude/sdlc/.enabled" ] || exit 0
 
 CMD="${CLAUDE_TOOL_INPUT:-}"
 [ -z "$CMD" ] && exit 0

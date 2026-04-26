@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # phase-gate.sh — Stop hook. Reminds the user that ending a phase requires a gate file.
 set -euo pipefail
+[ -f ".claude/sdlc/.enabled" ] || exit 0
 
 GATES=".claude/sdlc/gates"
 [ -d "$GATES" ] || exit 0
