@@ -122,9 +122,10 @@ fi
 
 # --- Scan downstream gates for this slug ---
 # Track: highest unsigned gate, and highest signed gate with pending sign-offs.
+# Seed highest_signed_num=1 (plan phase) since the plan gate was confirmed signed above.
 best_unsigned_phase="" best_unsigned_num=0 best_unsigned_file=""
 best_signoff_phase="" best_signoff_num=0 best_signoff_file=""
-highest_signed_num=0
+highest_signed_num=1
 
 if [ -d "$GATES" ]; then
   while IFS= read -r gate_file; do

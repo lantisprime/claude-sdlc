@@ -6,10 +6,14 @@ set -euo pipefail
 CONFIG="config/tools.json"
 [ -f "$CONFIG" ] || exit 0
 
-SCANNER=$(grep -A2 '"secret_scanner"' "$CONFIG" | grep '"command"' | head -1 \
-  | sed -E 's/.*"command"\s*:\s*"([^"]*)".*/\1/')
+_cmd_line=$(grep -A2 '"secret_scanner"' "$CONFIG" | grep '"command"' | head -1 || true)
+if echo "$_cmd_line" | grep -qE '"command"[[:space:]]*:[[:space:]]*"'; then
+  SCANNER=$(echo "$_cmd_line" | sed -E 's/.*"command"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/')
+else
+  SCANNER=""
+fi
 
-if [ -z "$SCANNER" ] || [ "$SCANNER" = "null" ]; then exit 0; fi
+if [ -z "$SCANNER" ]; then exit 0; fi
 
 # shellcheck disable=SC2086
 if ! $SCANNER; then
