@@ -23,7 +23,7 @@ MODIFIED_FNS=$(git diff -U0 --function-context 2>/dev/null \
   | grep -E '^@@ .* @@ ' \
   | sed -E 's/^@@ .* @@ //' \
   | awk '{print $0}' \
-  | sort -u)
+  | sort -u || true)
 
 [ -z "$MODIFIED_FNS" ] && exit 0
 

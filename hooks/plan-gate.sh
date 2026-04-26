@@ -27,7 +27,7 @@ fi
 
 # --- Plan artifact check (block-level) ---
 # Exclude versioned files (*.v1.md, *.v2.md, etc.) — superseded plans do not satisfy the gate.
-ACTIVE_PLAN=$(find "$PLANS" -maxdepth 1 -type f -name "*.md" ! -name "*.v[0-9]*.md" 2>/dev/null | head -1)
+ACTIVE_PLAN=$(find "$PLANS" -maxdepth 1 -type f -name "*.md" ! -name "*.v[0-9]*.md" 2>/dev/null | head -1 || true)
 
 if [ ! -d "$PLANS" ] || [ -z "$ACTIVE_PLAN" ]; then
   echo "[plan-gate] BLOCK: no plan artifact in $PLANS. Run /plan first." >&2
