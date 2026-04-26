@@ -128,7 +128,41 @@ Templates in `templates/` are the shape of the artifacts the plugin produces. Ch
 
 ## Testing the plugin
 
-There's no automated test suite in this repo yet (contributions welcome). Until there is, validate changes by:
+### Prerequisites
+
+- **bats-core** for hook tests: `brew install bats-core` or `npm install -g bats`
+- `python3` or `node` for JSON validation in the manifest checker
+
+### Running the suite
+
+From the repo root:
+
+```bash
+# Unit tests only (skips any @integration-tagged bats tests)
+tests/run.sh
+
+# Include integration tests
+tests/run.sh --integration
+```
+
+Exit code is the number of failed suites (0 = all pass).
+
+### What runs
+
+| Layer | What it checks |
+|---|---|
+| **Structural validators** | `plugin.json` is valid JSON with required fields + semver version; every `SKILL.md` and agent `.md` has `name:` and `description:` frontmatter; every template has at least one markdown heading |
+| **Hook tests (bats)** | `plan-gate`, `diff-scope-check`, `adjacent-function-detector`, `secret-scan`, `bash-safety`, `env-detect`, `work-item-validation`, `session-plan-check`, `approval-reconcile` |
+
+### Running a single bats file
+
+```bash
+bats tests/hooks/plan_gate.bats
+```
+
+### Manual end-to-end validation
+
+For changes to skills, commands, or templates (which the bats suite doesn't cover), validate by:
 
 1. Installing the plugin into a throwaway repo
 2. Running through a representative task (new build, fix, CR) end-to-end

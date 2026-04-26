@@ -581,6 +581,39 @@ Shape of the artifacts the plugin produces. Headings and fields are parsed by ho
 - [docs/claude-sdlc-enterprise-adoption.md](docs/claude-sdlc-enterprise-adoption.md) — enterprise role/cost/audit story
 - [docs/rfcs/pending-analysis.md](docs/rfcs/pending-analysis.md) — open design questions under analysis
 
+## Running the tests
+
+### Prerequisites
+
+- **bats-core** for hook tests: `brew install bats-core` or `npm install -g bats`
+- `python3` or `node` for the manifest JSON validator
+
+### Commands
+
+```bash
+# From the repo root — unit tests only (skips @integration-tagged bats tests)
+tests/run.sh
+
+# Include integration tests
+tests/run.sh --integration
+
+# Run a single hook test file
+bats tests/hooks/plan_gate.bats
+```
+
+Exit code is the number of failed suites (0 = all pass).
+
+### What's covered
+
+| Layer | Files | What it checks |
+|---|---|---|
+| **Plugin manifest** | `tests/plugin/validate_manifest.sh` | `plugin.json` is valid JSON; has `name`, `version`, `description`; version is semver |
+| **Skill & agent frontmatter** | `tests/skills/validate_frontmatter.sh` | Every `SKILL.md` and agent `.md` has `name:` and `description:` |
+| **Template structure** | `tests/templates/validate_structure.sh` | Every template has at least one markdown heading |
+| **Hook behaviour (bats)** | `tests/hooks/*.bats` | `plan-gate`, `diff-scope-check`, `adjacent-function-detector`, `secret-scan`, `bash-safety`, `env-detect`, `work-item-validation`, `session-plan-check`, `approval-reconcile` |
+
+Skills, commands, and templates beyond frontmatter/structure checks require manual end-to-end testing — see [`CLAUDE.md`](CLAUDE.md) for the validation checklist.
+
 ## Contributing
 
 Before submitting a change, read [`CLAUDE.md`](CLAUDE.md) — it documents the design intent and the anti-patterns that look like improvements but aren't.
