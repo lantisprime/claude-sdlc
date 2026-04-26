@@ -10,7 +10,7 @@ Read `README.md` for the quick-start and `docs/SDLC.md` for the full phase refer
 
 ## Design intent — read this before "improving" anything
 
-These principles are load-bearing. Changes that violate them usually feel like simplifications but aren't:
+These principles are essential. Changes that violate them usually feel like simplifications but aren't:
 
 1. **Human in the lead, always.** Every phase ends at a signed gate file. Subagents, hooks, and MCP connectors propose — humans approve. Do not add an "auto-approve" convenience. Do not let a subagent advance a phase. Do not let observation of past behavior substitute for a fresh human confirmation.
 
@@ -18,7 +18,7 @@ These principles are load-bearing. Changes that violate them usually feel like s
 
 3. **Plan before code.** `plan-gate.sh` blocks Edit/Write when no plan exists. This is the single most important rule in the plugin. If it seems to be firing "too often," the fix is better planning, not a looser hook.
 
-4. **Surgical edits.** Skills and hooks together enforce that only plan-listed files and functions are modified. Adjacent functions are never touched. "While I'm here" cleanups are a footgun, not a virtue.
+4. **Surgical edits.** Skills and hooks together enforce that only plan-listed files and functions are modified. Adjacent functions are never touched. "While I'm here" cleanups are a known failure mode, not a virtue.
 
 5. **Work-item traceability.** Every build references a REQ ID, an issue ticket, or a signed CR. Don't add a "quick fix" escape hatch that bypasses this.
 
@@ -37,7 +37,7 @@ When modifying this repo, follow the plugin's own discipline even though the hoo
 
 ## Hook strictness philosophy
 
-The plugin distinguishes *block* from *warn* deliberately:
+The plugin distinguishes *block* from *warn*:
 
 - **Block (exit 2)** — used only when the consequence is severe: no plan at all, unsigned CR, confirmed secret found. Exit 2 refuses the tool call.
 - **Warn (stderr, exit 0)** — the default. Surface the signal to Claude and the human; let them decide. Scope drift, adjacent-function edits, test-scope mismatch — all warnings.
@@ -82,7 +82,7 @@ sdlc-plugin/
 - `hooks/plan-gate.sh` — the single most important hook. Blocks all edits without a plan.
 - `hooks/adjacent-function-detector.sh` — the cleverest hook. Uses `git diff --function-context` hunk headers; can be switched to tree-sitter via `config/tools.json` for higher accuracy.
 - `hooks/hooks.json` — hook registration. PreToolUse, PostToolUse, Stop, SessionStart matchers live here.
-- `docs/SDLC.md` — the authoritative reference. If you're about to change behavior, check here first to see if the behavior is load-bearing.
+- `docs/SDLC.md` — the authoritative reference. If you're about to change behavior, check here first to see if the behavior is essential.
 
 ## Tuning knobs (safe to adjust)
 
