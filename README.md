@@ -616,9 +616,29 @@ Skills, commands, and templates beyond frontmatter/structure checks require manu
 
 ## Contributing
 
-Before submitting a change, read [`CLAUDE.md`](CLAUDE.md) — it documents the design intent and the anti-patterns that look like improvements but aren't.
+Full guide: [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md). Short version below.
 
-Short version: the plugin eats its own dog food. Plan before code, surgical edits, one concern per change. Unrelated ideas go in a follow-up, not in the current PR.
+### Prerequisites
+
+| Tool | Purpose | Install |
+|---|---|---|
+| `bats-core` | Hook and script tests | `brew install bats-core` |
+| `jq` | `scripts/package.sh` JSON parsing | `brew install jq` |
+| `python3` or `node` | Plugin manifest JSON validation | Usually pre-installed |
+
+### Run the tests
+
+```bash
+tests/run.sh               # unit tests only
+tests/run.sh --integration # full suite (what CI runs)
+```
+
+### Key rules
+
+- **Plugin artifacts** (skills, hooks, commands, templates, agents): follow `AGENT-RULES.md`. One artifact per commit; skill descriptions must list concrete trigger phrases; hooks default to warn (exit 0); new hooks go in `hooks/hooks.json`; new commands need a README entry.
+- **RFCs**: draft → second opinion → accepted → implement → archived. Don't implement before status is `accepted`.
+- **Counts sync**: after adding/removing an artifact, update the `validate-counts` block in `docs/references/_repo-context.md`.
+- **Dog food**: plan before code, surgical edits, one concern per commit. Read [`CLAUDE.md`](CLAUDE.md) for design intent and anti-patterns.
 
 ## License
 
