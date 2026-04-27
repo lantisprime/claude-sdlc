@@ -7,7 +7,7 @@
 > **RFC work:** also load `docs/rfcs/AGENT-RULES.md` — it contains the concise decision rules for creating, transitioning, and archiving RFCs.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-27 (RFC-002-release-packaging implemented)
+**Last updated:** 2026-04-27 (RFC-004 maintainer-code-review-enforcement drafted)
 
 ---
 
@@ -126,7 +126,7 @@ All five RFCs are fully implemented as of 2026-04-27.
 
 ## Draft RFCs
 
-*(none)*
+- **`docs/rfcs/RFC-004-maintainer-code-review-enforcement.md`** (draft) — three-layer code-review gate for maintainer PRs to this repo: §14 in `sdlc-plugin/AGENT-RULES.md`, new Stop hook at `.claude/hooks/code-review-gate.sh` (warn), and `.github/workflows/code-review.yml` CI gate requiring ≥1 approved review on non-doc PRs. Doc-only diffs (`*.md`, `docs/**`, `templates/**`, `agents/**`, `commands/**`, `.github/**`) bypass entirely. Consuming-repo artifacts (`sdlc-plugin/hooks/`, `hooks.json`) untouched. 2 open questions tracked in `pending-analysis.md`.
 
 ## Accepted RFCs (awaiting implementation)
 

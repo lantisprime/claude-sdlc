@@ -239,6 +239,14 @@
       "update_triggers": ["rfc:accepted", "rfc:implemented"]
     },
     {
+      "path": "docs/rfcs/RFC-004-maintainer-code-review-enforcement.md",
+      "title": "Maintainer Code-Review Enforcement",
+      "status": "draft",
+      "role": "rfc",
+      "description": "Three-layer code-review gate for maintainer PRs to this repo: AGENT-RULES.md §14 rule, .claude/hooks/code-review-gate.sh Stop hook (warn), and .github/workflows/code-review.yml CI gate. Doc-only PRs bypass; consuming-repo artifacts untouched.",
+      "update_triggers": ["rfc:accepted", "rfc:implemented"]
+    },
+    {
       "path": "docs/rfcs/archived/RFC-002-release-packaging.md",
       "title": "Release Packaging & Marketplace Distribution",
       "status": "implemented",
@@ -269,6 +277,16 @@
       "implemented": [
         "docs/USER-MANUAL.md",
         "docs/SDLC.md",
+        "docs/references/_repo-context.md"
+      ]
+    },
+    "docs/rfcs/RFC-004-maintainer-code-review-enforcement": {
+      "rfc_status": "draft",
+      "accepted": [
+        "docs/references/_repo-context.md",
+        "docs/rfcs/pending-analysis.md"
+      ],
+      "implemented": [
         "docs/references/_repo-context.md"
       ]
     },
