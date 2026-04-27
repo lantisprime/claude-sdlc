@@ -7,5 +7,6 @@
     "email": "you@example.com"
   },
   "license": "MIT",
-  "keywords": ["sdlc", "workflow", "governance", "agentic", "human-in-the-loop"]
+  "keywords": ["sdlc", "workflow", "governance", "agentic", "human-in-the-loop"],
+  "devFiles": ["AGENT-RULES.md", "CLAUDE.md", "docs/", "tests/", "CHANGELOG.md"]
 }

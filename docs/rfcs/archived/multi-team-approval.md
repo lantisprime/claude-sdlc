@@ -1,6 +1,6 @@
 # RFC: Multi-team approval across Claude Code sessions
 
-**Status:** Accepted — 2026-04-19 by Charlton Ho (author). Supersedes [pending-analysis](./pending-analysis.md) §3. Further changes require an amendment recorded in the sign-off block at the bottom.
+**Status:** Implemented — all 5 steps shipped 2026-04-26 (step 4 + step 5 via amendments A1/A2). Accepted 2026-04-19 by Charlton Ho. Further changes require an amendment recorded in the sign-off block at the bottom.
 
 Related reading: [CLAUDE.md](../../CLAUDE.md), [docs/SDLC.md](../SDLC.md), [templates/sign-off.md](../../templates/sign-off.md).
 

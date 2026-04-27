@@ -42,7 +42,7 @@ Files stay here while their related RFC is still active or not yet accepted. Onc
 
 | File | Status | What it covers |
 | --- | --- | --- |
-| [`plan_command_analysis.md`](./plan_command_analysis.md) | discussion | Risk analysis for `/plan` command — 18 risks from code inspection + ChatGPT synthesis. Priority-ordered fix list; items 11–13 scoped as separate architectural changes. |
+| [`plan_command_analysis.md`](./plan_command_analysis.md) | companion | Risk analysis for `/plan` command — 18 risks from code inspection + ChatGPT synthesis. Companion to RFC-001-plan-quality-gates.md; items 11–13 scoped as separate architectural changes. |
 | [`analysis_command_analysis.md`](./analysis_command_analysis.md) | discussion | Risk analysis for `/analyze` command — 14 risks from code inspection + ChatGPT synthesis. Recommended sequencing: template changes first, then skill additions, then hook changes. |
 
 Reference files (`_repo-context.md`, `_session-handoff.md`, `workflow-log.md`) are in [`docs/references/`](../../references/). Archived RFC companion notes are in [`docs/rfcs/archived/`](../archived/).

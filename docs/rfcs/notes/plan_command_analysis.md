@@ -1,5 +1,7 @@
 # Risk Analysis: `/plan` Command
 
+> **Status:** companion — RFC-001-plan-quality-gates.md
+
 **Date:** 2026-04-26  
 **Branch:** `claude/zealous-fermi-JHrih`  
 **Scope:** `commands/plan.md`, `skills/plan/SKILL.md`, `hooks/plan-gate.sh`, `hooks/diff-scope-check.sh`, `templates/plan.md`, `agents/scope-ingest.md`, `skills/domain-expert/SKILL.md`  
