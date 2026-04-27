@@ -261,6 +261,7 @@ graph LR
 
     PR2 --> PR3
     PR2 --> PR5
+    PR3 --> PR4
     PR3 --> PR6
     PR4 --> PR6
     PR5 --> PR6
@@ -268,7 +269,7 @@ graph LR
     PR7 --> PR8
 ```
 
-PR-1 and PR-2 are independent. PR-3, PR-4, and PR-5 may ship in parallel after PR-2 merges. PR-6 only ships after Phase 2 lands so the status table reflects shipped reality. PR-7 must merge before PR-8 — see the Phase 3 hard dependency in §Scope.
+PR-1 and PR-2 are independent. PR-3 and PR-5 may ship in parallel after PR-2 merges. **PR-4 depends on PR-3** — B2 specifies "Block (exit 2)" severity, which requires the PreToolUse infrastructure that PR-3 (B1) introduces; the placeholder scanner naturally extends PR-3's prior-gate verification. PR-6 only ships after Phase 2 lands so the status table reflects shipped reality. PR-7 must merge before PR-8 — see the Phase 3 hard dependency in §Scope.
 
 ### PR-1 — Track A documentation corrections (A1–A4)
 
