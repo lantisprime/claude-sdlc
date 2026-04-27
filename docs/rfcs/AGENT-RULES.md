@@ -75,11 +75,12 @@ If the decision is `revise first`, address the gaps before setting `status: acce
 **3b. After second opinion clears:**
 
 1. Update `status: accepted` and `last_modified:` in RFC frontmatter.
-2. Resolve or update open questions in the `## Open questions` table.
-3. Update `docs/references/_repo-context.md` — move RFC from draft → accepted.
-4. Update `docs/GLOSSARY.md` if the RFC introduces new terms.
-5. Update `docs/ideas/capabilities.md` roadmap status.
-6. Close resolved items in `rfcs/pending-analysis.md`.
+2. **Write `## Implementation plan`** — identify phases, files in scope per phase, PR sequence, and any hard dependencies between phases. Record in the RFC's `## Implementation plan` section. Aim for under 50 lines.
+3. Resolve or update open questions in the `## Open questions` table.
+4. Update `docs/references/_repo-context.md` — move RFC from draft → accepted.
+5. Update `docs/GLOSSARY.md` if the RFC introduces new terms.
+6. Update `docs/ideas/capabilities.md` roadmap status.
+7. Close resolved items in `rfcs/pending-analysis.md`.
 
 ---
 
@@ -163,7 +164,8 @@ Not permitted (require a new RFC instead):
 | `## Problem` | Always |
 | `## Proposal` | Always |
 | `## Alternatives considered` | Always — at least one row in the table |
-| `## Implementation` | After implementation only |
+| `## Implementation plan` | Required when `status: accepted` |
+| `## Implementation` | After implementation only (post-ship PR/commit refs) |
 | `## Open questions` | Required if any OQs exist at draft time |
 | `## Deferral note` | Only if `status: deferred` |
 | `## Withdrawal note` | Only if `status: withdrawn` |

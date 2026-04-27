@@ -45,9 +45,23 @@ Document every alternative that was seriously considered and explain concisely w
 
 ---
 
+## Implementation plan
+
+> Populate this section when the RFC moves to `accepted`. Aim for under 50 lines — list phases, files in scope per phase, and PR sequence. Do not repeat design rationale already covered above.
+
+| Phase | PRs / tasks | Files in scope |
+|---|---|---|
+| 1 | _example: create hook script_ | `hooks/example.sh` |
+| 2 | _example: register hook_ | `hooks/hooks.json` |
+
+Sequencing notes:
+- _list any hard dependencies between phases_
+
+---
+
 ## Implementation
 
-> Populate this section after the RFC is implemented. Leave it empty or omit during draft/accepted stages.
+> Populate this section after all PRs are merged. Leave empty during draft/accepted stages.
 
 | PR / Commit | What it delivered |
 |---|---|
