@@ -394,7 +394,7 @@ I have reviewed the phase outputs and approve advancing to the next phase.
 | `Acknowledgment` | A sentence (or two) naming the specific things you verified — flag state, rollback plan, canary window | Write `"approved"` or repeat the phase summary verbatim |
 | `Confirmation` | Leave the template line as-is | Delete or reword it |
 
-**After saving**, the next phase command (e.g. `/support`) will run normally. **Planned (RFC-003 PR-4):** `phase-gate.sh` will refuse to advance if any of the five required fields still contains a `<...>` placeholder. Until that ships, the placeholder check is the human's responsibility — fill every field before saving.
+**After saving**, the next phase command (e.g. `/support`) will run. `phase-gate.sh` will refuse to advance if any of the five required fields still contains a `<signer>` / `<timestamp>` / `<work-item>` / `<acknowledgment>` placeholder, a `___` blank, or a `TODO` marker. **Implemented hard block (RFC-003 PR-4)** — fill every field before saving.
 
 #### Same pattern for `/fix-fast`
 
@@ -529,14 +529,20 @@ After every phase gate is written, the skill appends a `## Next step hint` block
 
 ### Downstream enforcement (why gates can't be forged)
 
-Writing a gate file is not the whole story — two hooks check it on the way through. Today, `plan-gate.sh` blocks edits without a plan and `work-item-validation.sh` blocks builds without a valid `Classification` field or matching signed CR; gate-by-gate prior-phase enforcement and per-file traceability are planned (RFC-003 Phase 2/3).
+> **Status tags.** Hook capabilities below carry one of four tags:
+> - **Implemented hard block** — hook exits 2; confirmed by a passing bats test.
+> - **Implemented warning** — hook exits 0 + stderr; confirmed by test.
+> - **Planned** — accepted in an RFC, not yet shipped.
+> - **Strict-mode only** — requires a `config/tools.json` `enforcement.<key>: block` setting (no controls in this state today; the keys are reserved by RFC-003 PR-2).
+
+Writing a gate file is not the whole story — two hooks check it on the way through. `plan-gate.sh` blocks edits without a plan; `phase-gate.sh` and `work-item-validation.sh` together cover phase progression, gate signing, and per-file traceability per RFC-003.
 
 | Hook | When | What it checks |
 |---|---|---|
-| [phase-gate.sh](../hooks/phase-gate.sh) | `Stop` (advisory) | Prints a stderr reminder if no gate file has been updated in the last two hours; does not currently block. **Planned (RFC-003 PR-3):** PreToolUse `Edit`/`Write` block when the prior phase's gate file is missing. **Planned (RFC-003 PR-4):** block when a deploy or fix-fast gate has unfilled placeholder fields. |
-| [work-item-validation.sh](../hooks/work-item-validation.sh) | PreToolUse on Edit/Write | Validates that the active plan has a `Classification` field; for change-request plans, validates that a matching signed CR artifact exists. **Planned (RFC-003 PR-5):** file-level REQ / ticket / CR warning when an edited file lacks a traceability mapping. **Planned (RFC-003 PR-8):** promote that warning to a block once the plan template ships a per-file `## Traceability` section. |
+| [phase-gate.sh](../hooks/phase-gate.sh) | PreToolUse Edit/Write/MultiEdit + `Stop` | PreToolUse: blocks edits when the prior phase gate is missing — or when a deploy or fix-fast gate has unfilled placeholder fields. Stop: prints a 2-hour reminder if no gate file has been updated recently. **Implemented hard block (RFC-003 PR-3, PR-4).** |
+| [work-item-validation.sh](../hooks/work-item-validation.sh) | PreToolUse on Edit/Write | Validates that the active plan has a `Classification` field; for change-request plans, validates that a matching signed CR artifact exists. Also warns when the edited file is not in the plan's `## In-scope files` list or when the plan has no REQ/ticket/CR reference. **Implemented hard block** for Classification + CR sign-off; **Implemented warning (RFC-003 PR-5)** for file-level traceability; **Planned (RFC-003 PR-8)** to promote that warning to a block once the plan template ships a per-file `## Traceability` section. |
 
-The gate is a contract for the human signing it. The contract is partly enforced today (plan-gate.sh, classification + CR sign-off) and partly aspirational; RFC-003 closes the gap.
+The gate is a contract for the human signing it. With RFC-003 PR-3 through PR-5 shipped, the contract is enforced end-to-end except for file-level traceability (still warn-level pending PR-8).
 
 ### Graceful degradation
 
@@ -1201,8 +1207,8 @@ You'll interact with hooks implicitly — they fire on Claude's tool calls, not 
 | Hook | Fires on | Severity | Typical user experience |
 |---|---|---|---|
 | `plan-gate.sh` | PreToolUse Edit/Write | **Block** + 2 warns | **Block:** "I can't edit files yet — there's no plan for this task. Run `/plan` first." **Warn:** if `.claude/sdlc/scope.md` is absent, or if no scope gate exists at `.claude/sdlc/gates/scope-*.md`. The warns surface the gap; the block is reserved for the missing plan artifact. |
-| `work-item-validation.sh` | PreToolUse Edit/Write | **Block** | "Edit blocked: active plan has no `Classification` field" — or, for change-request plans, "no matching signed CR artifact found". *Planned (RFC-003 PR-5):* warn on edited files without a REQ / ticket / CR mapping. *Planned (RFC-003 PR-8):* promote that warning to a block once the plan template ships a per-file `## Traceability` section. |
-| `phase-gate.sh` | `Stop` (advisory) | **Advisory** | "Reminder: no gate file has been updated in the last two hours — verify the prior phase is signed before continuing." Does not currently block. *Planned (RFC-003 PR-3):* PreToolUse block when the prior phase's gate is missing. *Planned (RFC-003 PR-4):* block when a deploy or fix-fast gate has unfilled placeholder fields. |
+| `work-item-validation.sh` | PreToolUse Edit/Write | **Block** + Warn | **Block:** "Edit blocked: active plan has no `Classification` field" — or, for change-request plans, "no matching signed CR artifact found". **Warn (Implemented warning, RFC-003 PR-5):** "WARN: file '<path>' is not listed in the active plan's '## In-scope files' section" / "WARN: no REQ/TICKET/CR/ISSUE reference found in active plan". *Planned (RFC-003 PR-8):* promote the file-level warning to a block once the plan template ships a per-file `## Traceability` section. |
+| `phase-gate.sh` | PreToolUse Edit/Write/MultiEdit + `Stop` | **Block** + Advisory | **PreToolUse Block (Implemented hard block, RFC-003 PR-3):** "BLOCK: active phase is '<phase>' but no prior gate found for task '<slug>' (expected …)". **PreToolUse Block (Implemented hard block, RFC-003 PR-4):** "BLOCK: deploy/fix-fast gate has unfilled fields: …". **Stop Advisory:** "INFO: no gate file updated in the last 2 hours …". |
 | `secret-scan.sh` | PostToolUse | **Block** | "Secret scanner found a confirmed secret in this diff — refusing the write." |
 | `diff-scope-check.sh` | PostToolUse | Warn | "Warning: you touched `admin/api.go` but it's not in the plan's in-scope list." |
 | `adjacent-function-detector.sh` | PostToolUse | Warn | "Warning: function `formatAdminError` is adjacent to the in-scope `formatUserError` — verify this was intentional." |
