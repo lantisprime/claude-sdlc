@@ -87,10 +87,12 @@ create_archive() {
 
 release_branch() {
   echo "--- Publishing release branch"
-  local tmp_dir
+  local tmp_dir tmp_repo origin_url
   tmp_dir=$(mktemp -d)
+  tmp_repo=$(mktemp -d)
+  origin_url=$(git remote get-url origin)
 
-  # Copy distributable files to temp dir
+  # Copy distributable files to tmp_dir
   while IFS= read -r -d '' file; do
     local rel="${file#./}"
     if ! is_excluded "$rel"; then
@@ -100,19 +102,19 @@ release_branch() {
     fi
   done < <(find . -not -path './.git/*' -type f -print0)
 
-  # Force-push clean release branch — this is intentional; never push to release manually
-  local current_branch
-  current_branch=$(git rev-parse --abbrev-ref HEAD)
-  git checkout --orphan release-tmp
-  git rm -rf . --quiet
-  cp -r "$tmp_dir/." .
-  rm -rf "$tmp_dir"
-  git add -A
-  git commit -m "release: v${VERSION}"
-  git branch -f release release-tmp
-  git checkout "$current_branch"
-  git branch -D release-tmp
-  git push --force-with-lease origin release
+  # Build release branch in an isolated repo — avoids touching the working tree
+  # (required for CI worktree environments where in-place orphan checkout fails)
+  git -C "$tmp_repo" init
+  git -C "$tmp_repo" config user.name "$(git config user.name)"
+  git -C "$tmp_repo" config user.email "$(git config user.email)"
+  git -C "$tmp_repo" checkout -b release
+  cp -r "$tmp_dir/." "$tmp_repo/"
+  git -C "$tmp_repo" add -A
+  git -C "$tmp_repo" commit -m "release: v${VERSION}"
+  git -C "$tmp_repo" remote add origin "$origin_url"
+  git -C "$tmp_repo" push --force origin release
+
+  rm -rf "$tmp_dir" "$tmp_repo"
   echo "--- Release branch updated"
 }
 
