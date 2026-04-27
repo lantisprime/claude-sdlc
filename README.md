@@ -620,11 +620,11 @@ Full guide: [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md). Short version below.
 
 ### Prerequisites
 
-| Tool | Purpose | Install |
-|---|---|---|
-| `bats-core` | Hook and script tests | `brew install bats-core` |
-| `jq` | `scripts/package.sh` JSON parsing | `brew install jq` |
-| `python3` or `node` | Plugin manifest JSON validation | Usually pre-installed |
+| Tool | Purpose | macOS | Linux / WSL |
+|---|---|---|---|
+| `bats-core` | Hook and script tests | `brew install bats-core` | `sudo apt install bats` |
+| `jq` | `scripts/package.sh` JSON parsing | `brew install jq` | `sudo apt install jq` |
+| `python3` or `node` | Plugin manifest JSON validation | Usually pre-installed | Usually pre-installed |
 
 ### Run the tests
 
