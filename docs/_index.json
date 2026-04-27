@@ -231,6 +231,14 @@
       "update_triggers": ["rfc:accepted", "rfc:implemented"]
     },
     {
+      "path": "docs/rfcs/RFC-003-hook-enforcement-alignment.md",
+      "title": "Hook Enforcement Alignment",
+      "status": "draft",
+      "role": "rfc",
+      "description": "Closes four gaps between USER-MANUAL.md enforcement claims and actual hook implementations: phase-gate.sh PreToolUse registration, placeholder field validation for deploy/fix-fast gates, work-item file-level traceability warning, enforcement language audit.",
+      "update_triggers": ["rfc:accepted", "rfc:implemented"]
+    },
+    {
       "path": "docs/rfcs/archived/RFC-002-release-packaging.md",
       "title": "Release Packaging & Marketplace Distribution",
       "status": "implemented",
@@ -250,6 +258,17 @@
         "docs/SDLC.md",
         "docs/USER-MANUAL.md",
         "docs/ideas/capabilities.md",
+        "docs/references/_repo-context.md"
+      ]
+    },
+    "docs/rfcs/RFC-003-hook-enforcement-alignment": {
+      "rfc_status": "draft",
+      "accepted": [
+        "docs/references/_repo-context.md"
+      ],
+      "implemented": [
+        "docs/USER-MANUAL.md",
+        "docs/SDLC.md",
         "docs/references/_repo-context.md"
       ]
     },

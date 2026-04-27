@@ -126,7 +126,7 @@ All five RFCs are fully implemented as of 2026-04-27.
 
 ## Draft RFCs
 
-*(none)*
+- **`docs/rfcs/RFC-003-hook-enforcement-alignment.md`** (draft) — closes four gaps between `USER-MANUAL.md` enforcement claims and actual hook implementations: `phase-gate.sh` `PreToolUse` registration + prior-gate block, placeholder field validation for deploy/fix-fast gates, `work-item-validation.sh` file-level traceability warning, enforcement language audit in the manual. Two-track: Track A (doc corrections), Track B (hook implementation).
 
 ## Accepted RFCs (awaiting implementation)
 
