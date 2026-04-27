@@ -114,6 +114,22 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+# ── Bug 5: marketplace ref bump must go through PR (branch protection) ────
+# Direct `git push origin HEAD:main` from the GH Actions bot is rejected by
+# the main-branch protection rule. The release workflow opens a PR instead.
+
+@test "Bug 5 — release.yml opens a PR for marketplace ref instead of pushing direct" {
+  run grep -E "gh pr create" "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -E "git push origin HEAD:main" "$WORKFLOW"
+  [ "$status" -ne 0 ]
+}
+
+@test "Bug 5 — release.yml grants pull-requests: write to the release job" {
+  run grep -E "^\s*pull-requests:\s*write" "$WORKFLOW"
+  [ "$status" -eq 0 ]
+}
+
 # ── Flag parsing ──────────────────────────────────────────────────────────
 
 @test "--skip-tests flag accepted without error" {
