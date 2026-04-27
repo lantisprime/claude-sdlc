@@ -2,6 +2,48 @@
 
 All notable changes to claude-sdlc are documented here.
 
+## [1.3.0] — 2026-04-27
+
+Closes RFC-003 (Hook Enforcement Alignment) — eight PRs that tighten the four documented gaps between `USER-MANUAL.md`'s enforcement claims and the actual hook implementations. All changes are additive and back-compat: default behavior on upgrade matches pre-upgrade, with new enforcement modes available behind opt-in config flips.
+
+### Added
+
+- **`phase-gate.sh` PreToolUse prior-gate enforcement (RFC-003 PR-3)** — `phase-gate.sh` is now registered on `PreToolUse Edit|Write|MultiEdit` in addition to the existing `Stop` event. The `PreToolUse` branch reads the active plan's `Phase:` (or `Active Phase:`) field, looks up the prior gate (e.g. `analyze` requires `plan-<slug>.md`), and exits 2 with `[phase-gate] BLOCK` when the prior gate file is missing. Source/test/config edits block; `.md`/`.rst`/`.txt` edits warn instead. The `Stop` advisory reminder is unchanged.
+- **`phase-gate.sh` deploy/fix-fast placeholder validation (RFC-003 PR-4)** — When the active phase is `deploy` or follows a `fix-fast` mini-gate, the hook scans the most recent gate file for unfilled `<signer>` / `<timestamp>` / `<work-item>` / `<acknowledgment>` placeholder tokens, `___` blanks, or bare `TODO` markers in the `Signed by`, `Signed at`, `Work-item reference`, `## Acknowledgment`, and `## Confirmation` fields. Multi-line HTML comments are stripped before the scan. Block-level — refuses the edit until every required field is filled.
+- **`work-item-validation.sh` file-level traceability warning (RFC-003 PR-5)** — The hook now reads `CLAUDE_TOOL_INPUT.file_path` (jq → grep/sed → raw fallback) and emits two warn-level signals: file not in the active plan's `## In-scope files` section, or plan has no `(REQ|TICKET|CR|ISSUE)-[0-9]+` reference. Generated-file inheritance via `config/tools.json`'s `generated_files` map: edits to entries listed there inherit traceability from the configured `generated_by` source. In-scope check uses token-level line-by-line matching (not substring) so bare basenames don't falsely match longer paths. `.claude/sdlc/` paths bypass as a repair escape hatch.
+- **`work-item-validation.sh` file-level traceability opt-in block (RFC-003 PR-8)** — Promotes the file-level warning to a hard block (exit 2) when `enforcement.file_traceability: "block"` is set in `config/tools.json` AND the active plan contains a structured `## Traceability` markdown table. Each edited file must appear as a row in the table with a `(REQ|TICKET|CR|ISSUE)-[0-9]+` reference. Plans without the section fall back to warn-only regardless of config (back-compat). Header column accepts `File` / `Path` / `Source` / `Source File` (case-insensitive). Default mode is `warn` — opt-in only.
+- **Strict-mode `enforcement` config block (RFC-003 PR-2)** — `config/tools.example.json` reserves `enforcement` keys: `phase_gate` (default `block`), `file_traceability` (default `warn`), `scope_drift` (default `warn`), `missing_tests` (default `warn`). Hooks consume these for severity overrides — set any key to `warn` to demote a block (or `block` to promote a warn) without code changes.
+- **`generated_files` config schema (RFC-003 PR-2/PR-5)** — `config/tools.example.json` reserves `generated_files` as an array of `{path, generated_by}` entries. `work-item-validation.sh` (PR-5/PR-8) inherits traceability from the configured generator, so edits to lockfiles, generated SDKs, and build artifacts no longer warn or block when their source is in-scope and REQ-mapped.
+- **`Phase:` field in plan template (RFC-003 PR-3)** — `templates/plan.md` now ships a `Phase:` field (values: `plan | analyze | design | build | test | deploy | support | docs`) read by `phase-gate.sh` to determine prior-gate requirements. Both `Phase:` and `Active Phase:` forms are accepted.
+- **`## Traceability` section in plan template (RFC-003 PR-7)** — `templates/plan.md` now ships a 5-row markdown table (`File | REQ/Ticket/CR | Change Type`) for per-file work-item mapping. Read by `work-item-validation.sh` (PR-8) when block mode is configured. Purely additive; warn-only when absent.
+- **Anchor-token placeholders in gate template (RFC-003 PR-4)** — `templates/gate.md` replaces ambiguous multi-word placeholders with anchor tokens (`<signer>`, `<timestamp>`, `<work-item>`, `<acknowledgment>`) plus inline HTML-comment guidance. Detected reliably by `phase-gate.sh`'s placeholder scanner.
+
+### Changed
+
+- **`hooks/hooks.json`** — `phase-gate.sh` is now registered on `PreToolUse Edit|Write|MultiEdit` (in addition to the existing `Stop` event). The `PreToolUse` branch is reached for every Edit/Write call; the `Stop` branch continues to print a 2-hour reminder if no gate file has been updated recently. Both branches share a single script via `$CLAUDE_HOOK_EVENT` dispatch.
+
+### Documentation
+
+- **`docs/USER-MANUAL.md` enforcement language audit (RFC-003 PR-1)** — Five overclaimed enforcement sites were corrected to match shipped behavior, with `Planned (RFC-003 PR-N)` tags pointing at the implementing PR.
+- **`docs/USER-MANUAL.md` four-status legend + status-table sync (RFC-003 PR-6)** — Added a four-status legend block (Implemented hard block / Implemented warning / Planned / Strict-mode only) above the downstream-enforcement section. After Phase 2 shipped, replaced "Planned" tags with the shipped status: `phase-gate.sh` → Implemented hard block (PR-3, PR-4); `work-item-validation.sh` → Implemented warning for file-level traceability (PR-5), Implemented hard block when opt-in (PR-8). The gate-as-contract paragraph now reads "with RFC-003 PR-3 through PR-8 shipped, the contract is enforced end-to-end".
+- **`docs/rfcs/RFC-003-hook-enforcement-alignment.md`** — RFC accepted, all 8 PRs logged with commit SHAs and per-PR summaries, status flipped to `implemented`.
+- **`docs/rfcs/RFC-004-maintainer-code-review-enforcement.md`** — RFC accepted (not yet implemented). Index files updated.
+- **`docs/rfcs/pending-analysis.md`** — Items 3 and 4 closed; quick-reference table added.
+- **README + `docs/CONTRIBUTING.md`** — Install section updated with marketplace method and `v1.2.0` ref pin (now `v1.3.0`); Linux/WSL install commands added to prerequisites table.
+
+### Issues filed and closed (pre-commit code review traceability)
+
+- [#22](https://github.com/lantisprime/claude-sdlc/issues/22), [#23](https://github.com/lantisprime/claude-sdlc/issues/23) — RFC-003 PR-3 review fixes (Active Phase regex, branch detection)
+- [#24](https://github.com/lantisprime/claude-sdlc/issues/24), [#25](https://github.com/lantisprime/claude-sdlc/issues/25), [#26](https://github.com/lantisprime/claude-sdlc/issues/26) — RFC-003 PR-4 review fixes (case-insensitive field grep, multi-line HTML comments, pipefail brittleness)
+- [#27](https://github.com/lantisprime/claude-sdlc/issues/27) — RFC-003 PR-5 review fix (substring false-match in In-scope check)
+- [#28](https://github.com/lantisprime/claude-sdlc/issues/28), [#29](https://github.com/lantisprime/claude-sdlc/issues/29) — RFC-003 PR-8 review fixes (header parser brittleness, misleading promote-to-block hint)
+
+### Test count
+
+126/126 passing (`tests/run.sh`) — up from 109/109 at v1.2.0. New coverage: 30 phase-gate scenarios + 35 work-item-validation scenarios.
+
+---
+
 ## [1.2.0] — 2026-04-27
 
 ### Added
