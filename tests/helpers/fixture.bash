@@ -65,6 +65,40 @@ EOF
   touch "$dir/.claude/sdlc/plans/${slug}.md"
 }
 
+# Write a plan that includes a structured `## Traceability` table.
+# Usage: add_plan_with_traceability <dir> [<slug>]
+add_plan_with_traceability() {
+  local dir="$1" slug="${2:-test-task}"
+  cat > "$dir/.claude/sdlc/plans/${slug}.md" <<'EOF'
+# Plan: test-task
+
+Classification: new-build
+Reference: REQ-001
+
+## In-scope files
+- src/foo.js
+- src/bar.ts
+
+## Traceability
+
+| File | REQ/Ticket/CR | Change Type |
+|---|---|---|
+| src/foo.js | REQ-001 | modified |
+| src/bar.ts | TICKET-42 | new |
+| src/empty-ref.js |  | modified |
+EOF
+  touch "$dir/.claude/sdlc/plans/${slug}.md"
+}
+
+# Write `enforcement.file_traceability` value to config/tools.json.
+# Usage: set_traceability_mode <dir> block|warn
+set_traceability_mode() {
+  local dir="$1" mode="$2"
+  cat > "$dir/config/tools.json" <<EOF
+{ "enforcement": { "file_traceability": "${mode}" } }
+EOF
+}
+
 # Copy a versioned plan (*.v1.md) — should not satisfy plan-gate or work-item checks.
 add_versioned_plan() {
   local dir="$1" slug="${2:-test-task}"

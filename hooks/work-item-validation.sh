@@ -31,11 +31,15 @@ if grep -qiE '^\s*(Classification|Type)\s*:\s*change-request' "$PLAN"; then
   fi
 fi
 
-# ---- B3 file-level traceability warning (RFC-003 PR-5) ----
-# Warns (does not block) if the edited file is missing from the plan's
-# In-scope files section or if the plan has no REQ/TICKET/CR reference.
-# Block-level promotion is deferred to PR-8 once the plan template ships
-# the per-file ## Traceability section (RFC-003 §C2 prerequisites).
+# ---- B3 file-level traceability (RFC-003 PR-5 warn / PR-8 block) ----
+# Two enforcement paths sharing the same input plumbing:
+#   - warn (PR-5, default): missing In-scope or plan-level REQ logs to stderr.
+#   - block (PR-8, opt-in): if config/tools.json sets
+#     enforcement.file_traceability="block" AND the plan has a structured
+#     `## Traceability` table, every edited file must be a row in that table
+#     with a REQ/TICKET/CR/ISSUE reference, else exit 2.
+# Plans without the Traceability section fall back to warn-only regardless
+# of config, so legacy plans never get blocked unexpectedly.
 
 TOOL_INPUT="${CLAUDE_TOOL_INPUT:-}"
 [ -n "$TOOL_INPUT" ] || exit 0
@@ -86,15 +90,89 @@ $IN_SCOPE_BLOCK
 EOF_BLK
 fi
 
+# Read enforcement.file_traceability (block | warn). Default warn — the example
+# config ships warn as the post-RFC-003 baseline; users opt in to block.
+ENFORCE_MODE="warn"
+if command -v jq >/dev/null 2>&1 && [ -f "config/tools.json" ]; then
+  CFG_MODE=$(jq -r '.enforcement.file_traceability // "warn"' config/tools.json 2>/dev/null || true)
+  case "$CFG_MODE" in
+    block|warn) ENFORCE_MODE="$CFG_MODE" ;;
+  esac
+fi
+
+# Parse the structured `## Traceability` table. Format (PR-7 plan template):
+#   | File | REQ/Ticket/CR | Change Type |
+#   |---|---|---|
+#   | path/to/file.ext | REQ-001 | modified |
+# Emit "<path>\t<ref>" per data row. The header is detected by content
+# (case-insensitive: file/path/source) so users can rename the column.
+# The separator row is detected by shape (dashes/colons/spaces only).
+TRACE_BLOCK=$(awk '
+  /^## Traceability/ {f=1; next}
+  /^## / {f=0}
+  f && /^[[:space:]]*\|/ { print }
+' "$PLAN" 2>/dev/null || true)
+
+TRACE_ROWS=""
+if [ -n "$TRACE_BLOCK" ]; then
+  TRACE_ROWS=$(echo "$TRACE_BLOCK" | awk '
+    BEGIN { FS="|" }
+    {
+      # Skip separator-shaped rows (only dashes/spaces/colons/pipes).
+      if ($0 ~ /^[[:space:]]*\|[[:space:]:|-]+\|[[:space:]]*$/) next
+      file=$2; ref=$3
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", file)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", ref)
+      if (file == "") next
+      # Skip header rows by case-insensitive content match — accommodates
+      # renames like `Path`, `Source File`, `file`, etc.
+      lower=tolower(file)
+      if (lower == "file" || lower == "path" || lower == "source" || lower == "source file") next
+      printf "%s\t%s\n", file, ref
+    }
+  ' || true)
+fi
+
+TRACE_MATCH_PATH=""
+TRACE_MATCH_REF=""
+if [ -n "$TRACE_ROWS" ]; then
+  while IFS=$'\t' read -r row_path row_ref; do
+    if [ "$row_path" = "$TARGET_PATH" ]; then
+      TRACE_MATCH_PATH="$row_path"
+      TRACE_MATCH_REF="$row_ref"
+      break
+    fi
+  done <<EOF_TRACE
+$TRACE_ROWS
+EOF_TRACE
+fi
+
+# Block path: opt-in via config AND plan has a Traceability section.
+if [ "$ENFORCE_MODE" = "block" ] && [ -n "$TRACE_ROWS" ]; then
+  if [ -z "$TRACE_MATCH_PATH" ]; then
+    echo "[work-item] BLOCK: file '$FILE_PATH' is not listed in the active plan's '## Traceability' table. Add a row mapping the file to a REQ/TICKET/CR/ISSUE before editing." >&2
+    exit 2
+  fi
+  if ! echo "$TRACE_MATCH_REF" | grep -qE '(REQ|TICKET|CR|ISSUE)-[0-9]+'; then
+    echo "[work-item] BLOCK: file '$FILE_PATH' has no REQ/TICKET/CR/ISSUE reference in the '## Traceability' table (row reference: '${TRACE_MATCH_REF:-empty}')." >&2
+    exit 2
+  fi
+  exit 0
+fi
+
+# Warn path (default + back-compat for plans without a Traceability section).
 if [ -z "$IN_SCOPE" ]; then
   echo "[work-item] WARN: file '$FILE_PATH' is not listed in the active plan's '## In-scope files' section. Verify intentional, or update the plan." >&2
 fi
 
-# REQ/ticket/CR existence check. Recognised prefixes are listed in the warning so
-# users with non-canonical IDs (JIRA-style PROJ-123, GH-456, etc.) know to map them
-# onto the four supported forms or rename in the plan.
 if ! grep -qE '(REQ|TICKET|CR|ISSUE)-[0-9]+' "$PLAN"; then
-  echo "[work-item] WARN: no REQ/TICKET/CR/ISSUE reference (e.g. REQ-001, TICKET-42, CR-7, ISSUE-99) found in active plan $PLAN. File-level traceability will be promoted to a hard block once RFC-003 PR-8 ships the ## Traceability section." >&2
+  if [ "$ENFORCE_MODE" = "block" ]; then
+    # User has opted in to block mode but the plan lacks the Traceability section,
+    # so we fell through to warn. Make the inactive-block state explicit.
+    echo "[work-item] WARN: plan $PLAN has no '## Traceability' section; enforcement.file_traceability=\"block\" is configured but inactive until the section is added (back-compat warn-only path)." >&2
+  else
+    echo "[work-item] WARN: no REQ/TICKET/CR/ISSUE reference (e.g. REQ-001, TICKET-42, CR-7, ISSUE-99) found in active plan $PLAN. Add a '## Traceability' table and set enforcement.file_traceability=\"block\" in config/tools.json to promote this to a hard block." >&2
+  fi
 fi
 
 exit 0

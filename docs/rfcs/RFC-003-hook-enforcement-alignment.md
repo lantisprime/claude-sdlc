@@ -2,7 +2,7 @@
 rfc_id: RFC-003
 slug: hook-enforcement-alignment
 title: Hook Enforcement Alignment
-status: accepted
+status: implemented
 champion: charltond.ho
 created: 2026-04-27
 last_modified: 2026-04-27
@@ -391,7 +391,7 @@ Once PR-3, PR-4, PR-5 land, retrofit the manual with the four-status table from 
 > | `phase-gate.sh` blocks phase commands without prior gate | **Implemented hard block** (RFC-003 PR-3) |
 > | `phase-gate.sh` blocks gates with placeholder fields | **Implemented hard block** (RFC-003 PR-4) |
 > | `work-item-validation.sh` warns on un-traced files | **Implemented warning** (RFC-003 PR-5) |
-> | `work-item-validation.sh` blocks un-traced files | **Planned** (RFC-003 PR-8) |
+> | `work-item-validation.sh` blocks un-traced files | **Implemented hard block** (RFC-003 PR-8, opt-in via `enforcement.file_traceability: "block"`) |
 
 ### PR-7 — C1: plan template `## Traceability` section
 
@@ -465,7 +465,7 @@ The block-level check uses structured table parsing (or `active-plan.trace.json`
 | `b5157b0` (PR-5 follow-up) | Coverage gap closed: bats scenario for the no-jq grep/sed fallback path. Skips defensively when jq is reachable in `/usr/bin:/bin` (e.g. macOS systems with `/usr/bin/jq`); runs on Linux CI and macOS-with-brew-jq. |
 | `996cb7c` (PR-6) | §A5 status-table sync in `docs/USER-MANUAL.md`. Adds the four-status legend block (Implemented hard block / Implemented warning / Planned / Strict-mode only) above the downstream-enforcement section. Replaces three "Planned (RFC-003 PR-N)" hedges with the shipped status: PR-3 + PR-4 → Implemented hard block on `phase-gate.sh`; PR-5 → Implemented warning on file-level traceability; PR-8 stays Planned. Severity table rows for both hooks updated with the actual block/warn strings. No code changes. 110/110 tests pass. |
 | `805c283` (PR-7) | §C1 plan-template `## Traceability` section. Adds a 5-row markdown table (`File \| REQ/Ticket/CR \| Change Type`) to `templates/plan.md` between `## Out-of-scope` and `## Approach`. Two seed rows demonstrate `modified` + `new` change types. Purely additive — no hook consumer yet (PR-8 wires it into `work-item-validation.sh`). 110/110 tests pass. |
-| — (PR-8) | Pending — promote file-level warn to block once C2 prerequisites met. |
+| `<pending>` (PR-8) | §C2 + C4 promote file-level warn to block. `work-item-validation.sh` parses the structured `## Traceability` markdown table introduced by PR-7 (awk-based, header by case-insensitive content match across `file`/`path`/`source`/`source file`, separator detected by shape). Reads `enforcement.file_traceability` from `config/tools.json` (default `warn` per the example config baseline). Decision tree: legacy invocation / `.claude/sdlc/` path / generated-file inheritance bypasses unchanged → if mode is `block` AND a Traceability section exists, the edited file must match a row whose ref cell contains `(REQ\|TICKET\|CR\|ISSUE)-[0-9]+`, else exit 2. Plans without the section fall back to warn-only regardless of config (back-compat); when block is configured but the section is absent, the warn message surfaces the inactive-block state explicitly. Two pre-commit code-review issues filed and fixed: header-rename brittleness ([#28](https://github.com/lantisprime/claude-sdlc/issues/28)) and misleading promote-to-block hint when block is already configured ([#29](https://github.com/lantisprime/claude-sdlc/issues/29)). 16 new bats scenarios (12 + 4 review-driven); 126/126 tests pass. |
 
 ---
 
