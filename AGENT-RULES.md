@@ -120,6 +120,8 @@ Update `plugin.json` after any non-trivial change:
 | Breaking change to gate-file shape, plan artifact field names, or phase order | Major |
 | Bug fix or documentation only | Patch |
 
+Before tagging a release, add a `[X.Y.Z] — YYYY-MM-DD` entry to `CHANGELOG.md` covering all changes since the previous release. Use sub-sections (`### Added`, `### Changed`, `### Fixed`, `### Documentation`) as relevant. The changelog commit must land on `main` before the tag is pushed — `release.yml` does not update it automatically.
+
 ---
 
 ## 9. When a new feature ships

@@ -2,6 +2,37 @@
 
 All notable changes to claude-sdlc are documented here.
 
+## [1.2.0] — 2026-04-27
+
+### Added
+
+- **Distribution packaging system (RFC-002)** — `scripts/package.sh` builds a consumer-ready distribution: reads `devFiles` from `plugin.json`, applies a hardcoded infra exclusion list (`.git`, `.github`, `dist`, `.claude`, `config/tools.json`), produces a `dist/sdlc-plugin-vX.Y.Z.tar.gz` archive, and force-pushes a clean `release` branch. Supports `--dry-run` (manifest preview, no writes), `--skip-tests`, and `--skip-tag` flags.
+- **Self-hosted marketplace** — `.claude-plugin/marketplace.json` enables consumers to install with `/plugin marketplace add lantisprime/claude-sdlc` then `/plugin install sdlc-plugin@claude-sdlc`. No Anthropic approval required.
+- **CI release pipeline** — `.github/workflows/release.yml` runs a `test` job on every push to `main` and a `release` job on `v*.*.*` tags (only after `test` passes). Release job installs `jq`, configures git identity, calls `package.sh --skip-tests --skip-tag`, verifies the archive exists, creates a GitHub Release with the attached `.tar.gz`, validates `marketplace.json`, and commits the updated `ref` back to `main` with `[skip ci]`.
+- **Packaging test suite** — `tests/scripts/package.bats` (18 tests): covers all 4 CI bugs as regression tests, manifest exclusion correctness for all `devFiles` and infra categories, missing-dependency detection, and flag-parsing edge cases.
+- **Contributor/maintainer guide** — `docs/CONTRIBUTING.md` covers prerequisites, running tests, per-artifact-type rules (linking `AGENT-RULES.md` rather than duplicating it), release procedure, and the per-push docs-sync checklist.
+- **Docs-sync validator** — `tests/plugin/validate_docs_sync.sh` reads the machine-readable counts block from `docs/references/_repo-context.md` and compares against disk counts for skills, commands, hooks, templates, and agents. Also checks that every command file has a `/<name>` entry in `README.md`. Runs automatically on every `tests/run.sh` invocation.
+- **Machine-readable counts block** — `docs/references/_repo-context.md` now contains a `<!-- validate-counts:start ... end -->` block parsed by `validate_docs_sync.sh`.
+
+### Fixed
+
+- **`mapfile` bash 4+ incompatibility** — `scripts/package.sh` used `mapfile` to build the `DEV_FILES` array from `jq` output; `mapfile` is not available on macOS system bash 3.2. Replaced with a `while IFS= read -r line` loop.
+- **Git identity not set in CI** — `release_branch()` called `git commit` inside an isolated repo that inherited no git identity. Fixed by adding a `git config --global user.name/email` step to `release.yml` before the Package step.
+- **In-place orphan branch checkout failed in GitHub Actions worktree** — `git checkout --orphan release-tmp` inside an Actions worktree produced `cannot delete branch used by worktree`. Replaced with an isolated `/tmp` repo approach: init a new repo, copy distributable files, commit, add remote, force-push.
+- **Tag already exists in CI** — `package.sh` tried to create a tag that already existed when re-run after a partial failure. Added `--skip-tag` flag; `release.yml` passes it unconditionally.
+- **Credentials missing for isolated repo push** — `actions/checkout` sets credentials locally on the checked-out repo only; the isolated `/tmp` repo had no auth. Fixed by adding a `git config --global url.insteadOf` rewrite with `GITHUB_TOKEN` to `release.yml`.
+- **Hook count in `_repo-context.md`** — corrected from "13 registered" to "14 total (13 event hooks + `suspend-snapshot.sh` skill-invoked)".
+
+### Changed
+
+- `tests/run.sh` — structural validators section now auto-discovers all `validate_*.sh` scripts under `tests/plugin/` via `find`, so new validators are picked up without editing the runner.
+
+### Documentation
+
+- `docs/PACKAGING.md` — maintainer reference covering how the Claude Code installer works, the release branch model, step-by-step release checklist, dry-run usage, consumer install commands, packaging test suite table, and a troubleshooting table.
+
+---
+
 ## [1.1.0] — 2026-04-26
 
 ### Bug fixes
