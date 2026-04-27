@@ -20,8 +20,14 @@ separator
 echo "STRUCTURAL VALIDATORS"
 separator
 
+# Auto-discover plugin validators, then fixed-location skills/templates validators
+plugin_validators=()
+while IFS= read -r -d '' f; do
+  plugin_validators+=("$f")
+done < <(find "$TESTS_DIR/plugin" -name "validate_*.sh" -print0 | sort -z)
+
 for script in \
-  "$TESTS_DIR/plugin/validate_manifest.sh" \
+  "${plugin_validators[@]}" \
   "$TESTS_DIR/skills/validate_frontmatter.sh" \
   "$TESTS_DIR/templates/validate_structure.sh"
 do

@@ -44,8 +44,16 @@ Each phase writes a gate file at `.claude/sdlc/gates/<phase>-<slug>.md`. The nex
 - **Commands:** 16 (8 phase + `/review` + `/fix-fast` + `/token-review` + `/suspend` + `/configure` + `/start` + `/status` + `/help`)
 - **Skills:** 20 (8 phase + 7 cross-cutting: `scoping`, `surgical-edit`, `minimal-code`, `security-review`, `api-integration`, `gate-signoff`, `domain-expert` + 5 utility: `configure`, `start`, `status`, `help`, `suspend`)
 - **Agents:** 5 (`architect`, `test-designer`, `security-reviewer`, `observability`, `scope-ingest`) — bounded write scope, propose-only
-- **Hooks:** 13 registered in `hooks/hooks.json` + `suspend-snapshot.sh` (skill-invoked by `/suspend`, not an event hook)
+- **Hooks:** 14 total (13 registered in `hooks/hooks.json` as event hooks + `suspend-snapshot.sh` skill-invoked by `/suspend`)
 - **Templates:** 13 (incl. `scope-gate`, `approval-packet`, `sign-off-multi`)
+
+<!-- validate-counts:start
+skills=20
+commands=16
+hooks=14
+templates=13
+agents=5
+validate-counts:end -->
 
 ## Hook severity model
 
