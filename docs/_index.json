@@ -247,6 +247,14 @@
       "update_triggers": ["rfc:accepted", "rfc:implemented"]
     },
     {
+      "path": "docs/rfcs/RFC-005-work-item-reference-validation.md",
+      "title": "Work-Item Reference Validation",
+      "status": "draft",
+      "role": "rfc",
+      "description": "Two-layer work-item existence check: Layer 1 (default warn) verifies REQ IDs resolve to local requirement artifacts and CR IDs resolve to signed CR files; Layer 2 (opt-in) queries detected ticketing integrations for ticket existence/open status with graceful degradation. Extends work-item-validation.sh.",
+      "update_triggers": ["rfc:accepted", "rfc:implemented"]
+    },
+    {
       "path": "docs/rfcs/archived/RFC-002-release-packaging.md",
       "title": "Release Packaging & Marketplace Distribution",
       "status": "implemented",
@@ -256,6 +264,16 @@
     }
   ],
   "rfc_impact": {
+    "docs/rfcs/RFC-005-work-item-reference-validation": {
+      "rfc_status": "draft",
+      "accepted": [
+        "docs/references/_repo-context.md"
+      ],
+      "implemented": [
+        "docs/USER-MANUAL.md",
+        "docs/references/_repo-context.md"
+      ]
+    },
     "docs/rfcs/RFC-001-plan-quality-gates": {
       "rfc_status": "accepted",
       "accepted": [

@@ -126,7 +126,7 @@ All five RFCs are fully implemented as of 2026-04-27.
 
 ## Draft RFCs
 
-*(none)*
+- **`docs/rfcs/RFC-005-work-item-reference-validation.md`** (draft) — two-layer work-item existence check: Layer 1 (default warn) confirms REQ IDs resolve to local `.claude/sdlc/requirements/` artifact files and CR IDs resolve to signed CR files; Layer 2 (opt-in) queries the detected ticketing integration (GitHub Issues via `gh`, Jira via REST, Linear via GraphQL) for ticket existence and open status, warn-only with graceful degradation on network failure. Extends `work-item-validation.sh`; adds `enforcement.work_item_existence` and `work_item_lookups` config blocks.
 
 ## Accepted RFCs (awaiting implementation)
 
