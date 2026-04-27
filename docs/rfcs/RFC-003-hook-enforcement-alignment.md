@@ -72,6 +72,19 @@ Replace the file-level REQ/ticket claim with an accurate description: the hook v
 
 Review any section that uses "refuses", "blocks", or "hard gate" language for phase-gate behavior and downgrade to advisory language where the implementation does not support a hard block. This is consistent with the writing anti-pattern prohibition in `references/_repo-context.md`.
 
+**A5 — Update the manual only after implementation; use a status table**
+
+Documentation updates for Track B and Phase 3 must be written after the corresponding code ships, not before. Each control documented in the manual must be tagged with one of four statuses to prevent the manual from overclaiming again:
+
+| Status | Meaning |
+|---|---|
+| Implemented hard block | Hook exits 2 and is confirmed by a passing bats test |
+| Implemented warning | Hook exits 0 with stderr output; confirmed by test |
+| Planned | Accepted in RFC-003 but not yet shipped |
+| Strict-mode only | Requires `enforcement.<key>: block` in `config/tools.json` |
+
+A4 (enforcement language audit) runs now. A5 (status-table updates) runs after each Track B and Phase 3 commit merges.
+
 ### Track B — Hook implementation
 
 Four targeted code changes plus tests:
@@ -80,7 +93,38 @@ Four targeted code changes plus tests:
 
 Register a second entry for `phase-gate.sh` under `PreToolUse` in `hooks.json`, matching `Edit` and `Write`. In the `PreToolUse` path: guard on `.claude/sdlc/.enabled` (exit 0 if not present, consistent with every other hook in the plugin); read the active plan's phase field; determine which prior phase gate is expected; verify it exists in `.claude/sdlc/gates/`; exit 2 if absent. The existing `Stop` registration remains for the 2-hour reminder.
 
-Severity: Block (exit 2). Rationale: a missing prior phase gate means the human did not sign off on the previous phase, which violates the core "human in the lead" principle. This is the same standard used by `plan-gate.sh`.
+**Accepted phase field names** (the hook must accept either):
+- `Active Phase:`
+- `Phase:`
+
+**Accepted phase values:** `plan`, `analyze`, `design`, `build`, `test`, `deploy`, `support`, `docs`. Any value outside this set is treated as ambiguous — warn only, do not block.
+
+**Prior-gate map** (exact gate file prefix required before each phase):
+
+| Active phase | Required prior gate prefix | Notes |
+|---|---|---|
+| `plan` | none | First phase — no prior gate required |
+| `analyze` | `plan-` | |
+| `design` | `analyze-` | |
+| `build` | `design-` | |
+| `test` | `build-` | |
+| `deploy` | `test-` | |
+| `support` | `deploy-` or `support-transition-` | Either a deploy gate or an explicit support-transition gate satisfies the check |
+| `docs` | warn only | Cross-cutting phase that may run in parallel — never block |
+
+**Repair escape hatch** — the hook must never block edits to governance artifacts. Any file path under `.claude/sdlc/` exits 0 unconditionally. This preserves the ability to fix a malformed plan, fill in a missing gate, or correct a bad phase field without being trapped by the hook the fix requires. Mirrors the existing guard in `plan-gate.sh` line 13.
+
+**File-type enforcement scope:**
+
+| File type | Behavior |
+|---|---|
+| Source code files | Block if prior gate missing |
+| Test files | Block if prior gate missing |
+| Config / build files | Block if prior gate missing |
+| Documentation files (outside `.claude/sdlc/`) | Warn if prior gate missing |
+| `.claude/sdlc/` artifacts | Always allow (repair escape hatch) |
+
+Severity: Block (exit 2) for source, test, and config files. Rationale: a missing prior phase gate means the human did not sign off on the previous phase, which violates the core "human in the lead" principle. This is the same standard used by `plan-gate.sh`. Teams that permit intentional phase skipping (e.g., deferring Analysis in a low-risk hotfix) should set `enforcement.phase_gate: warn` in `config/tools.json` to override the block.
 
 **Known false-positive scenario:** if the user is on the first phase (Plan), there is no prior gate — the hook must handle this gracefully (no block). If the active phase cannot be determined from the plan, exit 0 (warn only) rather than blocking by default on ambiguity. This is the binding design for that edge case (OQ-2 closed).
 
@@ -98,24 +142,71 @@ Read the file path from `CLAUDE_TOOL_INPUT` — the environment variable Claude 
 
 Additionally grep the plan for any REQ, ticket, or CR reference associated with the file. If no reference is found, warn (not block). Full file-level blocking on traceability carries a higher false-positive risk than classification-level blocking and should begin as a warning.
 
+**Warn-only traceability may use heuristic grep-based parsing.** Promotion to block in Phase 3 requires structured data only — see C2.
+
+**Generated files:** a generated file (e.g., `package-lock.json`, generated API clients, build artifacts) may be edited if its generator or source file is mapped to an approved work item. The hook skips the traceability warning for files identified as generated via a `generated_files` map in `config/tools.json`. Example shape:
+
+```json
+{
+  "generated_files": [
+    { "path": "package-lock.json", "generated_by": "package.json" }
+  ]
+}
+```
+
+If `generated_by` resolves to a file that is itself in-scope and REQ-mapped, the generated file inherits that mapping.
+
 Severity: Warn (stderr, exit 0) for the file-level check. The classification and CR sign-off checks remain block-level (exit 2).
 
 **B4 — Tests**
 
-Add bats test cases covering:
+The table below lists representative test cases. The full bats suite must additionally cover edge cases including: support phase's dual-gate option (`deploy-` vs. `support-transition-`), fix-fast gate placeholder patterns (all three token types: `___`, `TODO`, `<identifier>`), and generated file inheritance when the source file is itself out-of-scope.
 
-- B1: missing prior phase gate blocks an `Edit` call
-- B1: first-phase (Plan) task with no prior gate does not block
-- B2: deploy gate with unfilled placeholder fields blocks
-- B2: deploy gate with all required fields filled passes
-- B3: in-scope file with REQ reference passes without warning
-- B3: file not listed in plan scope emits a warning (does not block)
+| Scenario | Expected |
+|---|---|
+| Analyze phase, plan gate present | pass |
+| Analyze phase, plan gate missing | block |
+| Design phase, analyze gate present | pass |
+| Design phase, analyze gate missing | block |
+| Build phase, design gate present | pass |
+| Build phase, design gate missing | block |
+| Deploy phase, test gate present | pass |
+| Deploy phase, test gate missing | block |
+| Support phase, deploy gate present | pass |
+| Support phase, support-transition gate present (no deploy gate) | pass |
+| Malformed deploy gate (placeholder fields present) | block |
+| Malformed fix-fast gate (placeholder fields present) | block |
+| Well-formed deploy gate (all fields filled) | pass |
+| Active phase field absent or unrecognised | warn, no block |
+| Edit to `.claude/sdlc/` artifact with missing prior gate | allow (repair escape hatch) |
+| In-scope file with REQ reference | pass, no warning |
+| In-scope file without REQ reference | warn, no block |
+| File not in plan scope | warn, no block |
+| Generated file whose source is REQ-mapped | pass, no warning |
+| Generated file whose source is not in scope | warn, no block |
+
+**B5 — Future-compatible strict mode config shape**
+
+RFC-003 does not implement strict mode but reserves the following config shape in `config/tools.json` for teams that need stronger enforcement beyond the defaults. Hooks must read this config and respect it. Default for each field is `warn` unless Track B makes it `block` by design.
+
+```json
+{
+  "enforcement": {
+    "phase_gate": "warn|block",
+    "file_traceability": "warn|block",
+    "scope_drift": "warn|block",
+    "missing_tests": "warn|block"
+  }
+}
+```
+
+`phase_gate` defaults to `block` once Phase 2 ships (the entire point of B1). All other fields default to `warn` until Phase 3 or a future RFC promotes them. The `scope_drift` field is reserved for `diff-scope-check.sh`; the `missing_tests` field is reserved for `modified-code-test-gate.sh` or a future RFC — neither is implemented by RFC-003.
 
 ---
 
 ## Scope
 
-**In scope:** Tracks A and B as described. Changes limited to `hooks/phase-gate.sh`, `hooks/work-item-validation.sh`, `hooks/hooks.json`, `docs/USER-MANUAL.md`, and `tests/hooks/`.
+**In scope:** Tracks A and B as described. Changes limited to `hooks/phase-gate.sh`, `hooks/work-item-validation.sh`, `hooks/hooks.json`, `docs/USER-MANUAL.md`, `config/tools.example.json` (strict mode shape + generated_files shape), `templates/plan.md` (Phase 3), and `tests/hooks/`.
 
 **Out of scope:**
 - Strengthening other warn-level hooks to block (separate RFC if warranted by evidence)
@@ -156,8 +247,9 @@ Add bats test cases covering:
 | B1 | `hooks/hooks.json` | Add `PreToolUse` entry for `phase-gate.sh` matching `Edit`/`Write` |
 | B1 | `hooks/phase-gate.sh` | Add `PreToolUse` path: detect active phase, locate prior gate, exit 2 if absent |
 | B2 | `hooks/phase-gate.sh` | Add placeholder field scanner for deploy/fix-fast gate files |
-| B3 | `hooks/work-item-validation.sh` | Add file-level in-scope and REQ/ticket warning check (warn-only) |
-| B4 | `tests/hooks/` | New bats test cases for B1–B3 behaviors |
+| B3 | `hooks/work-item-validation.sh` | Add file-level in-scope and REQ/ticket warning check (warn-only); add generated_files map support |
+| B4 | `tests/hooks/` | New bats test cases for B1–B3 behaviors (full scenario table per §B4) |
+| B5 | `config/tools.example.json` | Add `enforcement` strict-mode config shape + `generated_files` map shape |
 
 **Phase 3 — Traceability block (hard dependency: C1 must merge before C2 begins)**
 
@@ -167,9 +259,21 @@ Add bats test cases covering:
 
 | # | File | Change |
 |---|---|---|
-| C1 | `templates/plan.md` | Add `## Traceability` section with `\| File \| REQ/Ticket/CR \|` table |
-| C2 | `hooks/work-item-validation.sh` | Promote B3 from warn to block (exit 2); requires traceability table present and populated in the active plan — table absent → warn only (backward compatible) |
-| C3 | `tests/hooks/` | New bats test cases: traceability table present → block on untraced file; table absent → warn only |
+| C1 | `templates/plan.md` | Add `## Traceability` section with `\| File \| REQ/Ticket/CR \| Change Type \|` table |
+| C2 | `hooks/work-item-validation.sh` | Promote B3 from warn to block (exit 2); see C2 prerequisites below |
+| C3 | `config/tools.json` (example) | Add `generated_files` map shape |
+| C4 | `tests/hooks/` | New bats test cases: traceability table present → block on untraced file; table absent → warn only; generated file with mapped source → pass |
+
+**C2 prerequisites — all six must be satisfied before C2 may ship:**
+
+1. A valid structured traceability map exists in the active plan (`## Traceability` table with at least one row).
+2. The edited file path is deterministically matched against the table (exact path, not a substring heuristic).
+3. The REQ/ticket/CR reference in the table resolves to an item that exists in the plan's work-item list.
+4. Generated files have an explicit `generated_by` source mapping in `config/tools.json`.
+5. An override path exists (either the `.claude/sdlc/` repair escape hatch or an `enforcement.file_traceability: warn` config setting).
+6. Bats tests prove that mapped files pass, unmapped files block, and table-absent plans warn only.
+
+**C2 blocking requires structured data.** Heuristic grep is not sufficient for a block-level check. The hook must parse the `## Traceability` markdown table deterministically or use an `active-plan.trace.json` sidecar file if markdown parsing proves fragile.
 
 ---
 
@@ -206,6 +310,14 @@ Add bats test cases covering:
 **Reviewer:** independent subagent (no prior context on RFC)
 **Date:** 2026-04-27
 **Findings:** Four gaps surfaced and addressed in the same pass: (1) AI context did not mention Phase 3 or the C1→C2 hard dependency — updated to name all three phases and the template prerequisite; (2) Scope section lacked an explicit hard-dependency statement for Phase 3 — added with a concrete consequence note (false-positive flood if C2 ships without C1); (3) Phase 3 implementation table did not clarify non-conflict with RFC-001's plan template additions — added a non-conflict note distinguishing the file-centric `## Traceability` table from RFC-001's five plan sections and from the approval-packet's requirement-centric traceability table; (4) Phase 3 C2 row did not name the backward-compatibility rule (table absent → warn only) — added inline. All OQs confirmed closed. No conflicts with RFC-001 or implemented RFCs.
+**Decision:** proceed
+
+---
+
+**Review 3**
+**Reviewer:** independent subagent (no prior context on RFC)
+**Date:** 2026-04-27
+**Findings:** Three minor documentation gaps surfaced and addressed: (1) B4 test table was representative but incomplete — added rows for support phase dual-gate option (`deploy-` vs. `support-transition-`), fix-fast gate placeholder validation, and generated file inheritance when source is out-of-scope; added a note that the table is illustrative and the full suite must cover named edge cases; (2) B1 file-type enforcement rationale did not address teams that intentionally defer prior phases — added a note directing them to `enforcement.phase_gate: warn` override; (3) B5 strict-mode config shape reserved `scope_drift` and `missing_tests` without naming their owning hooks — added inline clarification (`diff-scope-check.sh` and `modified-code-test-gate.sh` respectively). No design flaws. AI context accurate. All OQs resolved. No conflicts with RFC-001, existing hooks, or config structure.
 **Decision:** proceed
 
 ---
