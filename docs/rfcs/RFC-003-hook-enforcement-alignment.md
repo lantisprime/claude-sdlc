@@ -110,7 +110,7 @@ Register a second entry for `phase-gate.sh` under `PreToolUse` in `hooks.json`, 
 | `test` | `build-` | |
 | `deploy` | `test-` | |
 | `support` | `deploy-` or `support-transition-` | Either a deploy gate or an explicit support-transition gate satisfies the check |
-| `docs` | warn only | Cross-cutting phase that may run in parallel — never block |
+| `docs` | warn only (phase gate only) | Cross-cutting phase that may run in parallel — never block on missing prior gate. File-type enforcement still applies: source/test/config edits during docs phase are subject to the file-type scope table below. |
 
 **Repair escape hatch** — the hook must never block edits to governance artifacts. Any file path under `.claude/sdlc/` exits 0 unconditionally. This preserves the ability to fix a malformed plan, fill in a missing gate, or correct a bad phase field without being trapped by the hook the fix requires. Mirrors the existing guard in `plan-gate.sh` line 13.
 
@@ -126,11 +126,21 @@ Register a second entry for `phase-gate.sh` under `PreToolUse` in `hooks.json`, 
 
 Severity: Block (exit 2) for source, test, and config files. Rationale: a missing prior phase gate means the human did not sign off on the previous phase, which violates the core "human in the lead" principle. This is the same standard used by `plan-gate.sh`. Teams that permit intentional phase skipping (e.g., deferring Analysis in a low-risk hotfix) should set `enforcement.phase_gate: warn` in `config/tools.json` to override the block.
 
+**Docs phase does not bypass file-type enforcement.** The "warn only" row for `docs` in the prior-gate map applies to the phase gate check only (no prior gate required). If source, test, or config files are edited while the active phase is `docs`, the file-type scope table above still applies — those files block if a prior gate is missing. Docs phase is not an escape hatch for editing non-documentation files without a signed gate.
+
 **Known false-positive scenario:** if the user is on the first phase (Plan), there is no prior gate — the hook must handle this gracefully (no block). If the active phase cannot be determined from the plan, exit 0 (warn only) rather than blocking by default on ambiguity. This is the binding design for that edge case (OQ-2 closed).
 
 **B2 — `phase-gate.sh`: add placeholder field validation for deploy and fix-fast gates**
 
-After locating a deploy or fix-fast gate file, scan for unfilled placeholder tokens: `___`, `TODO`, and `<identifier>` patterns (angle brackets containing only alphanumeric/underscore/hyphen text, e.g. `<signer>`, `<timestamp>`). Raw `<` characters that are part of HTML or prose do not match this pattern. If any required field contains a placeholder, exit 2 with a specific message naming the unfilled fields.
+After locating a deploy or fix-fast gate file, scan for unfilled placeholder tokens. A field is considered unfilled if it contains any of the following:
+
+| Token type | Examples |
+|---|---|
+| Blank fill | `___` |
+| TODO marker | `TODO` |
+| Angle-bracket identifier | `<signer>`, `<work-item>`, `<timestamp>`, `<confirmation>`, `<acknowledgment>` |
+
+Angle-bracket identifiers match only when the brackets contain alphanumeric/underscore/hyphen text. Raw `<` in HTML or prose does not match. If any required field contains a placeholder, exit 2 with a specific message naming the unfilled fields.
 
 Required fields to validate: signer, timestamp, work-item reference, acknowledgment, confirmation. These are the five fields the manual describes for manual deploy/fix-fast sign-off.
 
@@ -144,7 +154,7 @@ Additionally grep the plan for any REQ, ticket, or CR reference associated with 
 
 **Warn-only traceability may use heuristic grep-based parsing.** Promotion to block in Phase 3 requires structured data only — see C2.
 
-**Generated files:** a generated file (e.g., `package-lock.json`, generated API clients, build artifacts) may be edited if its generator or source file is mapped to an approved work item. The hook skips the traceability warning for files identified as generated via a `generated_files` map in `config/tools.json`. Example shape:
+**Generated files:** a generated file (e.g., `package-lock.json`, generated API clients, build artifacts) may be edited if its generator or source file is mapped to an approved work item. The hook skips the traceability warning for files identified as generated via a `generated_files` map in `config/tools.json` (the consumer-local file, not committed by the plugin; shape is documented in `config/tools.example.json`). Example shape:
 
 ```json
 {
@@ -187,7 +197,7 @@ The table below lists representative test cases. The full bats suite must additi
 
 **B5 — Future-compatible strict mode config shape**
 
-RFC-003 does not implement strict mode but reserves the following config shape in `config/tools.json` for teams that need stronger enforcement beyond the defaults. Hooks must read this config and respect it. Default for each field is `warn` unless Track B makes it `block` by design.
+RFC-003 does not implement strict mode but reserves the following config shape. The shape is documented in `config/tools.example.json` (plugin-shipped reference); consumers copy it to `config/tools.json` (local, not committed by the plugin). Hooks must read `config/tools.json` and respect these values. Default for each field is `warn` unless Track B makes it `block` by design.
 
 ```json
 {
@@ -206,7 +216,7 @@ RFC-003 does not implement strict mode but reserves the following config shape i
 
 ## Scope
 
-**In scope:** Tracks A and B as described. Changes limited to `hooks/phase-gate.sh`, `hooks/work-item-validation.sh`, `hooks/hooks.json`, `docs/USER-MANUAL.md`, `config/tools.example.json` (strict mode shape + generated_files shape), `templates/plan.md` (Phase 3), and `tests/hooks/`.
+**In scope:** Tracks A and B as described. Changes limited to `hooks/phase-gate.sh`, `hooks/work-item-validation.sh`, `hooks/hooks.json`, `docs/USER-MANUAL.md`, `config/tools.example.json` (plugin-shipped reference; documents strict-mode shape + `generated_files` shape — consumers copy to `config/tools.json`), `templates/plan.md` (Phase 3), and `tests/hooks/`.
 
 **Out of scope:**
 - Strengthening other warn-level hooks to block (separate RFC if warranted by evidence)
@@ -249,7 +259,7 @@ RFC-003 does not implement strict mode but reserves the following config shape i
 | B2 | `hooks/phase-gate.sh` | Add placeholder field scanner for deploy/fix-fast gate files |
 | B3 | `hooks/work-item-validation.sh` | Add file-level in-scope and REQ/ticket warning check (warn-only); add generated_files map support |
 | B4 | `tests/hooks/` | New bats test cases for B1–B3 behaviors (full scenario table per §B4) |
-| B5 | `config/tools.example.json` | Add `enforcement` strict-mode config shape + `generated_files` map shape |
+| B5 | `config/tools.example.json` | Add `enforcement` strict-mode config shape + `generated_files` map shape (documents supported keys; consumers copy to `config/tools.json`) |
 
 **Phase 3 — Traceability block (hard dependency: C1 must merge before C2 begins)**
 
@@ -261,14 +271,19 @@ RFC-003 does not implement strict mode but reserves the following config shape i
 |---|---|---|
 | C1 | `templates/plan.md` | Add `## Traceability` section with `\| File \| REQ/Ticket/CR \| Change Type \|` table |
 | C2 | `hooks/work-item-validation.sh` | Promote B3 from warn to block (exit 2); see C2 prerequisites below |
-| C3 | `config/tools.json` (example) | Add `generated_files` map shape |
+| C3 | `config/tools.example.json` | Add `generated_files` map shape (consumers copy to `config/tools.json`) |
 | C4 | `tests/hooks/` | New bats test cases: traceability table present → block on untraced file; table absent → warn only; generated file with mapped source → pass |
 
 **C2 prerequisites — all six must be satisfied before C2 may ship:**
 
 1. A valid structured traceability map exists in the active plan (`## Traceability` table with at least one row).
 2. The edited file path is deterministically matched against the table (exact path, not a substring heuristic).
-3. The REQ/ticket/CR reference in the table resolves to an item that exists in the plan's work-item list.
+3. The REQ/ticket/CR reference in the table resolves to an item found in one of the following accepted sources (searched in order):
+   - Plan frontmatter `work_items` field
+   - `## Requirements` section
+   - `## Change Request` section
+   - `## Linked Tickets` section
+   - `active-plan.trace.json` sidecar file, if present
 4. Generated files have an explicit `generated_by` source mapping in `config/tools.json`.
 5. An override path exists (either the `.claude/sdlc/` repair escape hatch or an `enforcement.file_traceability: warn` config setting).
 6. Bats tests prove that mapped files pass, unmapped files block, and table-absent plans warn only.
