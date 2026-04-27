@@ -171,3 +171,37 @@ run_stop() {
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 }
+
+@test "PreToolUse: parses 'Active Phase' form (bold list bullet) and passes when prior gate present" {
+  sdlc_workspace "$TEST_DIR"
+  enable_workflow "$TEST_DIR"
+  cat > "$TEST_DIR/.claude/sdlc/plans/test-task.md" <<'EOF'
+# Plan: test-task
+
+Classification: new-build
+- **Active Phase:** build
+
+## In-scope files
+- src/foo.js
+EOF
+  add_signed_gate "$TEST_DIR" "design" "test-task"
+  run_pretool "$TEST_DIR" "src/foo.js"
+  [ "$status" -eq 0 ]
+}
+
+@test "PreToolUse: parses 'Active Phase' form (plain) and blocks when prior gate missing" {
+  sdlc_workspace "$TEST_DIR"
+  enable_workflow "$TEST_DIR"
+  cat > "$TEST_DIR/.claude/sdlc/plans/test-task.md" <<'EOF'
+# Plan: test-task
+
+Classification: new-build
+Active Phase: analyze
+
+## In-scope files
+- src/foo.js
+EOF
+  run_pretool "$TEST_DIR" "src/foo.py"
+  [ "$status" -eq 2 ]
+  [[ "$output" =~ "BLOCK" ]]
+}

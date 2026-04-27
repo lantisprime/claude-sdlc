@@ -2,7 +2,7 @@
 # phase-gate.sh — phase progression enforcement.
 #   Stop event: advisory reminder to sign off after a phase.
 #   PreToolUse Edit/Write/MultiEdit: blocks edits when the prior phase gate is missing.
-# Branch detection: Claude Code sets CLAUDE_TOOL_INPUT for PreToolUse Edit/Write hooks.
+# Branch detection: $CLAUDE_HOOK_EVENT primary; falls back to $CLAUDE_TOOL_INPUT presence.
 set -euo pipefail
 
 if [ -f ".claude/sdlc/.suspended" ]; then
@@ -13,17 +13,36 @@ fi
 
 GATES=".claude/sdlc/gates"
 PLANS=".claude/sdlc/plans"
+EVENT="${CLAUDE_HOOK_EVENT:-}"
 TOOL_INPUT="${CLAUDE_TOOL_INPUT:-}"
 
-if [ -z "$TOOL_INPUT" ]; then
-  # ---- Stop path: 2-hour reminder ----
-  [ -d "$GATES" ] || exit 0
-  RECENT=$(find "$GATES" -type f -name "*.md" -mmin -120 2>/dev/null | head -1 || true)
-  if [ -z "$RECENT" ]; then
-    echo "[phase-gate] INFO: no gate file updated in the last 2 hours. If you just completed a phase, sign off with the relevant template before starting the next." >&2
+# Resolve event: explicit env var wins; otherwise infer from tool-input presence.
+if [ -z "$EVENT" ]; then
+  if [ -n "$TOOL_INPUT" ]; then
+    EVENT="PreToolUse"
+  else
+    EVENT="Stop"
   fi
-  exit 0
 fi
+
+case "$EVENT" in
+  Stop)
+    # ---- Stop path: 2-hour reminder ----
+    [ -d "$GATES" ] || exit 0
+    RECENT=$(find "$GATES" -type f -name "*.md" -mmin -120 2>/dev/null | head -1 || true)
+    if [ -z "$RECENT" ]; then
+      echo "[phase-gate] INFO: no gate file updated in the last 2 hours. If you just completed a phase, sign off with the relevant template before starting the next." >&2
+    fi
+    exit 0
+    ;;
+  PreToolUse)
+    : # fall through to PreToolUse logic below
+    ;;
+  *)
+    # Unknown event — exit silently rather than misroute.
+    exit 0
+    ;;
+esac
 
 # ---- PreToolUse path: prior-gate enforcement ----
 
@@ -36,7 +55,7 @@ ACTIVE_PLAN=$(find "$PLANS" -maxdepth 1 -type f -name "*.md" ! -name "*.v[0-9]*.
 [ -n "$ACTIVE_PLAN" ] || exit 0
 
 # Parse "Phase:" or "Active Phase:" — accepts plain, list-bulleted, and **bold** forms.
-PHASE=$(grep -iE '^[[:space:]]*[-*]?[[:space:]]*(\*\*)?[Pp]hase:' "$ACTIVE_PLAN" 2>/dev/null \
+PHASE=$(grep -iE '^[[:space:]]*[-*]?[[:space:]]*(\*\*)?(Active[[:space:]]+)?[Pp]hase:' "$ACTIVE_PLAN" 2>/dev/null \
   | head -1 \
   | sed -E 's/.*[Pp]hase:[*[:space:]]*//' \
   | awk '{print tolower($1)}' || true)
