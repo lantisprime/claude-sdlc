@@ -1,6 +1,8 @@
 # Repo context — claude-sdlc
 
 > **Purpose.** Paste or reference this file at the start of any new conversation about the repo so the assistant has accurate grounding without re-fetching everything. Keep it short and current. If a fact drifts, fix it here first.
+>
+> **RFC work:** also load `docs/rfcs/AGENT-RULES.md` — it contains the concise decision rules for creating, transitioning, and archiving RFCs.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
 **Last updated:** 2026-04-26 (all RFCs implemented — opt-in activation, suspend/resume, scope-ingest, guided-entry, multi-team approval)

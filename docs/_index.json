@@ -111,34 +111,74 @@
       "_note": "Updates on a competitive/market clock. No trigger-based enforcement."
     },
     {
-      "path": "docs/rfcs/scope-ingest.md",
+      "path": "docs/references/_repo-context.md",
+      "title": "Repo Context",
+      "status": "active",
+      "role": "reference",
+      "description": "Canonical repo grounding — principles, capability counts, accepted RFCs, open PRs, anti-patterns. Paste first in any new conversation.",
+      "update_triggers": ["rfc:implemented", "new-command", "new-hook", "capability-shipped"]
+    },
+    {
+      "path": "docs/references/_session-handoff.md",
+      "title": "Session Handoff",
+      "status": "active",
+      "role": "reference",
+      "description": "Rolling session continuity file (overwritten each session). Key decisions and open items from the most recent session.",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/references/workflow-log.md",
+      "title": "Workflow Log",
+      "status": "active",
+      "role": "reference",
+      "description": "Chronological record of what was built and decided across all working sessions on this repo.",
+      "update_triggers": ["rfc:implemented", "capability-shipped"]
+    },
+    {
+      "path": "docs/rfcs/archived/scope-ingest.md",
       "title": "Scope Ingest & Domain Expert RFC",
       "status": "implemented",
-      "role": "rfc",
+      "role": "rfc-archived",
       "description": "Defines scope-ingest agent and domain-expert skill; all implementation checklist items complete.",
       "update_triggers": []
     },
     {
-      "path": "docs/rfcs/multi-team-approval.md",
-      "title": "Multi-team Approval RFC",
-      "status": "partially-implemented",
-      "role": "rfc",
-      "description": "Distributed sign-off via file-per-signer transport. Steps 1–3 shipped (approval-reconcile.sh, sign-off-multi.md, Required sign-offs block, APPROVALS.md, network-share sync). Steps 4–5 (git transport, MCP) parked pending ≥3 repos + ≥4 weeks adoption.",
+      "path": "docs/rfcs/archived/plan-phase-scope-ingest-discussion.md",
+      "title": "Scope Ingest — RFC Discussion Note",
+      "status": "archived",
+      "role": "rfc-companion",
+      "description": "Pre-RFC discussion note for scope-ingest; promoted to RFC 2026-04-25. Historical record of the analysis path.",
       "update_triggers": []
     },
     {
-      "path": "docs/rfcs/guided-entry-session-resume-multi-role.md",
+      "path": "docs/rfcs/archived/multi-team-approval.md",
+      "title": "Multi-team Approval RFC",
+      "status": "implemented",
+      "role": "rfc-archived",
+      "description": "All 5 steps shipped: approval-reconcile.sh, sign-off-multi.md, Required sign-offs block, APPROVALS.md, network-share sync (tier 1), git transport (tier 2), MCP connector stub (tier 3).",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/rfcs/archived/guided-entry-session-resume-multi-role.md",
       "title": "Guided Entry, Session Resume, Multi-role RFC",
       "status": "implemented",
-      "role": "rfc",
+      "role": "rfc-archived",
       "description": "All 10 PRs shipped: /status, /start, session hook, plan versioning, /configure, /help + glossary, approval-packet, next-hints, docs sync.",
       "update_triggers": []
     },
     {
-      "path": "docs/rfcs/opt-in-activation-suspend-resume.md",
+      "path": "docs/rfcs/archived/guided-entry-pr7-degradation.md",
+      "title": "Guided Entry — PR 7 Degradation Analysis",
+      "status": "archived",
+      "role": "rfc-companion",
+      "description": "Companion note for dropped PR 7; superseded by multi-team-approval.md §3.4–§3.6. Historical failure-mode analysis.",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/rfcs/archived/opt-in-activation-suspend-resume.md",
       "title": "Opt-in Activation, Suspend/Resume RFC",
-      "status": "draft",
-      "role": "rfc",
+      "status": "implemented",
+      "role": "rfc-archived",
       "description": "Opt-in activation model (.enabled marker with hook guards), enhanced /start absorbing configure wizard (auto-detect repo/CI/stack/tracker), /suspend with SHA-256 + AES-256 encrypted snapshot, re-enable reconciliation with REQ ID supersession.",
       "update_triggers": []
     },
@@ -151,20 +191,44 @@
       "update_triggers": ["rfc:written", "rfc:accepted"]
     },
     {
+      "path": "docs/rfcs/AGENT-RULES.md",
+      "title": "RFC Agent Rules",
+      "status": "active",
+      "role": "agent-rules",
+      "description": "Concise numbered decision rules for AI/Claude Code doing RFC work. Must stay in sync with rfcs/README.md.",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/rfcs/README.md",
+      "title": "RFC Workflow",
+      "status": "active",
+      "role": "workflow",
+      "description": "Lifecycle overview with rationale — status vocabulary, naming convention (RFC-NNN), stage transitions, archive rules.",
+      "update_triggers": []
+    },
+    {
+      "path": "docs/rfcs/TEMPLATE.md",
+      "title": "RFC Template",
+      "status": "active",
+      "role": "template",
+      "description": "Copy when creating a new RFC. Includes AI context block, alternatives considered, and implementation sections.",
+      "update_triggers": []
+    },
+    {
       "path": "docs/rfcs/notes/README.md",
       "title": "RFC Notes Index",
       "status": "active",
       "role": "notes-index",
-      "description": "Index and naming conventions for all RFC companion notes in this directory.",
-      "update_triggers": ["rfc:written", "rfc:accepted", "rfc:implemented"]
+      "description": "Index of companion notes and risk analyses for RFCs currently in flight.",
+      "update_triggers": ["rfc:written", "rfc:accepted"]
     }
   ],
   "rfc_impact": {
-    "docs/rfcs/scope-ingest": {
+    "docs/rfcs/archived/scope-ingest": {
       "rfc_status": "implemented",
       "accepted": [
         "docs/GLOSSARY.md",
-        "docs/rfcs/notes/README.md",
+        "docs/references/_repo-context.md",
         "docs/ideas/capabilities.md"
       ],
       "implemented": [
@@ -172,14 +236,14 @@
         "docs/USER-MANUAL.md",
         "docs/GLOSSARY.md",
         "docs/ideas/capabilities.md",
-        "docs/rfcs/notes/README.md"
+        "docs/references/_repo-context.md"
       ]
     },
-    "docs/rfcs/multi-team-approval": {
-      "rfc_status": "partially-implemented",
+    "docs/rfcs/archived/multi-team-approval": {
+      "rfc_status": "implemented",
       "accepted": [
         "docs/GLOSSARY.md",
-        "docs/rfcs/notes/README.md",
+        "docs/references/_repo-context.md",
         "docs/ideas/capabilities.md"
       ],
       "implemented": [
@@ -188,27 +252,27 @@
         "docs/GLOSSARY.md",
         "docs/claude-sdlc-enterprise-adoption.md",
         "docs/ideas/capabilities.md",
-        "docs/rfcs/notes/README.md"
+        "docs/references/_repo-context.md"
       ]
     },
-    "docs/rfcs/guided-entry-session-resume-multi-role": {
+    "docs/rfcs/archived/guided-entry-session-resume-multi-role": {
       "rfc_status": "implemented",
       "accepted": [
-        "docs/rfcs/notes/README.md",
+        "docs/references/_repo-context.md",
         "docs/ideas/capabilities.md"
       ],
       "implemented": [
         "docs/SDLC.md",
         "docs/USER-MANUAL.md",
         "docs/ideas/capabilities.md",
-        "docs/rfcs/notes/README.md"
+        "docs/references/_repo-context.md"
       ]
     },
-    "docs/rfcs/opt-in-activation-suspend-resume": {
-      "rfc_status": "draft",
+    "docs/rfcs/archived/opt-in-activation-suspend-resume": {
+      "rfc_status": "implemented",
       "accepted": [
         "docs/rfcs/pending-analysis.md",
-        "docs/rfcs/notes/README.md",
+        "docs/references/_repo-context.md",
         "docs/ideas/capabilities.md"
       ],
       "implemented": [
@@ -216,7 +280,7 @@
         "docs/USER-MANUAL.md",
         "docs/GLOSSARY.md",
         "docs/ideas/capabilities.md",
-        "docs/rfcs/notes/README.md"
+        "docs/references/_repo-context.md"
       ]
     }
   },
@@ -225,12 +289,12 @@
       "docs/SDLC.md",
       "docs/USER-MANUAL.md",
       "docs/diagrams.md",
-      "docs/rfcs/notes/README.md"
+      "docs/references/_repo-context.md"
     ],
     "new_command": [
       "docs/USER-MANUAL.md",
       "docs/review-processes.md",
-      "docs/rfcs/notes/README.md"
+      "docs/references/_repo-context.md"
     ],
     "new_hook": [
       "docs/SDLC.md",
@@ -242,7 +306,8 @@
     ],
     "capability_shipped": [
       "docs/ideas/capabilities.md",
-      "docs/rfcs/notes/README.md"
+      "docs/references/_repo-context.md",
+      "docs/references/workflow-log.md"
     ]
   }
 }

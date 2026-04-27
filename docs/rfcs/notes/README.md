@@ -2,7 +2,7 @@
 
 Working notes that sit alongside RFCs but aren't RFCs themselves. This directory is for in-flight thinking, companion implementation notes, conflict analyses, and shared context that the main repo docs shouldn't carry.
 
-**Start here:** [`_repo-context.md`](./_repo-context.md) — the canonical grounding for any new conversation about the repo. Paste it first.
+**Start here:** [`docs/references/_repo-context.md`](../../references/_repo-context.md) — the canonical grounding for any new conversation about the repo. Paste it first.
 
 ---
 
@@ -10,48 +10,50 @@ Working notes that sit alongside RFCs but aren't RFCs themselves. This directory
 
 | Lives in `docs/rfcs/` | Lives in `docs/rfcs/notes/` |
 | --- | --- |
-| Accepted RFC | Discussion note leading up to an RFC |
-| Proposed RFC under formal review | Companion implementation note for a specific RFC |
-| Decision the repo now enforces | Conflict analysis between competing proposals |
-| Long-lived reference | Working context, repo state snapshots |
+| Formal RFC (draft, accepted, deferred) | Discussion note or experiment leading up to an RFC |
+| Decision the repo now enforces | Companion analysis or risk note for an active RFC |
+| Closed RFC (implemented, withdrawn, superseded) → `rfcs/archived/` | Conflict analysis between competing proposals |
 
-If a note hardens into a decision, promote it to an RFC in the parent directory. If an RFC gets superseded, its companion notes stay here as history.
+If a note hardens into a decision, promote it to a formal RFC using [`rfcs/TEMPLATE.md`](../TEMPLATE.md). When an RFC closes, its companion notes move to `rfcs/archived/` in the same step.
 
 ## Naming conventions
 
-- **Underscore prefix** (`_repo-context.md`) — meta-files for the directory itself. Kept short to sort to the top.
-- **RFC companions** — match the RFC's slug, with a qualifier. Example: `guided-entry-pr7-degradation.md` is the degradation matrix for PR 7 of the guided-entry RFC.
-- **Standalone discussions** — descriptive slug with the phase or area first. Example: `plan-phase-scope-ingest-discussion.md`.
-- **Conflict checks** — slug + `-conflict-check.md`. Use when a proposal needs to be reconciled with an accepted RFC before it can move forward.
+- **RFC companions** — match the RFC's slug with a qualifier: `<rfc-slug>-<qualifier>.md`. Example: `guided-entry-pr7-degradation.md`.
+- **Standalone discussions** — descriptive slug, area first: `<area>-<topic>-discussion.md`. Example: `plan-phase-scope-ingest-discussion.md`.
+- **Experiments / spikes** — slug ending in `-spike.md` or `-experiment.md`. Example: `plan-quality-gate-spike.md`.
+- **Risk analyses** — slug ending in `_analysis.md`. Example: `plan_command_analysis.md`.
+- **Conflict checks** — slug ending in `-conflict-check.md`.
 
 ## Status vocabulary
 
 Every note should declare its status in the first line after the title. Use one of:
 
-- **discussion** — active thinking; not yet a proposal
-- **draft** — structured enough to review, not ready to accept
-- **companion** — implementation detail for an existing RFC (accepted or draft)
-- **superseded** — kept for history, no longer current; point at what replaced it
+- **discussion** — open-ended exploration; not yet shaped into a proposal
+- **experiment** — a spike or prototype built to learn whether an approach is viable; captures what was tried and what was learned, regardless of whether it became an RFC
+- **companion** — analysis or implementation detail for a specific active RFC; moves to `rfcs/archived/` when the RFC closes
+- **superseded** — kept for history; point at what replaced it
 - **archived** — historical record of a path not taken
 
 A note with no status field should be treated as `discussion`.
 
 ## Current contents
 
+Files stay here while their related RFC is still active or not yet accepted. Once the RFC is implemented, both the RFC and its companion notes move to `docs/rfcs/archived/`.
+
 | File | Status | What it covers |
 | --- | --- | --- |
-| [`_repo-context.md`](./_repo-context.md) | reference | Canonical repo grounding — principles, capability counts, accepted RFCs, open PRs, anti-patterns. Paste first in any new conversation. |
-| [`_session-handoff.md`](./_session-handoff.md) | reference (overwritten each session) | Short-lived "what just happened" continuity. Key decisions and open items from the most recent session. Paste second after `_repo-context.md` when resuming. |
-| [`plan-phase-scope-ingest-discussion.md`](./plan-phase-scope-ingest-discussion.md) | superseded (promoted) | Promoted to `docs/rfcs/scope-ingest.md` (2026-04-25). All conflicts resolved. Kept as historical record of the analysis path. |
-| [`guided-entry-pr7-degradation.md`](./guided-entry-pr7-degradation.md) | superseded | Historical reference for dropped PR 7. Superseded by accepted `multi-team-approval.md` §3.4–§3.6 (file-transport distributed sign-off). Some failure-mode analysis may still inform Tier 2 git transport implementation. |
+| [`plan_command_analysis.md`](./plan_command_analysis.md) | discussion | Risk analysis for `/plan` command — 18 risks from code inspection + ChatGPT synthesis. Priority-ordered fix list; items 11–13 scoped as separate architectural changes. |
+| [`analysis_command_analysis.md`](./analysis_command_analysis.md) | discussion | Risk analysis for `/analyze` command — 14 risks from code inspection + ChatGPT synthesis. Recommended sequencing: template changes first, then skill additions, then hook changes. |
+
+Reference files (`_repo-context.md`, `_session-handoff.md`, `workflow-log.md`) are in [`docs/references/`](../../references/). Archived RFC companion notes are in [`docs/rfcs/archived/`](../archived/).
 
 ## Adding a new note
 
-1. Pick a name per the conventions above.
+1. Pick a name and status per the conventions above. Use `experiment` if you built or prototyped something to learn from it; use `discussion` for open-ended analysis.
 2. First line after the title: a `> **Status:**` blockquote with one of the vocabulary terms.
-3. Top of the body: a `**Date:**` line, a `**Scope:**` line (what this note is and isn't about), and a `**Related:**` list pointing at any RFCs, PRs, or other notes it depends on.
+3. Top of the body: a `**Date:**` line, a `**Scope:**` line (what this note is and is not about), and a `**Related:**` list pointing at any RFCs, PRs, or other notes it depends on. For `experiment` notes, add a `**Outcome:**` line summarising what was learned.
 4. Add a one-line entry to the "Current contents" table in this README.
-5. If the note meaningfully changes repo state, update `_repo-context.md` too.
+5. If the note meaningfully changes repo state, update `references/_repo-context.md`.
 
 ## Conventions for the writing itself
 

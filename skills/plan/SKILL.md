@@ -123,9 +123,41 @@ If `.claude/sdlc/gates/scope-<project-slug>.md` does not exist, draft and sign t
 
 After sign-off, `plan-gate.sh` will stop warning about the missing scope gate on all future `/plan` invocations for this project.
 
-## Step 5 — Human gate
+## Step 5 — Second opinion review (hard rule — cannot be skipped)
+
+Before presenting the plan to the human, run a self-contained second-opinion review. Re-read the complete plan artifact as if encountering it for the first time and check:
+
+1. **Classification** — is it unambiguously one of: new-build / fix / change-request? Any ambiguity must be resolved before proceeding.
+2. **In-scope files** — explicit, non-empty list. "TBD" is not acceptable at gate time.
+3. **In-scope functions** — explicit or documented as deferred (allowed before Build only).
+4. **Out-of-scope** — not the template placeholder; must name specific things excluded.
+5. **Tests to add/update** — non-empty; function-level.
+6. **Risks & rollback** — non-empty; names specific failure modes and the rollback path.
+7. **Compatibility matrix** — no unresolved `FAIL` rows; `UNKNOWN` is treated as an open item, not a pass.
+
+If any item fails the checklist, surface the gap explicitly and ask the human to resolve it **before** requesting sign-off. Do not present the gate summary until all checklist items pass.
+
+Present the second-opinion findings to the human in this format:
+
+```
+Second opinion — plan review
+✓ / ✗ Classification: [result]
+✓ / ✗ In-scope files: [result]
+✓ / ✗ In-scope functions: [result]
+✓ / ✗ Out-of-scope: [result]
+✓ / ✗ Tests: [result]
+✓ / ✗ Risks & rollback: [result]
+✓ / ✗ Compatibility matrix: [result]
+
+[If any ✗: list gaps and ask human to resolve before sign-off.]
+[If all ✓: "Plan passes second-opinion review. Proceeding to sign-off."]
+```
+
+## Step 6 — Human gate
 
 Produce a one-screen summary of the plan and ask the human to confirm before Analyze/Design/Build proceeds. Write the confirmation to `.claude/sdlc/gates/plan-<task-slug>.md` using `templates/gate.md` — later commands check for this file.
+
+The gate summary must show what the human **is** approving (scope, classification, risks) and what they are **not** approving (architecture, implementation approach — those belong in later phases).
 
 ## What this skill must NOT do
 
@@ -133,6 +165,7 @@ Produce a one-screen summary of the plan and ask the human to confirm before Ana
 - Do not modify files outside `.claude/sdlc/`.
 - Do not skip the scope check, even if the task feels obvious.
 - Do not approve the plan on the user's behalf — the gate file requires the human to confirm.
+- **Do not present the gate summary (Step 6) before completing the second-opinion review (Step 5).** This is a hard rule. A plan that skips Step 5 is not ready for sign-off.
 
 ## References
 

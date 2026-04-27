@@ -4,7 +4,25 @@ This file is the authoritative index for everything under `docs/`. Its primary j
 
 ---
 
+## RFC Workflow
+
+All RFCs and their companion discussion notes follow a single lifecycle. See [`rfcs/README.md`](rfcs/README.md) for the full rules. Short version:
+
+| Stage | Where the file lives | When to move it |
+|-------|---------------------|-----------------|
+| Early discussion / pre-RFC thinking | `rfcs/notes/` | — |
+| Companion note for an active RFC | `rfcs/notes/` | — |
+| Formal RFC (draft or accepted) | `rfcs/` root | — |
+| RFC fully implemented | `rfcs/archived/` | On implementation |
+| Companion note whose RFC is implemented | `rfcs/archived/` | Same step as the RFC |
+
+**Rule:** When an RFC is archived, every companion note that belongs to it moves to `rfcs/archived/` in the same step. `rfcs/notes/` only holds notes for RFCs that are still active.
+
+---
+
 ## File Registry
+
+### Core docs
 
 | Path | Title | Status | Role | Description |
 |------|-------|--------|------|-------------|
@@ -20,12 +38,41 @@ This file is the authoritative index for everything under `docs/`. Its primary j
 | [sdlc-flow.excalidraw](sdlc-flow.excalidraw) | Flow Diagram Source | draft | diagram-source | Excalidraw source for the SDLC phase flow diagram |
 | [ideas/capabilities.md](ideas/capabilities.md) | Capabilities Review | active | ideas | Capability maturity ratings, integration matrix, RFC-backed roadmap status |
 | [ideas/comparison-gstack.md](ideas/comparison-gstack.md) | Comparison vs. gstack | active | ideas | Strategic positioning: claude-sdlc (governance) vs. gstack (acceleration) |
-| [rfcs/scope-ingest.md](rfcs/scope-ingest.md) | Scope Ingest & Domain Expert RFC | implemented | rfc | Defines scope-ingest agent and domain-expert skill; all checklist items complete |
-| [rfcs/multi-team-approval.md](rfcs/multi-team-approval.md) | Multi-team Approval RFC | implemented | rfc | All 5 steps shipped: approval-reconcile.sh, sign-off-multi.md, Required sign-offs block, APPROVALS.md, network-share sync (tier 1), git transport (tier 2), MCP connector stub (tier 3) |
-| [rfcs/guided-entry-session-resume-multi-role.md](rfcs/guided-entry-session-resume-multi-role.md) | Guided Entry, Session Resume, Multi-role RFC | implemented | rfc | All 10 PRs shipped: /status, /start, session hook, plan versioning, /configure, /help + glossary, approval-packet, next-hints, docs sync |
-| [rfcs/opt-in-activation-suspend-resume.md](rfcs/opt-in-activation-suspend-resume.md) | Opt-in Activation, Suspend/Resume RFC | implemented | rfc | Opt-in activation model (.enabled marker), enhanced /start absorbing configure wizard, /suspend with SHA-256 + AES-256 snapshot, re-enable reconciliation with REQ ID supersession |
+
+### References
+
+Living reference files for grounding sessions and tracking development history.
+
+| Path | Title | Status | Role | Description |
+|------|-------|--------|------|-------------|
+| [references/_repo-context.md](references/_repo-context.md) | Repo Context | active | reference | Canonical repo grounding — principles, capability counts, accepted RFCs, open PRs, anti-patterns. Paste first in any new conversation. |
+| [references/_session-handoff.md](references/_session-handoff.md) | Session Handoff | active | reference | Rolling session continuity file (overwritten each session). Key decisions and open items from the most recent session. |
+| [references/workflow-log.md](references/workflow-log.md) | Workflow Log | active | reference | Chronological record of what was built and decided across all working sessions on this repo. |
+
+### RFCs
+
+Active RFC trackers and notes.
+
+| Path | Title | Status | Role | Description |
+|------|-------|--------|------|-------------|
+| [rfcs/AGENT-RULES.md](rfcs/AGENT-RULES.md) | RFC Agent Rules | active | agent-rules | Load when doing RFC work — concise numbered decision rules for AI/Claude Code, no prose |
+| [rfcs/README.md](rfcs/README.md) | RFC Workflow | active | workflow | Lifecycle overview with rationale — status vocabulary, naming convention (RFC-NNN), stage transitions, archive rules |
+| [rfcs/TEMPLATE.md](rfcs/TEMPLATE.md) | RFC Template | active | template | Copy this when creating a new RFC; includes AI context, alternatives considered, and implementation sections |
 | [rfcs/pending-analysis.md](rfcs/pending-analysis.md) | Pending Analysis | active | tracker | Open design questions: items 1–2 open (deferred), item 3 closed/accepted, item 4 open (secret-scan always-on) |
-| [rfcs/notes/README.md](rfcs/notes/README.md) | RFC Notes Index | active | notes-index | Index and naming conventions for all RFC companion notes in this directory |
+| [rfcs/notes/README.md](rfcs/notes/README.md) | RFC Notes Index | active | notes-index | Index of companion notes, risk analyses, and experiment notes for RFCs currently in flight |
+
+### Archived RFCs
+
+Fully implemented RFCs. Kept for historical traceability; no longer updated.
+
+| Path | Title | Status | Role | Description |
+|------|-------|--------|------|-------------|
+| [rfcs/archived/scope-ingest.md](rfcs/archived/scope-ingest.md) | Scope Ingest & Domain Expert RFC | implemented | rfc | Defines scope-ingest agent and domain-expert skill; all checklist items complete |
+| [rfcs/archived/plan-phase-scope-ingest-discussion.md](rfcs/archived/plan-phase-scope-ingest-discussion.md) | Scope Ingest — RFC Discussion Note | archived | rfc-companion | Pre-RFC discussion note for scope-ingest; promoted to RFC 2026-04-25. Historical record of the analysis path. |
+| [rfcs/archived/multi-team-approval.md](rfcs/archived/multi-team-approval.md) | Multi-team Approval RFC | implemented | rfc | All 5 steps shipped: approval-reconcile.sh, sign-off-multi.md, Required sign-offs block, APPROVALS.md, network-share sync (tier 1), git transport (tier 2), MCP connector stub (tier 3) |
+| [rfcs/archived/guided-entry-session-resume-multi-role.md](rfcs/archived/guided-entry-session-resume-multi-role.md) | Guided Entry, Session Resume, Multi-role RFC | implemented | rfc | All 10 PRs shipped: /status, /start, session hook, plan versioning, /configure, /help + glossary, approval-packet, next-hints, docs sync |
+| [rfcs/archived/guided-entry-pr7-degradation.md](rfcs/archived/guided-entry-pr7-degradation.md) | Guided Entry — PR 7 Degradation Analysis | archived | rfc-companion | Companion note for dropped PR 7; superseded by multi-team-approval.md §3.4–§3.6. |
+| [rfcs/archived/opt-in-activation-suspend-resume.md](rfcs/archived/opt-in-activation-suspend-resume.md) | Opt-in Activation, Suspend/Resume RFC | implemented | rfc | Opt-in activation model (.enabled marker), enhanced /start absorbing configure wizard, /suspend with SHA-256 + AES-256 snapshot, re-enable reconciliation with REQ ID supersession |
 
 ---
 
@@ -33,35 +80,69 @@ This file is the authoritative index for everything under `docs/`. Its primary j
 
 Use this as a PR checklist. For each type of change, the listed files **must be reviewed** and updated if affected.
 
-### RFC written (new RFC file added)
+### New discussion note or pre-RFC thinking
+- [ ] Create file in `rfcs/notes/` per conventions in [`rfcs/notes/README.md`](rfcs/notes/README.md)
+- [ ] Add entry to `rfcs/notes/README.md` Current contents table
+- [ ] Add any open questions to `rfcs/pending-analysis.md`
+
+### RFC written (new RFC file added to `rfcs/`)
+- [ ] Copy `rfcs/TEMPLATE.md` → `rfcs/RFC-NNN-<slug>.md`; assign next RFC number
 - [ ] `rfcs/pending-analysis.md` — add any open questions surfaced
-- [ ] `rfcs/notes/_repo-context.md` — add to draft RFC list
+- [ ] `references/_repo-context.md` — add to draft RFC list
+- [ ] Update companion note in `rfcs/notes/` status to `companion`
+- [ ] Register in this file (File Registry → RFCs) and in `_index.json`
 
 ### RFC accepted
-- [ ] `rfcs/notes/_repo-context.md` — move from draft → accepted RFC list
+- [ ] **Hard rule: second-opinion review must pass first** — complete per `rfcs/AGENT-RULES.md §3a`; record findings in RFC's `## Second opinion` section; decision must be `proceed` before any step below runs
+- [ ] Update `status: accepted` and `last_modified:` in RFC frontmatter
+- [ ] `references/_repo-context.md` — move from draft → accepted RFC list
 - [ ] `rfcs/pending-analysis.md` — close any resolved items
 - [ ] `GLOSSARY.md` — add new terms coined in the RFC
 - [ ] `ideas/capabilities.md` — update roadmap status for capabilities the RFC designs
 
+### RFC deferred
+- [ ] Update `status: deferred` and `last_modified:` in RFC frontmatter
+- [ ] Add `## Deferral note` section explaining why and unpark conditions
+- [ ] `references/_repo-context.md` — note as deferred (file stays in `rfcs/` root)
+
 ### RFC implemented
-- [ ] The RFC file itself — update status field to `implemented`
-- [ ] `rfcs/notes/_repo-context.md` — update capability counts and implemented list
+- [ ] Populate `## Implementation` section in RFC with commit/PR refs
+- [ ] Move RFC file: `rfcs/<slug>.md` → `rfcs/archived/<slug>.md`
+- [ ] Move all companion notes for this RFC: `rfcs/notes/<companion>.md` → `rfcs/archived/<companion>.md`
+- [ ] Update `rfcs/notes/README.md` — remove moved entries
+- [ ] Update this file — move RFC row to **Archived RFCs**; add companion note rows
+- [ ] Update `_index.json` — change paths and roles (`rfc` → `rfc-archived`, `rfc-companion`)
+- [ ] `references/_repo-context.md` — update capability counts and move RFC to implemented list
+- [ ] `references/workflow-log.md` — add a session/feature section
 - [ ] `ideas/capabilities.md` — update maturity ratings for newly shipped capabilities
 - [ ] `SDLC.md` — if the RFC changes phase behavior, gates, hooks, or validation metrics
 - [ ] `USER-MANUAL.md` — if the RFC changes user-facing behavior or introduces new scenarios
 - [ ] `GLOSSARY.md` — if the RFC introduces new terms
 - [ ] `claude-sdlc-enterprise-adoption.md` — if a roadmap item ships or the cost model changes
 
+### RFC withdrawn
+- [ ] Add `## Withdrawal note` section explaining why
+- [ ] Update `status: withdrawn` and `last_modified:` in RFC frontmatter
+- [ ] Move RFC and companion notes to `rfcs/archived/` (same steps as Implemented, minus living-doc updates)
+- [ ] `references/_repo-context.md` — remove from active list
+
+### RFC superseded
+- [ ] Add `superseded_by: RFC-NNN-<new-slug>` to old RFC frontmatter
+- [ ] Add `supersedes: RFC-NNN-<old-slug>` to new RFC frontmatter
+- [ ] Add `## Supersession note` to old RFC
+- [ ] Move old RFC and companion notes to `rfcs/archived/`
+- [ ] Update indexes (same steps as Implemented)
+
 ### New phase added or reordered
 - [ ] `SDLC.md`
 - [ ] `USER-MANUAL.md`
 - [ ] `diagrams.md`
-- [ ] `rfcs/notes/_repo-context.md`
+- [ ] `references/_repo-context.md`
 
 ### New `/command` added or renamed
 - [ ] `USER-MANUAL.md`
 - [ ] `review-processes.md` (if the command adds or changes a review track)
-- [ ] `rfcs/notes/_repo-context.md` (capability counts)
+- [ ] `references/_repo-context.md` (capability counts)
 
 ### New hook added or behavior changed
 - [ ] `SDLC.md` (if block/warn behavior changes)
@@ -73,7 +154,8 @@ Use this as a PR checklist. For each type of change, the listed files **must be 
 
 ### Capability shipped (not RFC-tracked)
 - [ ] `ideas/capabilities.md`
-- [ ] `rfcs/notes/_repo-context.md`
+- [ ] `references/_repo-context.md`
+- [ ] `references/workflow-log.md`
 
 ---
 
@@ -83,10 +165,10 @@ Derived from `_index.json` update_triggers. A stale `implemented` column against
 
 | RFC | RFC Status | On Acceptance — update | On Implementation — update |
 |-----|------------|------------------------|----------------------------|
-| [rfcs/scope-ingest.md](rfcs/scope-ingest.md) | **implemented** | GLOSSARY.md, rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
-| [rfcs/multi-team-approval.md](rfcs/multi-team-approval.md) | **implemented** (all 5 steps shipped) | GLOSSARY.md, rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, claude-sdlc-enterprise-adoption.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
-| [rfcs/guided-entry-session-resume-multi-role.md](rfcs/guided-entry-session-resume-multi-role.md) | **implemented** | rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
-| [rfcs/opt-in-activation-suspend-resume.md](rfcs/opt-in-activation-suspend-resume.md) | **implemented** | rfcs/pending-analysis.md, rfcs/notes/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, ideas/capabilities.md, rfcs/notes/_repo-context.md |
+| [rfcs/archived/scope-ingest.md](rfcs/archived/scope-ingest.md) | **implemented** | GLOSSARY.md, references/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, ideas/capabilities.md, references/_repo-context.md |
+| [rfcs/archived/multi-team-approval.md](rfcs/archived/multi-team-approval.md) | **implemented** | GLOSSARY.md, references/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, claude-sdlc-enterprise-adoption.md, ideas/capabilities.md, references/_repo-context.md |
+| [rfcs/archived/guided-entry-session-resume-multi-role.md](rfcs/archived/guided-entry-session-resume-multi-role.md) | **implemented** | references/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, ideas/capabilities.md, references/_repo-context.md |
+| [rfcs/archived/opt-in-activation-suspend-resume.md](rfcs/archived/opt-in-activation-suspend-resume.md) | **implemented** | rfcs/pending-analysis.md, references/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, ideas/capabilities.md, references/_repo-context.md |
 
 ---
 
@@ -97,8 +179,10 @@ These files are load-bearing. A PR that changes behavior covered by these docs s
 
 - `SDLC.md` — the authoritative phase/hook/gate reference
 - `GLOSSARY.md` — term definitions; stale terms break RFC traceability
-- `rfcs/*.md` — status fields must reflect actual implementation state
-- `rfcs/notes/README.md` — the notes directory index
+- `rfcs/AGENT-RULES.md` — the machine-readable RFC decision rules; must stay in sync with `rfcs/README.md`
+- `rfcs/README.md` — the RFC lifecycle workflow and rationale
+- `rfcs/notes/README.md` — index of in-flight companion notes
+- `references/_repo-context.md` — repo grounding; capability counts must match reality
 
 ### Acceptable lag
 These files should be updated soon after a feature lands, but are not merge-blockers.
@@ -106,12 +190,13 @@ These files should be updated soon after a feature lands, but are not merge-bloc
 - `USER-MANUAL.md` — scenarios can trail behind implementation
 - `review-processes.md` — review tracks update less frequently
 - `diagrams.md` — visual updates can follow after behavior is stable
+- `references/workflow-log.md` — chronological log; acceptable to update at session wrap-up
 
 ### Intentionally static / historical
 No enforcement. These exist for context and positioning, not as living specs.
 
+- `rfcs/archived/` — append-only; nothing is edited after archiving
 - `ideas/` — capability reviews and competitive comparisons update on a market/adoption clock, not a code clock
-- `rfcs/notes/` — individual companion notes are historical once promoted or superseded
 - `when-not-to-use.md` — philosophy document; changes rarely
 - `claude-sdlc-enterprise-adoption.md` — positioning document; updates on a business clock
 - `diagrams-preview.html`, `*.excalidraw` — design artifacts, not living docs

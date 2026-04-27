@@ -97,12 +97,63 @@ Changes to how sessions on this repo are run — not plugin features.
 
 ---
 
-## 6. What's next
+## 6. Opt-in activation + suspend/resume RFC — all shipped
 
-1. **V2 scope gate note** — write `docs/rfcs/notes/scope-gate-v2-followup.md`. Open question: should the scope gate be a first-class artifact class in v2 rather than a pseudo phase-gate?
-2. **Dogfood** — install the plugin in 1–2 real repos and run a full task end-to-end. This is the prerequisite for unparking step 4.
-3. **Steps 4 & 5** — only after dogfood data meets the unpark criteria above.
+Goal: make the plugin opt-in per repo (no hooks fire without explicit activation), add a governed suspension mechanism, and harden `/start` to cover both first-time setup and re-enable reconciliation.
+
+### PR 1 — Opt-in activation model
+
+- `.claude/sdlc/.enabled` marker — plugin is inactive until the file exists
+- All hooks guard on `.enabled` at entry (exit 0 when absent)
+- `secret-scan.sh` exempted: always-on regardless of activation state
+- `/start` command becomes the activation front-door
+
+### PR 2 — `/suspend` plumbing (`f673ac2`)
+
+- `hooks/suspend-snapshot.sh` — 260-line substrate: AES-256 encrypted governance snapshot with SHA-256 manifest (sha256 + size + mtime per file); plain-text fallback when openssl is absent
+- `skills/suspend/SKILL.md` — 6-step suspend flow
+- `commands/suspend.md` — command descriptor
+- `.suspension-log.jsonl` — append-only log of suspend/resume events
+- 7 warn-type hooks amended to emit suspended-state messaging when `.suspended` is present: `diff-scope-check.sh`, `adjacent-function-detector.sh`, `format-on-write.sh`, `modified-code-test-gate.sh`, `phase-gate.sh`, `token-tracker.sh`, `approval-reconcile.sh`
+
+Key decisions made during this PR:
+- `suspend-snapshot.sh` uses `python3` for JSON (already a repo dependency via `env-detect.sh`)
+- `tools.local.json` merge uses python3 to preserve existing fields (e.g. `tracker.auth_token`)
+- Verify JSON is plan-keyed (`{"plans": {"REQ-001": {...}}}`) so `/start` doesn't reconstruct grouping
+- PATH B (re-enable) preserves snapshot until REQ supersession is signed, not deleted on re-enable
+
+### PR 3 — `/start` rewrite (`dc5659a`)
+
+- `skills/start/SKILL.md` — full rewrite: three-path dispatch
+  - **PATH A** (fresh activation): config auto-detect → scope → plan draft
+  - **PATH B** (re-enable): snapshot verify → REQ supersession → reconciliation
+  - **PATH C** (already active): task intake only
+- `commands/start.md` — updated description to cover all three paths
+- Scope overflow cap: warns when `cap_warning` is non-null (triggered by scope.md ∈ S2 with >20 active plans)
 
 ---
 
-*Last updated: 2026-04-25. HEAD at `f8f0936` on `main` (`lantisprime/claude-sdlc`).*
+## 7. Risk analyses — `/plan` and `/analyze`
+
+Structured risk analyses produced via code inspection + ChatGPT second opinion, then synthesized.
+
+| File | Coverage | Risk count | Priority fix |
+|------|----------|-----------|--------------|
+| [`plan_command_analysis.md`](./plan_command_analysis.md) | `skills/plan/SKILL.md`, `plan-gate.sh`, `diff-scope-check.sh`, `templates/plan.md`, `scope-ingest`, `domain-expert` | 18 risks | Pre-signoff quality checklist (R-05); WARN on unsigned plan (R-01) |
+| [`analysis_command_analysis.md`](./analysis_command_analysis.md) | `skills/analyze/SKILL.md`, `templates/requirements.md`, `hooks/plan-gate.sh` | 14 risks | Gate summary must be decisional not factual (R10); REQ lifecycle states (R2) |
+
+Items 11–13 in the plan analysis (gate_hash verification, TBD enforcement at Build, active-task sentinel) are scoped as separate architectural changes. Implementation has not started.
+
+---
+
+## 8. What's next
+
+1. **Implement plan risk-analysis fixes** — 10 priority items from `plan_command_analysis.md`: pre-signoff checklist, WARN on unsigned status, low-provenance marker, degraded-mode banner, resolved-plan logging, scope-delta decision record, domain no-match note, UNKNOWN-as-open-item in compatibility matrix, materiality checklist, domain context template placeholder.
+2. **V2 scope gate note** — write `docs/rfcs/notes/scope-gate-v2-followup.md`. Open question: should the scope gate be a first-class artifact class in v2 rather than a pseudo phase-gate?
+3. **OQ-1 in guided-entry RFC** — resolve set-change semantics for `In-scope files`. Required before guided-entry PR 4 can begin.
+4. **Dogfood** — install the plugin in 1–2 real repos and run a full task end-to-end. Prerequisite for unparking multi-team approval step 4.
+5. **Steps 4 & 5 (multi-team approval)** — only after dogfood data meets the unpark criteria.
+
+---
+
+*Last updated: 2026-04-27. HEAD at `dc5659a` on `main` (`lantisprime/claude-sdlc`).*
