@@ -35,6 +35,15 @@
 - path/to/adjacent_file.ext
 - `path/to/file_a.ext::unrelated_helper`
 
+## Traceability
+
+Per-file work-item mapping. The `work-item-validation.sh` hook (RFC-003) reads this table to verify that every edited file has a documented REQ / ticket / CR reference. Warn-only today; promoted to a hard block by RFC-003 PR-8 once your repo's plans consistently include this section.
+
+| File | REQ/Ticket/CR | Change Type |
+|---|---|---|
+| path/to/file_a.ext | REQ-001 | modified |
+| path/to/file_b.ext | REQ-002 | new |
+
 ## Approach
 
 - Step 1 — …
