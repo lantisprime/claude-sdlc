@@ -211,6 +211,26 @@ EOF
   [[ "$output" =~ "In-scope files" ]]
 }
 
+@test "B3: jq-absent invocation uses grep/sed fallback for file_path extraction" {
+  # Restricted PATH typically excludes jq (brew installs to /usr/local/bin or
+  # /opt/homebrew/bin). Skip defensively if jq remains reachable.
+  if PATH=/usr/bin:/bin command -v jq >/dev/null 2>&1; then
+    skip "jq is reachable in /usr/bin or /bin — cannot test the no-jq fallback path"
+  fi
+  sdlc_workspace "$TEST_DIR"
+  enable_workflow "$TEST_DIR"
+  add_active_plan "$TEST_DIR"
+  # plan-with-classification.md has src/foo.js in-scope and no REQ.
+  # If grep/sed extracted the path correctly: no scope warning fires; REQ
+  # warning still fires because the plan has no REQ. If extraction failed,
+  # the file path would default to the raw JSON envelope and miss the
+  # in-scope match → scope warning would also fire (test would fail).
+  run bash -c "cd '$TEST_DIR' && PATH=/usr/bin:/bin CLAUDE_TOOL_INPUT='{\"file_path\":\"src/foo.js\"}' '$HOOKS_DIR/work-item-validation.sh' 2>&1"
+  [ "$status" -eq 0 ]
+  [[ ! "$output" =~ "is not listed" ]]
+  [[ "$output" =~ "no REQ/TICKET/CR/ISSUE" ]]
+}
+
 @test "B3: plan with no '## In-scope files' section warns about scope" {
   sdlc_workspace "$TEST_DIR"
   enable_workflow "$TEST_DIR"
