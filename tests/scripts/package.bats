@@ -131,14 +131,26 @@ teardown() {
 # ── Missing dependency ─────────────────────────────────────────────────────
 
 @test "exits 1 with error message when jq is not in PATH" {
-  # Build a PATH that excludes any directory containing a jq binary
-  local safe_path=""
-  while IFS= read -r d; do
-    [[ -f "$d/jq" ]] && continue
-    safe_path+="${d}:"
-  done < <(echo "$PATH" | tr ':' '\n')
+  # Build a sandbox PATH that contains every standard binary EXCEPT jq.
+  # The naive approach (drop every PATH dir containing jq) breaks on Linux
+  # CI runners where jq lives in /usr/bin alongside git/find/awk — stripping
+  # the dir would also strip the binaries package.sh needs, producing exit 127
+  # (command not found) instead of the expected exit 1 (jq is required).
+  local mock_bin="$BATS_TEST_TMPDIR/mock-bin"
+  [ -n "$BATS_TEST_TMPDIR" ] || mock_bin=$(mktemp -d)
+  mkdir -p "$mock_bin"
+  for src_dir in /usr/local/bin /opt/homebrew/bin /usr/bin /bin; do
+    [ -d "$src_dir" ] || continue
+    for bin in "$src_dir"/*; do
+      local name
+      name=$(basename "$bin")
+      [ "$name" = "jq" ] && continue
+      [ -e "$mock_bin/$name" ] && continue
+      ln -s "$bin" "$mock_bin/$name" 2>/dev/null || true
+    done
+  done
 
-  run bash -c "cd '$FIXTURE' && PATH='$safe_path' bash '$PACKAGE_SH' --dry-run 2>&1"
+  run bash -c "cd '$FIXTURE' && PATH='$mock_bin' bash '$PACKAGE_SH' --dry-run 2>&1"
   [ "$status" -eq 1 ]
   [[ "$output" =~ "jq is required" ]]
 }
