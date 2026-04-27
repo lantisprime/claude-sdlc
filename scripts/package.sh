@@ -9,10 +9,12 @@ command -v jq >/dev/null 2>&1 || { echo "error: jq is required (brew install jq)
 
 DRY_RUN=false
 SKIP_TESTS=false
+SKIP_TAG=false
 for arg in "$@"; do
   case "$arg" in
     --dry-run)     DRY_RUN=true ;;
     --skip-tests)  SKIP_TESTS=true ;;
+    --skip-tag)    SKIP_TAG=true ;;
     *) echo "error: unknown flag: $arg"; exit 1 ;;
   esac
 done
@@ -139,6 +141,11 @@ fi
 build_manifest
 create_archive
 release_branch
-tag_release
+
+if $SKIP_TAG; then
+  echo "--- Skipping tag (--skip-tag)"
+else
+  tag_release
+fi
 
 echo "Done — v${VERSION} packaged and released."

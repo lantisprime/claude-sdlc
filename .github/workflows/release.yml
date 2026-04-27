@@ -36,7 +36,7 @@ jobs:
           git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Package
-        run: scripts/package.sh --skip-tests
+        run: scripts/package.sh --skip-tests --skip-tag
 
       - name: Verify archive exists
         run: |
