@@ -118,15 +118,26 @@ This plugin runs inside Claude Code — it has no standalone runtime.
 
 ## Install
 
-Clone the repo and install as a local plugin:
+**Via marketplace (recommended):**
 
 ```bash
-# pin to the latest stable release (recommended)
-git clone --branch v1.0.0 https://github.com/lantisprime/claude-sdlc.git
+# Add this repo as a marketplace source
+/plugin marketplace add lantisprime/claude-sdlc
 
-# or clone main for the latest unreleased changes
+# Install the plugin
+/plugin install sdlc-plugin@claude-sdlc
+```
+
+No Anthropic approval required — Claude Code supports self-hosted community marketplaces.
+
+**Via git clone:**
+
+```bash
+# Pin to the latest stable release
+git clone --branch v1.2.0 https://github.com/lantisprime/claude-sdlc.git
+
+# Or clone main for the latest unreleased changes
 git clone https://github.com/lantisprime/claude-sdlc.git
-# then, from your project repo, load it via Claude Code's /plugin command
 ```
 
 See [Claude Code's plugin docs](https://docs.claude.com/en/docs/claude-code/plugins) for the current install flow — plugin distribution is still evolving.
