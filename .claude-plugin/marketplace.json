@@ -1,0 +1,17 @@
+{
+  "name": "claude-sdlc",
+  "metadata": {
+    "owner": { "name": "lantisprime", "url": "https://github.com/lantisprime/claude-sdlc" }
+  },
+  "plugins": [
+    {
+      "name": "sdlc-plugin",
+      "description": "Enforces an 8-phase SDLC workflow for Claude Code with human sign-off at every gate.",
+      "source": {
+        "source": "github",
+        "repo": "lantisprime/claude-sdlc",
+        "ref": "v1.1.0"
+      }
+    }
+  ]
+}
