@@ -24,7 +24,8 @@ ARCHIVE="dist/sdlc-plugin-v${VERSION}.tar.gz"
 # 1. devFiles in plugin.json: repo-specific dev files (docs, tests, scripts, etc.)
 # 2. INFRA_EXCLUDES: universal infrastructure files — never appropriate for any consumer
 #    (kept hardcoded here so they don't require maintainer upkeep in plugin.json)
-mapfile -t DEV_FILES < <(jq -r '.devFiles[]' "$PLUGIN_JSON")
+DEV_FILES=()
+while IFS= read -r line; do DEV_FILES+=("$line"); done < <(jq -r '.devFiles[]' "$PLUGIN_JSON")
 INFRA_EXCLUDES=(".git" ".github" "config/tools.json" "dist" ".DS_Store" ".claude")
 
 is_excluded() {
