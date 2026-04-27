@@ -1,0 +1,19 @@
+{
+  "_comment": "Domain registry for the domain-expert skill. The skill uses LLM semantic judgment to match tasks against domain descriptions — no keyword scanning. To force or exclude a domain for this project, use the 'overrides' block.",
+  "version": "2",
+  "domains": [
+    {
+      "slug": "payments",
+      "description": "Payment processing, billing, invoicing, subscriptions, PCI-DSS compliance, card tokenization, hosted fields, payment processors (Stripe, Braintree, PayPal, Adyen, Worldpay, Checkout.com), refunds, chargebacks, merchant settlement, reconciliation, webhook events from payment providers."
+    },
+    {
+      "slug": "auth",
+      "description": "Authentication (AuthN), authorization (AuthZ), login and logout flows, OAuth 2.0, OIDC, SSO, SAML, JWT and session tokens, password handling and hashing, MFA and 2FA, passkeys and WebAuthn, access control models (RBAC, ABAC, ACL), identity providers (Auth0, Okta, Cognito, Keycloak, Azure AD), privilege escalation, token storage and rotation."
+    }
+  ],
+  "overrides": {
+    "_comment": "Optional. 'force' pins a domain slug at high confidence for this project regardless of task content. 'exclude' prevents a slug from matching. Both take precedence over LLM judgment.",
+    "force": null,
+    "exclude": []
+  }
+}
