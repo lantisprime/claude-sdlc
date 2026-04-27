@@ -70,7 +70,6 @@ create_archive() {
   mkdir -p dist
   local tmp_dir
   tmp_dir=$(mktemp -d)
-  trap 'rm -rf "$tmp_dir"' EXIT
 
   while IFS= read -r -d '' file; do
     local rel="${file#./}"
@@ -82,6 +81,7 @@ create_archive() {
   done < <(find . -not -path './.git/*' -type f -print0)
 
   tar czf "$ARCHIVE" -C "$tmp_dir" .
+  rm -rf "$tmp_dir"
   echo "--- Archive created: $ARCHIVE"
 }
 
@@ -89,7 +89,6 @@ release_branch() {
   echo "--- Publishing release branch"
   local tmp_dir
   tmp_dir=$(mktemp -d)
-  trap 'rm -rf "$tmp_dir"' EXIT
 
   # Copy distributable files to temp dir
   while IFS= read -r -d '' file; do
@@ -107,6 +106,7 @@ release_branch() {
   git checkout --orphan release-tmp
   git rm -rf . --quiet
   cp -r "$tmp_dir/." .
+  rm -rf "$tmp_dir"
   git add -A
   git commit -m "release: v${VERSION}"
   git branch -f release release-tmp
