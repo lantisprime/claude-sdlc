@@ -29,6 +29,15 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
+      - name: Verify changelog entry
+        run: |
+          VERSION=$(jq -r '.version' .claude-plugin/plugin.json)
+          grep -q "## \[${VERSION}\]" CHANGELOG.md || {
+            echo "error: CHANGELOG.md has no entry for [${VERSION}] — add one to main before tagging"
+            exit 1
+          }
+          echo "OK: CHANGELOG.md has entry for [${VERSION}]"
+
       - name: Configure git identity and credentials
         run: |
           git config --global user.name "github-actions[bot]"

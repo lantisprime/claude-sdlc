@@ -95,6 +95,13 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+# ── Changelog enforcement ─────────────────────────────────────────────────
+
+@test "release.yml verifies CHANGELOG.md entry before packaging" {
+  run grep "CHANGELOG" "$WORKFLOW"
+  [ "$status" -eq 0 ]
+}
+
 # ── Bug 2: git identity in workflow ───────────────────────────────────────
 
 @test "Bug 2 — release.yml sets git user.name globally before Package step" {

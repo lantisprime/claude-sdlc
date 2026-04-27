@@ -50,16 +50,17 @@ The `dist/` tag (`v{version}`) is immutable once created. `marketplace.json` pin
 Full release cycle, step by step:
 
 1. **Bump `version`** in `.claude-plugin/plugin.json` (e.g. `1.1.0` → `1.2.0`)
-2. **Preview the distribution manifest** — run `scripts/package.sh --dry-run` and confirm no devFiles appear in the output
-3. **Commit the version bump** to `main`
-4. **Push the tag:**
+2. **Add a `[X.Y.Z]` entry to `CHANGELOG.md`** — CI will fail at the "Verify changelog entry" step if this is missing
+3. **Preview the distribution manifest** — run `scripts/package.sh --dry-run` and confirm no devFiles appear in the output
+4. **Commit the version bump and changelog** to `main`
+5. **Push the tag:**
    ```bash
    git tag v1.2.0
    git push origin v1.2.0
    ```
-5. **Watch the release workflow** — the `test` job runs first; `release` only starts after `test` passes
-6. **Verify the GitHub Release** — confirm `dist/sdlc-plugin-v1.2.0.tar.gz` is attached
-7. **Verify `marketplace.json`** — confirm the `ref` field on `main` was updated to `v1.2.0` by the release job's `[skip ci]` commit
+6. **Watch the release workflow** — the `test` job runs first; `release` only starts after `test` passes
+7. **Verify the GitHub Release** — confirm `dist/sdlc-plugin-v1.2.0.tar.gz` is attached
+8. **Verify `marketplace.json`** — confirm the `ref` field on `main` was updated to `v1.2.0` by the release job's `[skip ci]` commit
 
 ---
 
