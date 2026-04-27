@@ -106,7 +106,7 @@ Register a second entry for `phase-gate.sh` under `PreToolUse` in `hooks.json`, 
 | `plan` | none | First phase — no prior gate required |
 | `analyze` | `plan-` | |
 | `design` | `analyze-` | |
-| `build` | `design-` | |
+| `build` | `design-` or `fix-fast-` | The `/fix-fast` flow collapses Plan/Analyze/Design into a single mini-gate at `fix-fast-<slug>.md`; that gate satisfies the build prior-gate check in lieu of `design-`. Documented in PR-4. |
 | `test` | `build-` | |
 | `deploy` | `test-` | |
 | `support` | `deploy-` or `support-transition-` | Either a deploy gate or an explicit support-transition gate satisfies the check |

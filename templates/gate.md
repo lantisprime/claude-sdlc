@@ -2,9 +2,9 @@
 
 - **Phase:** plan | analyze | design | build | test | deploy | support
 - **Task:** <task-slug>
-- **Signed by:** <human name or email>
-- **Signed at:** <YYYY-MM-DDTHH:MM:SSZ>
-- **Work-item reference:** <URL of REQ / ticket / CR, or `no ticket REQ-<n>, REQ-<n>` in degraded mode>
+- **Signed by:** <signer> <!-- Your name or email as it will appear in audit logs -->
+- **Signed at:** <timestamp> <!-- ISO-8601 UTC, e.g. 2026-04-27T10:00:00Z -->
+- **Work-item reference:** <work-item> <!-- URL of REQ / ticket / CR, or `no ticket REQ-<n>` in degraded mode -->
 
 ## Phase summary
 
@@ -25,7 +25,8 @@
 
 ## Acknowledgment
 
-<The user's raw sign-off message, quoted verbatim. Captured by the `gate-signoff` skill when signed via chat, or written in directly when signed by hand (e.g. for `/deploy` and `/fix-fast`).>
+<acknowledgment>
+<!-- The user's raw sign-off message, quoted verbatim. Captured by the `gate-signoff` skill when signed via chat, or written by hand for /deploy and /fix-fast. -->
 
 ## Confirmation
 

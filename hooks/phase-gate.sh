@@ -79,21 +79,75 @@ SLUG=$(basename "$ACTIVE_PLAN" .md)
 case "$PHASE" in
   analyze) PRIOR_PREFIXES="plan" ;;
   design)  PRIOR_PREFIXES="analyze" ;;
-  build)   PRIOR_PREFIXES="design" ;;
+  build)   PRIOR_PREFIXES="design fix-fast" ;;
   test)    PRIOR_PREFIXES="build" ;;
   deploy)  PRIOR_PREFIXES="test" ;;
   support) PRIOR_PREFIXES="deploy support-transition" ;;
 esac
 
-GATE_EXISTS=""
+# B2 placeholder scanner — flags unfilled fields in deploy/fix-fast gates.
+# Required fields: signer, timestamp, work-item reference, acknowledgment, confirmation.
+# Detection regex: ___+ | ^TODO$ | <[A-Za-z][A-Za-z0-9_-]*>
+scan_for_placeholders() {
+  local gate="$1"
+  local field value unfilled=""
+
+  # Inline fields rendered as `- **<Field>:** <value>`. Field-name match is
+  # case-insensitive (grep -i); the strip uses a generic `**.*:**` pattern so
+  # case variations on the field name don't break value extraction.
+  for field in "Signed by" "Signed at" "Work-item reference"; do
+    value=$(grep -iE "^[[:space:]]*-?[[:space:]]*\\*\\*${field}:\\*\\*" "$gate" 2>/dev/null \
+      | head -1 \
+      | sed -E 's/.*\*\*[^:]*:\*\*[[:space:]]*//' || true)
+    if [ -n "$value" ] && echo "$value" | grep -qE '___+|^TODO$|<[A-Za-z][A-Za-z0-9_-]*>'; then
+      unfilled="${unfilled}, ${field}"
+    fi
+  done
+
+  # Section-body fields. First non-empty, non-comment line of each section.
+  # Tracks multi-line HTML comments via in_comment state so a wrapping <!-- ... --> block
+  # doesn't expose the next line (which would mask the real placeholder below it).
+  for field in "Acknowledgment" "Confirmation"; do
+    value=$(awk -v sec="## ${field}" '
+      $0 == sec { in_section=1; next }
+      /^## / && in_section { exit }
+      in_section && /<!--/ { in_comment=1 }
+      in_comment && /-->/ { in_comment=0; next }
+      in_comment { next }
+      in_section && /[^[:space:]]/ { print; exit }
+    ' "$gate")
+    if [ -n "$value" ] && echo "$value" | grep -qE '___+|^TODO$|<[A-Za-z][A-Za-z0-9_-]*>'; then
+      unfilled="${unfilled}, ${field}"
+    fi
+  done
+
+  echo "${unfilled#, }"
+}
+
+PRIOR_GATE_FILE=""
+PRIOR_GATE_PREFIX=""
 for prefix in $PRIOR_PREFIXES; do
   if [ -f "$GATES/${prefix}-${SLUG}.md" ]; then
-    GATE_EXISTS="yes"
+    PRIOR_GATE_FILE="$GATES/${prefix}-${SLUG}.md"
+    PRIOR_GATE_PREFIX="$prefix"
     break
   fi
 done
 
-[ -n "$GATE_EXISTS" ] && exit 0
+if [ -n "$PRIOR_GATE_FILE" ]; then
+  # Prior gate exists. For deploy/fix-fast gates (signed manually by hand),
+  # also validate that no required field still contains a placeholder.
+  case "$PRIOR_GATE_PREFIX" in
+    deploy|fix-fast)
+      UNFILLED=$(scan_for_placeholders "$PRIOR_GATE_FILE")
+      if [ -n "$UNFILLED" ]; then
+        echo "[phase-gate] BLOCK: ${PRIOR_GATE_PREFIX} gate '${PRIOR_GATE_FILE}' has unfilled fields: ${UNFILLED}. Fill in all required fields before continuing." >&2
+        exit 2
+      fi
+      ;;
+  esac
+  exit 0
+fi
 
 # Gate absent — determine severity by file extension.
 # Try JSON parse first; fall back to treating raw input as a path (used by tests and simple invocations).
