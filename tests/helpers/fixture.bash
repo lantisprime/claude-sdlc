@@ -49,6 +49,22 @@ add_plan_no_classification() {
   touch "$dir/.claude/sdlc/plans/${slug}.md"
 }
 
+# Write a plan with both Classification and a specific Phase field.
+# Usage: add_plan_with_phase <dir> <phase> [<slug>]
+add_plan_with_phase() {
+  local dir="$1" phase="$2" slug="${3:-test-task}"
+  cat > "$dir/.claude/sdlc/plans/${slug}.md" <<EOF
+# Plan: ${slug}
+
+Classification: new-build
+Phase: ${phase}
+
+## In-scope files
+- src/foo.js
+EOF
+  touch "$dir/.claude/sdlc/plans/${slug}.md"
+}
+
 # Copy a versioned plan (*.v1.md) — should not satisfy plan-gate or work-item checks.
 add_versioned_plan() {
   local dir="$1" slug="${2:-test-task}"

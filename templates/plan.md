@@ -7,6 +7,7 @@
 - **Created:** <YYYY-MM-DD>
 - **Version:** 1
 - **Status:** draft | signed | superseded
+- **Phase:** plan | analyze | design | build | test | deploy | support | docs
 - **Estimate:** <S/M/L/XL or story points>
 
 ## Problem

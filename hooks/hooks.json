@@ -6,6 +6,7 @@
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
           { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/plan-gate.sh" },
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/phase-gate.sh" },
           { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/hooks/work-item-validation.sh" }
         ]
       },
