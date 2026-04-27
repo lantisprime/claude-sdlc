@@ -231,10 +231,10 @@
       "update_triggers": ["rfc:accepted", "rfc:implemented"]
     },
     {
-      "path": "docs/rfcs/RFC-002-release-packaging.md",
+      "path": "docs/rfcs/archived/RFC-002-release-packaging.md",
       "title": "Release Packaging & Marketplace Distribution",
-      "status": "accepted",
-      "role": "rfc",
+      "status": "implemented",
+      "role": "rfc-archived",
       "description": "Adds marketplace.json, scripts/package.sh (devFiles exclusion, release branch, dist tags), .github/workflows/release.yml (test gate + release job), and docs/PACKAGING.md.",
       "update_triggers": ["rfc:accepted", "rfc:implemented"]
     }
@@ -253,8 +253,8 @@
         "docs/references/_repo-context.md"
       ]
     },
-    "docs/rfcs/RFC-002-release-packaging": {
-      "rfc_status": "accepted",
+    "docs/rfcs/archived/RFC-002-release-packaging": {
+      "rfc_status": "implemented",
       "accepted": [
         "docs/references/_repo-context.md"
       ],

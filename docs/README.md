@@ -61,7 +61,6 @@ Active RFC trackers and notes.
 | [rfcs/pending-analysis.md](rfcs/pending-analysis.md) | Pending Analysis | active | tracker | Open design questions: items 1–2 open (deferred), item 3 closed/accepted, item 4 open (secret-scan always-on) |
 | [rfcs/notes/README.md](rfcs/notes/README.md) | RFC Notes Index | active | notes-index | Index of companion notes, risk analyses, and experiment notes for RFCs currently in flight |
 | [rfcs/RFC-001-plan-quality-gates.md](rfcs/RFC-001-plan-quality-gates.md) | Plan Command Quality Gates | accepted | rfc | Closes gap between plan governance intent and enforcement: status check in plan-gate.sh, staleness threshold, scope-delta records, low-provenance markers, degraded-mode banner, domain no-match note |
-| [rfcs/RFC-002-release-packaging.md](rfcs/RFC-002-release-packaging.md) | Release Packaging & Marketplace Distribution | accepted | rfc | Establishes marketplace.json, packaging script (devFiles exclusion + release branch + dist tags), release workflow (test gate on every push, release on tag), and PACKAGING.md reference |
 
 ### Archived RFCs
 
@@ -69,6 +68,7 @@ Fully implemented RFCs. Kept for historical traceability; no longer updated.
 
 | Path | Title | Status | Role | Description |
 |------|-------|--------|------|-------------|
+| [rfcs/archived/RFC-002-release-packaging.md](rfcs/archived/RFC-002-release-packaging.md) | Release Packaging & Marketplace Distribution | implemented | rfc | marketplace.json, scripts/package.sh (devFiles exclusion + release branch), release workflow (CI gate + marketplace ref update), docs/PACKAGING.md |
 | [rfcs/archived/scope-ingest.md](rfcs/archived/scope-ingest.md) | Scope Ingest & Domain Expert RFC | implemented | rfc | Defines scope-ingest agent and domain-expert skill; all checklist items complete |
 | [rfcs/archived/plan-phase-scope-ingest-discussion.md](rfcs/archived/plan-phase-scope-ingest-discussion.md) | Scope Ingest — RFC Discussion Note | archived | rfc-companion | Pre-RFC discussion note for scope-ingest; promoted to RFC 2026-04-25. Historical record of the analysis path. |
 | [rfcs/archived/multi-team-approval.md](rfcs/archived/multi-team-approval.md) | Multi-team Approval RFC | implemented | rfc | All 5 steps shipped: approval-reconcile.sh, sign-off-multi.md, Required sign-offs block, APPROVALS.md, network-share sync (tier 1), git transport (tier 2), MCP connector stub (tier 3) |
@@ -168,7 +168,7 @@ Derived from `_index.json` update_triggers. A stale `implemented` column against
 | RFC | RFC Status | On Acceptance — update | On Implementation — update |
 |-----|------------|------------------------|----------------------------|
 | [rfcs/RFC-001-plan-quality-gates.md](rfcs/RFC-001-plan-quality-gates.md) | **accepted** | references/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, ideas/capabilities.md, references/_repo-context.md |
-| [rfcs/RFC-002-release-packaging.md](rfcs/RFC-002-release-packaging.md) | **accepted** | references/_repo-context.md | docs/README.md (PACKAGING.md added), references/_repo-context.md |
+| [rfcs/archived/RFC-002-release-packaging.md](rfcs/archived/RFC-002-release-packaging.md) | **implemented** | references/_repo-context.md | docs/README.md (PACKAGING.md added), references/_repo-context.md |
 | [rfcs/archived/scope-ingest.md](rfcs/archived/scope-ingest.md) | **implemented** | GLOSSARY.md, references/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, ideas/capabilities.md, references/_repo-context.md |
 | [rfcs/archived/multi-team-approval.md](rfcs/archived/multi-team-approval.md) | **implemented** | GLOSSARY.md, references/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, claude-sdlc-enterprise-adoption.md, ideas/capabilities.md, references/_repo-context.md |
 | [rfcs/archived/guided-entry-session-resume-multi-role.md](rfcs/archived/guided-entry-session-resume-multi-role.md) | **implemented** | references/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, ideas/capabilities.md, references/_repo-context.md |

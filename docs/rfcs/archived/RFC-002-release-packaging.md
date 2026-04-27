@@ -2,10 +2,10 @@
 rfc_id: RFC-002
 slug: release-packaging
 title: Release Packaging & Marketplace Distribution
-status: accepted
+status: implemented
 champion: charltond.ho
 created: 2026-04-27
-last_modified: 2026-04-27 (accepted)
+last_modified: 2026-04-27 (implemented)
 supersedes: ~
 superseded_by: ~
 ---
@@ -379,18 +379,13 @@ PR-2  (independent, can merge anytime after PR-1)
 
 ## Implementation
 
-> Populate after implementation.
-
-| PR / Commit | What it delivered |
+| PR | What it delivered |
 |---|---|
-| — | — |
-
-Key files to create/modify:
-- `.claude-plugin/marketplace.json` — new marketplace catalog
-- `.claude-plugin/plugin.json` — add `_comment` to `devFiles` field
-- `scripts/package.sh` — new packaging script
-- `.github/workflows/release.yml` — new release workflow
-- `docs/PACKAGING.md` — new packaging reference
+| [#12](https://github.com/lantisprime/claude-sdlc/pull/12) | `_devFiles_comment` + `scripts/` added to `devFiles` in `.claude-plugin/plugin.json` |
+| [#13](https://github.com/lantisprime/claude-sdlc/pull/13) | `.claude-plugin/marketplace.json` — self-hosted marketplace catalog |
+| [#14](https://github.com/lantisprime/claude-sdlc/pull/14) | `scripts/package.sh` — packaging script with dry-run, --skip-tests, graceful claude CLI degradation |
+| [#15](https://github.com/lantisprime/claude-sdlc/pull/15) | `.github/workflows/release.yml` — CI gate + release job with archive check and marketplace ref update |
+| [#16](https://github.com/lantisprime/claude-sdlc/pull/16) | `docs/PACKAGING.md` — maintainer reference covering installer behaviour, release branch model, checklist, troubleshooting |
 
 ---
 

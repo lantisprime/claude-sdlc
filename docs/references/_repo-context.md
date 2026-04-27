@@ -7,7 +7,7 @@
 > **RFC work:** also load `docs/rfcs/AGENT-RULES.md` — it contains the concise decision rules for creating, transitioning, and archiving RFCs.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-27 (RFC-002-release-packaging accepted)
+**Last updated:** 2026-04-27 (RFC-002-release-packaging implemented)
 
 ---
 
@@ -100,7 +100,7 @@ Frontend tasks halt in Phase 2 until some UX artifact exists at `.claude/sdlc/ar
 
 ## Implemented RFCs
 
-All four RFCs are fully implemented as of 2026-04-26.
+All five RFCs are fully implemented as of 2026-04-27.
 
 - **`docs/rfcs/multi-team-approval.md`** (implemented) — sign-off files at `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md`; `APPROVALS.md` reconciler; transport ladder Tier 0–3; `approval-reconcile.sh` hook; `sign-off-multi.md` + `approval-packet.md` templates.
 
@@ -109,6 +109,8 @@ All four RFCs are fully implemented as of 2026-04-26.
 - **`docs/rfcs/guided-entry-session-resume-multi-role.md`** (implemented) — `/status`, `/start`, `/configure`, `/help`; `session-plan-check.sh` hook; plan versioning; approval packets; auto next-step hints (`_shared/next-hint.sh` + `hints.jsonl` fade-after-3); glossary.
 
 - **`docs/rfcs/opt-in-activation-suspend-resume.md`** (implemented) — opt-in `.enabled` marker; hooks guard on `.enabled`; enhanced `/start` (PATH A: config auto-detect + scope + plan draft; PATH B: re-enable reconciliation with snapshot verify + REQ supersession); `/suspend` with `suspend-snapshot.sh` (AES-256, plain fallback); `.suspension-log.jsonl`; `secret-scan.sh` always-on regardless of activation state.
+
+- **`docs/rfcs/archived/RFC-002-release-packaging.md`** (implemented) — `.claude-plugin/marketplace.json` (self-hosted install), `scripts/package.sh` (devFiles exclusion + release branch + dist tags; `--dry-run` + `--skip-tests`), `.github/workflows/release.yml` (CI test gate + release job with archive check + marketplace.json validation), `docs/PACKAGING.md` maintainer reference.
 
 ## Open PRs
 
@@ -121,8 +123,6 @@ All four RFCs are fully implemented as of 2026-04-26.
 ## Accepted RFCs (awaiting implementation)
 
 - **`docs/rfcs/RFC-001-plan-quality-gates.md`** (accepted) — closes the gap between plan governance intent and `plan-gate.sh` enforcement: status check (warn on unsigned plan), 48h staleness threshold, scope-delta decision records, low-provenance scope markers, degraded-mode banner, domain no-match note. 7 changes across 4 files: `plan-gate.sh`, `diff-scope-check.sh`, `skills/plan/SKILL.md`, `skills/domain-expert/SKILL.md`.
-
-- **`docs/rfcs/RFC-002-release-packaging.md`** (accepted) — establishes marketplace.json (self-distributing install via `claude plugin install`), `scripts/package.sh` (devFiles exclusion + release branch + dist tags), `.github/workflows/release.yml` (test gate on every push, release job on tag), `docs/PACKAGING.md` reference. Fixes: `devFiles` is unrecognized by Claude Code installer; no marketplace.json; no CI gate before release.
 
 ## Anti-patterns the repo explicitly guards against
 
