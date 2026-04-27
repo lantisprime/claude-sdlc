@@ -55,12 +55,12 @@ Full release cycle, step by step:
 4. **Commit the version bump and changelog** to `main`
 5. **Push the tag:**
    ```bash
-   git tag v1.2.0
-   git push origin v1.2.0
+   git tag v1.3.0
+   git push origin v1.3.0
    ```
 6. **Watch the release workflow** — the `test` job runs first; `release` only starts after `test` passes
-7. **Verify the GitHub Release** — confirm `dist/sdlc-plugin-v1.2.0.tar.gz` is attached
-8. **Verify `marketplace.json`** — confirm the `ref` field on `main` was updated to `v1.2.0` by the release job's `[skip ci]` commit
+7. **Verify the GitHub Release** — confirm `dist/sdlc-plugin-v1.3.0.tar.gz` is attached
+8. **Verify `marketplace.json`** — confirm the `ref` field on `main` was updated to `v1.3.0` by the release job's `[skip ci]` commit
 
 ---
 
@@ -138,4 +138,4 @@ tests/run.sh
 | `warn: claude CLI not found — skipping plugin validate` | `claude` not in PATH (expected in CI) | Not a failure; validation is a local safety net only |
 | `error: Archive not found` | `package.sh` failed silently during `create_archive` | Re-run with `bash -x scripts/package.sh --skip-tests` to trace the failure |
 | `[skip ci]` commit re-triggered the workflow | GitHub stopped honoring `[skip ci]` | Manually cancel the triggered run; open an issue to investigate |
-| `error: marketplace.json invalid JSON after update` | `jq` filter produced malformed output | Run `jq --arg v "v1.2.0" '.plugins[0].source.ref = $v' .claude-plugin/marketplace.json` locally to debug |
+| `error: marketplace.json invalid JSON after update` | `jq` filter produced malformed output | Run `jq --arg v "v1.3.0" '.plugins[0].source.ref = $v' .claude-plugin/marketplace.json` locally to debug |

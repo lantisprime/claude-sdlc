@@ -3,8 +3,8 @@
   "version": "1.3.0",
   "description": "Enforces an 8-phase SDLC workflow for Claude Code: Plan, Analyze, Design, Build, Test, Deploy, Support, Docs. Keeps the human in the lead through explicit phase gates, enforces plan-before-code and surgical-edit discipline, and degrades gracefully when Git/ticketing/observability integrations are absent.",
   "author": {
-    "name": "Your Name",
-    "email": "you@example.com"
+    "name": "Charlton Ho",
+    "email": "me@charltonho.com"
   },
   "license": "MIT",
   "keywords": ["sdlc", "workflow", "governance", "agentic", "human-in-the-loop"],

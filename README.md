@@ -134,7 +134,7 @@ No Anthropic approval required — Claude Code supports self-hosted community ma
 
 ```bash
 # Pin to the latest stable release
-git clone --branch v1.2.0 https://github.com/lantisprime/claude-sdlc.git
+git clone --branch v1.3.0 https://github.com/lantisprime/claude-sdlc.git
 
 # Or clone main for the latest unreleased changes
 git clone https://github.com/lantisprime/claude-sdlc.git
@@ -536,7 +536,7 @@ Registered in [hooks/hooks.json](hooks/hooks.json). Block vs. warn philosophy do
 |---|---|---|---|
 | [plan-gate.sh](hooks/plan-gate.sh) | PreToolUse (Edit/Write) | **Block** / Warn | No-op until `.enabled` exists; then blocks edits when no plan exists; warns when `scope.md` or the scope gate is absent |
 | [work-item-validation.sh](hooks/work-item-validation.sh) | PreToolUse | **Block** | Requires a valid REQ ID, ticket, or signed CR |
-| [secret-scan.sh](hooks/secret-scan.sh) | PreToolUse | **Block** | Blocks writes containing confirmed secrets |
+| [secret-scan.sh](hooks/secret-scan.sh) | PostToolUse | **Block** | Blocks writes containing confirmed secrets |
 | [phase-gate.sh](hooks/phase-gate.sh) | PreToolUse (commands) | **Block** | Refuses a phase command until the prior gate is signed |
 | [diff-scope-check.sh](hooks/diff-scope-check.sh) | PostToolUse | Warn | Flags edits to files outside the plan |
 | [adjacent-function-detector.sh](hooks/adjacent-function-detector.sh) | PostToolUse | Warn | Flags edits to functions adjacent to in-scope ones |
