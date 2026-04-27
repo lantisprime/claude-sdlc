@@ -453,11 +453,10 @@ The block-level check uses structured table parsing (or `active-plan.trace.json`
 
 ## Implementation
 
-> Populate after implementation.
-
 | PR / Commit | What it delivered |
 |---|---|
-| — | — |
+| `79a9765` (PR-1) | Track A documentation corrections in `docs/USER-MANUAL.md`. Downgrades five overclaimed enforcement sites to match current hook behavior; tags planned promotions with the corresponding RFC-003 PR (PR-3 / PR-4 / PR-5 / PR-8). |
+| — (PR-2 through PR-8) | Pending |
 
 ---
 
