@@ -1,6 +1,6 @@
 # Packaging & Release Guide
 
-Reference for maintainers. Covers how the plugin is packaged, how releases are cut, and how consumers install it.
+Reference for maintainers. Covers how the plugin is packaged, how releases are cut, how consumers install it, and how to test the packaging system.
 
 ---
 
@@ -90,6 +90,42 @@ After `marketplace.json` and the release workflow are in place, consumers instal
 ```
 
 No Anthropic approval is required. Claude Code supports self-hosted community marketplaces — any public GitHub repo with a `.claude-plugin/marketplace.json` is valid.
+
+---
+
+## 6. Packaging test suite
+
+`tests/scripts/package.bats` is a regression suite for `scripts/package.sh`. Run it with:
+
+```bash
+bats tests/scripts/package.bats
+```
+
+It is also included automatically when you run the full suite:
+
+```bash
+tests/run.sh
+```
+
+### What it tests
+
+| Test | What it guards against |
+|---|---|
+| `bash -n` syntax check | Script has a syntax error |
+| No `mapfile` calls | Bash 4+ syntax breaking on macOS system bash 3.2 |
+| Dry-run runs on system bash | Any future bash 3.x incompatibility |
+| No `git checkout --orphan` in script | In-place orphan branch failing in GitHub Actions worktree |
+| `--skip-tag` accepted; present in `release.yml` | CI trying to re-create a tag that already exists |
+| `release.yml` has `git config --global` for name + email | `git commit` failing inside `release_branch()` — no identity set |
+| `--skip-tests` accepted | Flag regression |
+| Unknown flag exits 1 | Undetected typo in flag names |
+| `jq` not in PATH exits 1 with error | Silent failure when dependency is missing |
+| 6× manifest exclusion tests | `devFiles` or infra files leaking into consumer distribution |
+| Distributable files present in manifest | Over-exclusion accidentally dropping plugin files |
+
+### Test file location
+
+`tests/scripts/package.bats` lives under `tests/` which is in `devFiles` — it is **not shipped to consumers**.
 
 ---
 
