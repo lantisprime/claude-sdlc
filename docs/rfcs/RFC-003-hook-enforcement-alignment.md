@@ -142,6 +142,8 @@ After locating a deploy or fix-fast gate file, scan for unfilled placeholder tok
 
 Angle-bracket identifiers match only when the brackets contain alphanumeric/underscore/hyphen text. Raw `<` in HTML or prose does not match. If any required field contains a placeholder, exit 2 with a specific message naming the unfilled fields.
 
+**Detection pattern:** `<[A-Za-z][A-Za-z0-9_-]*>` — each token is matched as a whole word against the field value. The full unfilled-token regex is `___+|^TODO$|<[A-Za-z][A-Za-z0-9_-]*>`.
+
 Required fields to validate: signer, timestamp, work-item reference, acknowledgment, confirmation. These are the five fields the manual describes for manual deploy/fix-fast sign-off.
 
 Severity: Block (exit 2). Rationale: a gate file with placeholder fields is a template that has not been filled in, not a signed artifact. Treating it as signed would silently void the deploy sign-off requirement.
@@ -278,12 +280,14 @@ RFC-003 does not implement strict mode but reserves the following config shape. 
 
 1. A valid structured traceability map exists in the active plan (`## Traceability` table with at least one row).
 2. The edited file path is deterministically matched against the table (exact path, not a substring heuristic).
-3. The REQ/ticket/CR reference in the table resolves to an item found in one of the following accepted sources (searched in order):
-   - Plan frontmatter `work_items` field
-   - `## Requirements` section
-   - `## Change Request` section
-   - `## Linked Tickets` section
-   - `active-plan.trace.json` sidecar file, if present
+3. The REQ/ticket/CR reference in the table resolves to an item found in one of the following accepted sources (searched in order; first match wins):
+   - Plan frontmatter `work_items` field (YAML list, e.g., `work_items: [REQ-42, TICKET-123]`)
+   - `## Requirements` section (any line containing the reference token)
+   - `## Change Request` section (any line containing the reference token)
+   - `## Linked Tickets` section (any line containing the reference token)
+   - `active-plan.trace.json` sidecar file, if present (top-level `work_items` array)
+
+   **Match algorithm:** whole-word, case-insensitive — the reference (e.g., `REQ-42`) must appear as a complete token bounded by non-word characters or line edges. Partial matches do not count: `REQ-4` does not match `REQ-42`, and `req-42` does match `REQ-42`. If none of the five sources produces a whole-word match, the file is treated as untraced (block under C2; warn under B3).
 4. Generated files have an explicit `generated_by` source mapping in `config/tools.json`.
 5. An override path exists (either the `.claude/sdlc/` repair escape hatch or an `enforcement.file_traceability: warn` config setting).
 6. Bats tests prove that mapped files pass, unmapped files block, and table-absent plans warn only.
