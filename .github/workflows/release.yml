@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bats-core
+        run: sudo apt-get install -y bats
+      - name: Run test suite
+        run: tests/run.sh --integration
+
+  release:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Package
+        run: scripts/package.sh --skip-tests
+
+      - name: Verify archive exists
+        run: |
+          VERSION=$(jq -r '.version' .claude-plugin/plugin.json)
+          [ -f "dist/sdlc-plugin-v${VERSION}.tar.gz" ] || { echo "error: archive not found"; exit 1; }
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/sdlc-plugin-v*.tar.gz
+
+      - name: Update marketplace ref
+        run: |
+          VERSION=${GITHUB_REF_NAME}
+          jq --arg v "$VERSION" '.plugins[0].source.ref = $v' \
+            .claude-plugin/marketplace.json > tmp.json
+          jq . tmp.json > /dev/null || { echo "error: marketplace.json invalid JSON after update"; exit 1; }
+          mv tmp.json .claude-plugin/marketplace.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/marketplace.json
+          git commit -m "chore: update marketplace ref to ${VERSION} [skip ci]"
+          git push origin HEAD:main
