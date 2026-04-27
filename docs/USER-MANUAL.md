@@ -32,7 +32,7 @@ For the concise overview, read [README.md](../README.md). For the authoritative 
 
 ## 1. Prerequisites
 
-**These must exist before the plugin can be useful. Without them, either the plugin refuses to advance a phase or it degrades to local-only artifacts.**
+**These must exist before the plugin can be useful. Without them, either the plugin blocks edits (via `plan-gate.sh`) or it degrades to local-only artifacts.**
 
 > **Platform note:** macOS and Linux users have everything they need from a standard install. **Windows users** must run Claude Code inside [Git Bash](https://git-scm.com/downloads) (included with Git for Windows) or WSL2 — the hooks are bash scripts and will not run in cmd or PowerShell.
 
@@ -394,7 +394,7 @@ I have reviewed the phase outputs and approve advancing to the next phase.
 | `Acknowledgment` | A sentence (or two) naming the specific things you verified — flag state, rollback plan, canary window | Write `"approved"` or repeat the phase summary verbatim |
 | `Confirmation` | Leave the template line as-is | Delete or reword it |
 
-**After saving**, the next phase command (e.g. `/support`) will run — `phase-gate.sh` parses this file and refuses to advance if any of the five fields still contains a `<...>` placeholder.
+**After saving**, the next phase command (e.g. `/support`) will run normally. **Planned (RFC-003 PR-4):** `phase-gate.sh` will refuse to advance if any of the five required fields still contains a `<...>` placeholder. Until that ships, the placeholder check is the human's responsibility — fill every field before saving.
 
 #### Same pattern for `/fix-fast`
 
@@ -529,14 +529,14 @@ After every phase gate is written, the skill appends a `## Next step hint` block
 
 ### Downstream enforcement (why gates can't be forged)
 
-Writing a gate file is not the whole story — two hooks double-check independently, so a malformed or missing sign-off fails twice:
+Writing a gate file is not the whole story — two hooks check it on the way through. Today, `plan-gate.sh` blocks edits without a plan and `work-item-validation.sh` blocks builds without a valid `Classification` field or matching signed CR; gate-by-gate prior-phase enforcement and per-file traceability are planned (RFC-003 Phase 2/3).
 
 | Hook | When | What it checks |
 |---|---|---|
-| [phase-gate.sh](../hooks/phase-gate.sh) | PreToolUse on phase commands (`/build`, `/test`, …) | Refuses the command if the prior phase's gate file is missing or malformed |
-| [work-item-validation.sh](../hooks/work-item-validation.sh) | PreToolUse on Edit/Write during Build | Refuses the edit if no valid REQ / ticket / signed CR references the file |
+| [phase-gate.sh](../hooks/phase-gate.sh) | `Stop` (advisory) | Prints a stderr reminder if no gate file has been updated in the last two hours; does not currently block. **Planned (RFC-003 PR-3):** PreToolUse `Edit`/`Write` block when the prior phase's gate file is missing. **Planned (RFC-003 PR-4):** block when a deploy or fix-fast gate has unfilled placeholder fields. |
+| [work-item-validation.sh](../hooks/work-item-validation.sh) | PreToolUse on Edit/Write | Validates that the active plan has a `Classification` field; for change-request plans, validates that a matching signed CR artifact exists. **Planned (RFC-003 PR-5):** file-level REQ / ticket / CR warning when an edited file lacks a traceability mapping. **Planned (RFC-003 PR-8):** promote that warning to a block once the plan template ships a per-file `## Traceability` section. |
 
-This means even if someone hand-writes a broken gate, the next phase's first Edit still blocks. The gate is a contract, not a mere note.
+The gate is a contract for the human signing it. The contract is partly enforced today (plan-gate.sh, classification + CR sign-off) and partly aspirational; RFC-003 closes the gap.
 
 ### Graceful degradation
 
@@ -693,7 +693,7 @@ https://linear.app/acme/issue/API-4421
 
 **Plugin:**
 - `plan-gate.sh` checks plan exists → pass
-- `work-item-validation.sh` checks REQ / ticket → pass
+- `work-item-validation.sh` checks plan `Classification` (and signed CR if applicable) → pass
 - `build` skill writes code to `gateway/middleware/ratelimit.go` (surgical: only in-scope functions)
 - `format-on-write.sh` runs `gofmt -w`
 - `secret-scan.sh` scans the diff → pass
@@ -1201,8 +1201,8 @@ You'll interact with hooks implicitly — they fire on Claude's tool calls, not 
 | Hook | Fires on | Severity | Typical user experience |
 |---|---|---|---|
 | `plan-gate.sh` | PreToolUse Edit/Write | **Block** + 2 warns | **Block:** "I can't edit files yet — there's no plan for this task. Run `/plan` first." **Warn:** if `.claude/sdlc/scope.md` is absent, or if no scope gate exists at `.claude/sdlc/gates/scope-*.md`. The warns surface the gap; the block is reserved for the missing plan artifact. |
-| `work-item-validation.sh` | PreToolUse Edit/Write | **Block** | "Edit blocked: no REQ ID, ticket, or signed CR references this file." |
-| `phase-gate.sh` | PreToolUse (commands) | **Block** | "Can't run `/build` — the design gate isn't signed yet." |
+| `work-item-validation.sh` | PreToolUse Edit/Write | **Block** | "Edit blocked: active plan has no `Classification` field" — or, for change-request plans, "no matching signed CR artifact found". *Planned (RFC-003 PR-5):* warn on edited files without a REQ / ticket / CR mapping. *Planned (RFC-003 PR-8):* promote that warning to a block once the plan template ships a per-file `## Traceability` section. |
+| `phase-gate.sh` | `Stop` (advisory) | **Advisory** | "Reminder: no gate file has been updated in the last two hours — verify the prior phase is signed before continuing." Does not currently block. *Planned (RFC-003 PR-3):* PreToolUse block when the prior phase's gate is missing. *Planned (RFC-003 PR-4):* block when a deploy or fix-fast gate has unfilled placeholder fields. |
 | `secret-scan.sh` | PostToolUse | **Block** | "Secret scanner found a confirmed secret in this diff — refusing the write." |
 | `diff-scope-check.sh` | PostToolUse | Warn | "Warning: you touched `admin/api.go` but it's not in the plan's in-scope list." |
 | `adjacent-function-detector.sh` | PostToolUse | Warn | "Warning: function `formatAdminError` is adjacent to the in-scope `formatUserError` — verify this was intentional." |
