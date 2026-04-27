@@ -34,13 +34,13 @@ do
   echo
 done
 
-# --- Bats hook tests ---
+# --- Bats tests (hooks + scripts) ---
 separator
-echo "HOOK TESTS (bats)"
+echo "BATS TESTS (hooks + scripts)"
 separator
 
 if ! command -v bats >/dev/null 2>&1; then
-  echo "WARN: bats not found — skipping hook tests."
+  echo "WARN: bats not found — skipping bats tests."
   echo "Install with: brew install bats-core  OR  npm install -g bats"
 else
   bats_files=()
@@ -51,7 +51,7 @@ else
       continue
     fi
     bats_files+=("$f")
-  done < <(find "$TESTS_DIR/hooks" -name "*.bats" -print0 | sort -z)
+  done < <(find "$TESTS_DIR/hooks" "$TESTS_DIR/scripts" -name "*.bats" -print0 | sort -z)
 
   if [ "${#bats_files[@]}" -gt 0 ]; then
     if bats "${bats_files[@]}"; then
