@@ -2,7 +2,7 @@
 rfc_id: RFC-003
 slug: hook-enforcement-alignment
 title: Hook Enforcement Alignment
-status: draft
+status: accepted
 champion: charltond.ho
 created: 2026-04-27
 last_modified: 2026-04-27
@@ -244,37 +244,192 @@ RFC-003 does not implement strict mode but reserves the following config shape. 
 
 ## Implementation plan
 
-> Populate when accepted.
+Eight PRs across three phases. Phase 1 (PR-1, PR-2) ships immediately and lowers the manual to match current behavior plus reserves the config schema. Phase 2 (PR-3 through PR-6) implements the enforcement the manual already describes. Phase 3 (PR-7, PR-8) promotes file-level traceability to a hard block once the plan template ships the per-file mapping.
 
-**Phase 1 — Track A (documentation corrections, no code change)**
+### Sequencing
 
-| # | File | Change |
+```mermaid
+graph LR
+    PR1[PR-1<br/>Track A docs<br/>A1–A4]
+    PR2[PR-2<br/>Config shapes<br/>B5 + C3]
+    PR3[PR-3<br/>B1 phase-gate<br/>PreToolUse]
+    PR4[PR-4<br/>B2 placeholder<br/>validation]
+    PR5[PR-5<br/>B3 file-level<br/>warn]
+    PR6[PR-6<br/>A5 status<br/>table sync]
+    PR7[PR-7<br/>C1 plan template<br/>Traceability section]
+    PR8[PR-8<br/>C2+C4 promote<br/>warn → block]
+
+    PR2 --> PR3
+    PR2 --> PR5
+    PR3 --> PR6
+    PR4 --> PR6
+    PR5 --> PR6
+    PR5 --> PR8
+    PR7 --> PR8
+```
+
+PR-1 and PR-2 are independent. PR-3, PR-4, and PR-5 may ship in parallel after PR-2 merges. PR-6 only ships after Phase 2 lands so the status table reflects shipped reality. PR-7 must merge before PR-8 — see the Phase 3 hard dependency in §Scope.
+
+### PR-1 — Track A documentation corrections (A1–A4)
+
+Lowers the manual's enforcement claims to match current implementation. No code, no tests.
+
+**Files:** `docs/USER-MANUAL.md`
+
+**Before (excerpt):**
+
+> `phase-gate.sh` runs as a `PreToolUse` hook on phase commands and refuses to advance if the prior gate file is missing or has unfilled placeholder fields. `work-item-validation.sh` blocks `Edit`/`Write` during Build if no valid REQ, ticket, or signed CR references the file being edited.
+
+**After (excerpt):**
+
+> `phase-gate.sh` runs as a `Stop` hook after each session turn and prints an advisory reminder if no gate file has been updated in the last two hours. It does not currently block. `work-item-validation.sh` validates that the active plan has a `Classification` field and (for change-request plans) a matching signed CR — file-level REQ/ticket traceability is planned (RFC-003 Phase 2/3) but not currently enforced.
+
+### PR-2 — Config shapes (B5 + C3)
+
+Reserves the strict-mode `enforcement` block and the `generated_files` map in `config/tools.example.json`. Hooks do not yet consume the new keys; PR-2 ships the schema so PR-3 / PR-5 can read them at the same revision they're introduced.
+
+**Files:** `config/tools.example.json`
+
+**Before:**
+
+```json
+{
+  "_comment": "...existing keys...",
+  "formatter": "...",
+  "linter": "..."
+}
+```
+
+**After (additive):**
+
+```json
+{
+  "_comment": "...existing keys...",
+  "formatter": "...",
+  "linter": "...",
+  "enforcement": {
+    "phase_gate": "block",
+    "file_traceability": "warn",
+    "scope_drift": "warn",
+    "missing_tests": "warn"
+  },
+  "generated_files": [
+    { "path": "package-lock.json", "generated_by": "package.json" }
+  ]
+}
+```
+
+### PR-3 — B1: `phase-gate.sh` `PreToolUse` enforcement
+
+Adds a second registration of `phase-gate.sh` under `PreToolUse` matching `Edit`/`Write`. Reads the active plan's phase, looks up the required prior gate from the map in §B1, and exits 2 if the gate is missing — except for `.claude/sdlc/` paths (repair escape hatch) and ambiguous phase values (warn only). Existing `Stop` reminder behavior is preserved.
+
+**Files:** `hooks/phase-gate.sh`, `hooks/hooks.json`, `tests/hooks/phase_gate.bats`
+
+**Before (`hooks.json` excerpt):**
+
+```json
+{
+  "Stop": [
+    { "matcher": ".*", "hooks": [{ "type": "command", "command": ".../phase-gate.sh" }] }
+  ]
+}
+```
+
+**After (`hooks.json` excerpt):**
+
+```json
+{
+  "PreToolUse": [
+    { "matcher": "Edit|Write", "hooks": [{ "type": "command", "command": ".../phase-gate.sh" }] }
+  ],
+  "Stop": [
+    { "matcher": ".*", "hooks": [{ "type": "command", "command": ".../phase-gate.sh" }] }
+  ]
+}
+```
+
+**Before (`phase-gate.sh` behavior):** Single code path — checks gate freshness, prints reminder, exits 0.
+
+**After (`phase-gate.sh` behavior):** Branches on `$CLAUDE_HOOK_EVENT`. PreToolUse path: guard on `.enabled`, allow `.claude/sdlc/` paths, parse phase, look up prior gate, exit 2 if absent (block) for source/test/config files or exit 0 + stderr (warn) for documentation. Stop path: unchanged.
+
+### PR-4 — B2: `phase-gate.sh` placeholder validation
+
+Adds the unfilled-token regex from §B2 (`___+|^TODO$|<[A-Za-z][A-Za-z0-9_-]*>`). Scans the located deploy or fix-fast gate file for any of those tokens in the five required fields (signer, timestamp, work-item reference, acknowledgment, confirmation). Exits 2 with a list of unfilled fields if any match.
+
+**Files:** `hooks/phase-gate.sh`, `tests/hooks/phase_gate.bats`
+
+**Before:** Hook treats any gate file as signed once it exists.
+
+**After:** Hook treats a gate file as signed only if no required field matches the unfilled-token regex. A gate with `Signer: <signer>` blocks; a gate with `Signer: J. Smith` passes.
+
+### PR-5 — B3: `work-item-validation.sh` file-level warning
+
+Reads the edited file path from `$CLAUDE_TOOL_INPUT` (`jq -r '.file_path'` with grep/sed fallback). Compares against the active plan's in-scope file list and the five accepted work-item sources from §B3 / §C2 prerequisite 3. Warns (exit 0 + stderr) on file-not-in-scope or no-REQ-mapping. Skips files identified by the `generated_files` map whose `generated_by` source is itself in-scope and REQ-mapped. Existing classification + CR sign-off checks remain block-level.
+
+**Files:** `hooks/work-item-validation.sh`, `tests/hooks/work_item_validation.bats`
+
+**Before:** Validates two things: (1) plan has a `Classification` field; (2) for change-request plans, a signed CR exists. Does not read the file path.
+
+**After:** Same two block-level checks plus a third warn-level check: read `CLAUDE_TOOL_INPUT.file_path`, look it up against the in-scope file list and work-item sources. No REQ mapping → stderr warning. Generated file with mapped source → silent pass.
+
+### PR-6 — A5: `USER-MANUAL.md` status table sync
+
+Once PR-3, PR-4, PR-5 land, retrofit the manual with the four-status table from §A5. Each enforcement claim now carries a status tag.
+
+**Files:** `docs/USER-MANUAL.md`
+
+**Before (excerpt):**
+
+> The plan-gate hook blocks `Edit`/`Write` when no plan exists.
+
+**After (excerpt):**
+
+> | Control | Status |
+> |---|---|
+> | `plan-gate.sh` blocks `Edit`/`Write` without a plan | **Implemented hard block** |
+> | `phase-gate.sh` blocks phase commands without prior gate | **Implemented hard block** (RFC-003 PR-3) |
+> | `phase-gate.sh` blocks gates with placeholder fields | **Implemented hard block** (RFC-003 PR-4) |
+> | `work-item-validation.sh` warns on un-traced files | **Implemented warning** (RFC-003 PR-5) |
+> | `work-item-validation.sh` blocks un-traced files | **Planned** (RFC-003 PR-8) |
+
+### PR-7 — C1: plan template `## Traceability` section
+
+Adds the per-file traceability table to the canonical plan template. Purely additive — ships before PR-8 to give existing plans time to adopt the section without being blocked.
+
+**Files:** `templates/plan.md`
+
+**Non-conflict note:** RFC-001 Changes 4–7 add five new sections to the plan artifact (scope source quality, scope decisions, degraded-mode banner, domain no-match note). The `## Traceability` table added here is a sixth, purely additive section. It is file-centric (`| File | REQ/Ticket/CR |`) and distinct from the approval-packet's requirement-centric traceability table (`| REQ ID | Requirement summary | Test case | Status |`). No RFC-001 section is modified or removed.
+
+**Before:** Plan template has `Classification`, `In-scope files`, `In-scope functions`, `Out-of-scope`, plus the five RFC-001 sections.
+
+**After:** Same plus a sixth additive section:
+
+```markdown
+## Traceability
+
+| File | REQ/Ticket/CR | Change Type |
 |---|---|---|
-| A1–A4 | `docs/USER-MANUAL.md` | Four targeted prose edits per the proposal |
+| <relative-file-path> | REQ-NNN or TICKET-NNN or CR-NNN | new / modified / deleted |
+```
 
-**Phase 2 — Track B (hook implementation)**
+### PR-8 — C2 + C4: promote `work-item-validation.sh` to block
 
-| # | File | Change |
-|---|---|---|
-| B1 | `hooks/hooks.json` | Add `PreToolUse` entry for `phase-gate.sh` matching `Edit`/`Write` |
-| B1 | `hooks/phase-gate.sh` | Add `PreToolUse` path: detect active phase, locate prior gate, exit 2 if absent |
-| B2 | `hooks/phase-gate.sh` | Add placeholder field scanner for deploy/fix-fast gate files |
-| B3 | `hooks/work-item-validation.sh` | Add file-level in-scope and REQ/ticket warning check (warn-only); add generated_files map support |
-| B4 | `tests/hooks/` | New bats test cases for B1–B3 behaviors (full scenario table per §B4) |
-| B5 | `config/tools.example.json` | Add `enforcement` strict-mode config shape + `generated_files` map shape (documents supported keys; consumers copy to `config/tools.json`) |
+Promotes the file-level traceability check from warn (PR-5) to block (exit 2), gated on all six C2 prerequisites. Backward-compatibility rule: if the active plan does not have a `## Traceability` table, the hook stays at warn. Override: if `enforcement.file_traceability: warn` is set in `config/tools.json`, the hook stays at warn.
 
-**Phase 3 — Traceability block (hard dependency: C1 must merge before C2 begins)**
+**Files:** `hooks/work-item-validation.sh`, `tests/hooks/work_item_validation.bats`
 
-> Unblocked only after the plan template ships a per-file traceability mapping. C1 and C2 must ship as separate commits in order — do not merge C2 until C1 is live in the template and at least one active plan in the test repo has been updated to include the mapping.
->
-> **Non-conflict note:** RFC-001 Changes 4–7 add five new sections to the plan artifact (scope source quality, scope decisions, degraded-mode banner, domain no-match note). The `## Traceability` table added here is a sixth, purely additive section. It is file-centric (`| File | REQ/Ticket/CR |`) and distinct from the approval-packet's requirement-centric traceability table (`| REQ ID | Requirement summary | Test case | Status |`). No RFC-001 section is modified or removed by this phase.
+**Phase 3 hard dependency:** PR-8 must not begin code review until PR-7 merges and at least one active plan in the test repo has been updated to include the `## Traceability` section. Shipping PR-8 against the old template would block every edit on every plan that lacks the table.
 
-| # | File | Change |
-|---|---|---|
-| C1 | `templates/plan.md` | Add `## Traceability` section with `\| File \| REQ/Ticket/CR \| Change Type \|` table |
-| C2 | `hooks/work-item-validation.sh` | Promote B3 from warn to block (exit 2); see C2 prerequisites below |
-| C3 | `config/tools.example.json` | Add `generated_files` map shape (consumers copy to `config/tools.json`) |
-| C4 | `tests/hooks/` | New bats test cases: traceability table present → block on untraced file; table absent → warn only; generated file with mapped source → pass |
+**Before:** File-level check is warn-only (PR-5).
+
+**After:** File-level check follows the C2 decision tree:
+
+1. Plan has `## Traceability` table? No → warn only (back-compat).
+2. `enforcement.file_traceability: warn` set? Yes → warn only (override).
+3. Edited file matches a row in the table with a resolved REQ/ticket/CR? Yes → pass.
+4. Otherwise → exit 2 with the unmapped file path in the error message.
+
+The block-level check uses structured table parsing (or `active-plan.trace.json` if present), not heuristic grep — see §C2.
 
 **C2 prerequisites — all six must be satisfied before C2 may ship:**
 

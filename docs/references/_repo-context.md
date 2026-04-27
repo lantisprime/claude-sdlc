@@ -126,11 +126,13 @@ All five RFCs are fully implemented as of 2026-04-27.
 
 ## Draft RFCs
 
-- **`docs/rfcs/RFC-003-hook-enforcement-alignment.md`** (draft) — closes four gaps between `USER-MANUAL.md` enforcement claims and actual hook implementations: `phase-gate.sh` `PreToolUse` registration + prior-gate block, placeholder field validation for deploy/fix-fast gates, `work-item-validation.sh` file-level traceability warning, enforcement language audit in the manual. Two-track: Track A (doc corrections), Track B (hook implementation).
+*(none)*
 
 ## Accepted RFCs (awaiting implementation)
 
 - **`docs/rfcs/RFC-001-plan-quality-gates.md`** (accepted) — closes the gap between plan governance intent and `plan-gate.sh` enforcement: status check (warn on unsigned plan), 48h staleness threshold, scope-delta decision records, low-provenance scope markers, degraded-mode banner, domain no-match note. 7 changes across 4 files: `plan-gate.sh`, `diff-scope-check.sh`, `skills/plan/SKILL.md`, `skills/domain-expert/SKILL.md`.
+
+- **`docs/rfcs/RFC-003-hook-enforcement-alignment.md`** (accepted) — closes four gaps between `USER-MANUAL.md` enforcement claims and actual hook implementations: `phase-gate.sh` `PreToolUse` registration + prior-gate block, placeholder field validation for deploy/fix-fast gates, `work-item-validation.sh` file-level traceability warning, enforcement language audit. 8 PRs across three phases (Track A docs / Track B hooks / Phase 3 traceability block) touching `hooks/phase-gate.sh`, `hooks/work-item-validation.sh`, `hooks/hooks.json`, `docs/USER-MANUAL.md`, `config/tools.example.json`, `templates/plan.md`, `tests/hooks/`.
 
 ## Anti-patterns the repo explicitly guards against
 
