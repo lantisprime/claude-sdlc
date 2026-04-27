@@ -233,7 +233,7 @@
     {
       "path": "docs/rfcs/RFC-002-release-packaging.md",
       "title": "Release Packaging & Marketplace Distribution",
-      "status": "draft",
+      "status": "accepted",
       "role": "rfc",
       "description": "Adds marketplace.json, scripts/package.sh (devFiles exclusion, release branch, dist tags), .github/workflows/release.yml (test gate + release job), and docs/PACKAGING.md.",
       "update_triggers": ["rfc:accepted", "rfc:implemented"]
@@ -254,7 +254,7 @@
       ]
     },
     "docs/rfcs/RFC-002-release-packaging": {
-      "rfc_status": "draft",
+      "rfc_status": "accepted",
       "accepted": [
         "docs/references/_repo-context.md"
       ],

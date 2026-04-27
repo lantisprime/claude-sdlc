@@ -46,20 +46,22 @@ Companion notes in `rfcs/notes/` always match the lifecycle of their RFC. When t
 
 **Trigger:** design is approved; implementation can begin.
 
-> **Hard rule — second opinion required.** An RFC cannot move to `accepted` until a second-opinion review is completed and recorded in the RFC's `## Second opinion` section. This step cannot be skipped or deferred.
+> **Hard rule — second opinion required.** An RFC cannot move to `accepted` until a second-opinion review is completed and recorded in `## Second opinion`.
 
 **3a. Run the second-opinion review first:**
 
-Re-read the RFC in full as if encountering it for the first time. Check:
+Re-read the RFC as if encountering it for the first time. Check:
 
-1. **AI context** — does the 3-sentence summary accurately reflect the RFC as written? Is it still current?
-2. **Problem** — is it grounded in observable behavior, not assumed? Is it still the right problem to solve?
-3. **Proposal** — is the scope (in/out) explicit? Are there implementation risks not yet captured?
-4. **Alternatives considered** — are there alternatives missing from the table that a future reader would reasonably ask about?
-5. **Open questions** — are any OQs still unresolved that would block a safe implementation?
-6. **Compatibility** — does the proposal conflict with any other accepted or implemented RFC?
+| Section | Question |
+|---------|----------|
+| **AI context** | Does the 3-sentence summary still accurately reflect the RFC? |
+| **Problem** | Grounded in observable behavior? Still the right problem? |
+| **Proposal** | Is scope (in/out) explicit? Implementation risks captured? |
+| **Alternatives** | Any obvious alternatives a future reader would ask about? |
+| **Open questions** | Any unresolved OQs that would block safe implementation? |
+| **Compatibility** | Conflicts with any accepted or implemented RFC? |
 
-Record the findings in the RFC's `## Second opinion` section:
+Record findings in `## Second opinion`:
 
 ```markdown
 ## Second opinion
@@ -70,14 +72,20 @@ Record the findings in the RFC's `## Second opinion` section:
 **Decision:** proceed | revise first
 ```
 
-If the decision is `revise first`, address the gaps before setting `status: accepted`. Do not proceed until the decision is `proceed`.
+If the decision is `revise first`, address the gaps before setting `status: accepted`.
+
+> **Preferred approach:** spawn an independent subagent to perform the review rather than self-reviewing. An agent with no prior context on the RFC surfaces risks and alternatives that familiarity obscures.
 
 **3b. After second opinion clears:**
 
 1. Update `status: accepted` and `last_modified:` in RFC frontmatter.
-2. **Write `## Implementation plan`** — identify phases, files in scope per phase, PR sequence, and any hard dependencies between phases. Record in the RFC's `## Implementation plan` section. Aim for under 50 lines.
+2. **Write `## Implementation plan`** — use `### PR-N — <file(s)>` subheadings. For each PR: **Before** block (current state or "file does not exist"), **After** block (exact diff, skeleton, or section outline), one-line dependency note, key constraints. Close with a **Sequencing** diagram.
 3. Resolve or update open questions in the `## Open questions` table.
 4. Update `docs/references/_repo-context.md` — move RFC from draft → accepted.
+5. Update `docs/README.md` — File Registry and RFC Impact Matrix rows.
+6. Update `docs/_index.json` — `status` and `rfc_status` fields.
+
+> **Hard stop — do not offer implementation until all steps above are complete.** Specifically: `status: accepted` is set, `## Second opinion` decision is `proceed`, `## Implementation plan` is written, and all index files are updated. Offering to implement before these are done skips the acceptance gate.
 5. Update `docs/GLOSSARY.md` if the RFC introduces new terms.
 6. Update `docs/ideas/capabilities.md` roadmap status.
 7. Close resolved items in `rfcs/pending-analysis.md`.
@@ -99,8 +107,8 @@ If the decision is `revise first`, address the gaps before setting `status: acce
 
 **Trigger:** all implementation PRs are merged.
 
-1. Populate `## Implementation` section with commit hashes and key files changed.
-2. Update `status: implemented` and `last_modified:`.
+1. Populate `## Implementation` section with PR numbers and key files changed. **Mark each PR row immediately after it merges — do not batch at the end.**
+2. Update `status: implemented` and `last_modified:` in RFC frontmatter.
 3. Move RFC: `rfcs/<slug>.md` → `rfcs/archived/<slug>.md`.
 4. Move all companion notes: `rfcs/notes/<companion>.md` → `rfcs/archived/<companion>.md`.
 5. Update `rfcs/notes/README.md` — remove moved entries.
@@ -165,7 +173,7 @@ Not permitted (require a new RFC instead):
 | `## Proposal` | Always |
 | `## Alternatives considered` | Always — at least one row in the table |
 | `## Implementation plan` | Required when `status: accepted` |
-| `## Implementation` | After implementation only (post-ship PR/commit refs) |
+| `## Implementation` | After implementation only (post-ship PR refs) |
 | `## Open questions` | Required if any OQs exist at draft time |
 | `## Deferral note` | Only if `status: deferred` |
 | `## Withdrawal note` | Only if `status: withdrawn` |

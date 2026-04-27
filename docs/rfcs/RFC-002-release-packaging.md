@@ -2,10 +2,10 @@
 rfc_id: RFC-002
 slug: release-packaging
 title: Release Packaging & Marketplace Distribution
-status: draft
+status: accepted
 champion: charltond.ho
 created: 2026-04-27
-last_modified: 2026-04-27
+last_modified: 2026-04-27 (accepted)
 supersedes: ~
 superseded_by: ~
 ---
@@ -83,6 +83,10 @@ The `ref` field pins to a dist tag on the release branch (see Deliverable 2). Th
 /plugin install sdlc-plugin@claude-sdlc
 ```
 
+**Anthropic registration not required.** Claude Code has two independent marketplace systems: the official Anthropic marketplace (`claude-plugins-official`, pre-loaded in every install) and self-hosted community marketplaces. Any public GitHub repo with a `.claude-plugin/marketplace.json` is a valid self-hosted marketplace — no submission or approval from Anthropic is needed. `/plugin marketplace add lantisprime/claude-sdlc` resolves directly from GitHub.
+
+Submitting to Anthropic's official marketplace (`claude.ai/settings/plugins/submit`) is optional and out of scope for this RFC.
+
 ### Deliverable 2 — `scripts/package.sh`
 
 A bash packaging script run locally by maintainers and called by the release workflow. It has two modes:
@@ -157,6 +161,222 @@ A reference document for maintainers covering:
 
 ---
 
+## Implementation plan
+
+### PR-1 — `.claude-plugin/plugin.json`
+
+**Before:**
+```json
+"devFiles": ["AGENT-RULES.md", "CLAUDE.md", "docs/", "tests/", "CHANGELOG.md"]
+```
+
+**After:**
+```json
+"_devFiles_comment": "Consumed by scripts/package.sh — excluded from consumer distribution. Not recognized by the Claude Code installer.",
+"devFiles": ["AGENT-RULES.md", "CLAUDE.md", "docs/", "tests/", "CHANGELOG.md", "scripts/"]
+```
+
+Prerequisite for PR-3 — `scripts/` must be in `devFiles` before `package.sh` runs, otherwise the script would include itself in the distribution archive.
+
+---
+
+### PR-2 — `.claude-plugin/marketplace.json`
+
+**Before:** file does not exist.
+
+**After (new file):**
+```json
+{
+  "name": "claude-sdlc",
+  "metadata": {
+    "owner": { "name": "lantisprime", "url": "https://github.com/lantisprime/claude-sdlc" }
+  },
+  "plugins": [
+    {
+      "name": "sdlc-plugin",
+      "description": "Enforces an 8-phase SDLC workflow for Claude Code with human sign-off at every gate.",
+      "source": {
+        "source": "github",
+        "repo": "lantisprime/claude-sdlc",
+        "ref": "v1.1.0"
+      }
+    }
+  ]
+}
+```
+
+`ref` is set to `v1.1.0` as the initial value. On each release, PR-4's release job updates `ref` to the new tag and commits `marketplace.json` back to `main` with `[skip ci]`. This means `marketplace.json` is a committed file on `main` — not a generated artifact kept off-branch. Consumer install flow after this PR ships:
+
+```bash
+/plugin marketplace add lantisprime/claude-sdlc
+/plugin install sdlc-plugin@claude-sdlc
+```
+
+Independent — can merge anytime after PR-1.
+
+---
+
+### PR-3 — `scripts/package.sh`
+
+**Before:** file does not exist.
+
+**After (new file, key structure):**
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+command -v jq >/dev/null 2>&1 || { echo "jq is required"; exit 1; }
+
+DRY_RUN=false
+[[ "${1:-}" == "--dry-run" ]] && DRY_RUN=true
+
+PLUGIN_JSON=".claude-plugin/plugin.json"
+VERSION=$(jq -r '.version' "$PLUGIN_JSON")
+ARCHIVE="dist/sdlc-plugin-v${VERSION}.tar.gz"
+
+# Exclusion list — two sources:
+# 1. devFiles in plugin.json (repo-specific: AGENT-RULES.md, CLAUDE.md, docs/, tests/, CHANGELOG.md, scripts/)
+# 2. Hardcoded infra files never appropriate for consumers
+DEV_FILES=$(jq -r '.devFiles[]' "$PLUGIN_JSON")
+INFRA_EXCLUDES=(".git/" ".github/" "config/tools.json" "dist/" ".DS_Store" ".claude/")
+
+SKIP_TESTS=false
+[[ "${1:-}" == "--skip-tests" ]] && SKIP_TESTS=true
+
+validate() {
+  # Gracefully degrade if claude CLI is not in PATH (e.g. CI environments without Claude Code installed)
+  command -v claude >/dev/null 2>&1 || { echo "warn: claude not found, skipping plugin validate"; return 0; }
+  claude plugin validate
+}
+run_tests()      { tests/run.sh --integration; }
+build_manifest() { # prints included files after applying both exclusion sources; }
+create_archive() { mkdir -p dist && tar czf "$ARCHIVE" <included files>; }
+release_branch() { # force-pushes release branch — this is intentional; never push to release manually; }
+tag_release()    { git tag "v${VERSION}" && git push origin "v${VERSION}"; }
+
+if $DRY_RUN; then
+  build_manifest
+elif $SKIP_TESTS; then
+  validate && build_manifest && create_archive && release_branch && tag_release
+else
+  validate && run_tests && build_manifest && create_archive && release_branch && tag_release
+fi
+```
+
+Dry-run (`--dry-run`) prints the full file manifest without writing anything — use to verify the exclusion list before tagging a release.
+
+`--skip-tests` skips `run_tests()` for the CI call in PR-4's release job (tests already passed in the `test` job — running them again inside `package.sh` is redundant). Local and manual release calls should always omit `--skip-tests`.
+
+`validate()` degrades gracefully if `claude` is not in PATH: logs a warning and continues. `claude plugin validate` is a local safety net, not a hard CI gate.
+
+`release_branch()` force-pushes — this is intentional. The `release` branch is CI-owned output. Never push to it manually; the force-push will overwrite any manual changes without warning. See §2 of `PACKAGING.md`.
+
+Depends on PR-1 (`scripts/` must be in `devFiles` before packaging runs).
+
+---
+
+### PR-4 — `.github/workflows/release.yml`
+
+**Before:** file does not exist.
+
+**After (new file):**
+```yaml
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run test suite
+        run: tests/run.sh --integration
+
+  release:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install jq
+        run: sudo apt-get install -y jq
+      - name: Package
+        run: scripts/package.sh --skip-tests
+      - name: Verify archive exists
+        run: |
+          VERSION=$(jq -r '.version' .claude-plugin/plugin.json)
+          [ -f "dist/sdlc-plugin-v${VERSION}.tar.gz" ] || { echo "Archive not found"; exit 1; }
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/sdlc-plugin-v*.tar.gz
+      - name: Update marketplace ref
+        run: |
+          VERSION=${GITHUB_REF_NAME}
+          jq --arg v "$VERSION" '.plugins[0].source.ref = $v' \
+            .claude-plugin/marketplace.json > tmp.json && mv tmp.json .claude-plugin/marketplace.json
+          jq . tmp.json > /dev/null || { echo "marketplace.json is invalid JSON after update"; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/marketplace.json
+          git commit -m "chore: update marketplace ref to ${VERSION} [skip ci]"
+          git push origin HEAD:main
+```
+
+Key points:
+- `test` runs on every push to `main` and every tag push; `release` only runs on `v*.*.*` tags and only if `test` passes — a failing test suite blocks the release
+- `package.sh` is called with `--skip-tests` because the `test` job already ran the suite; running it again inside the script is redundant
+- Archive existence is verified before the GitHub Release step — if `package.sh` fails to produce the tar.gz, the job fails rather than creating an empty release
+- `marketplace.json` is validated as parseable JSON after the jq update before committing — guards against a malformed filter producing invalid JSON on `main`
+- `[skip ci]` on the `marketplace.json` commit prevents the push back to `main` from re-triggering the release workflow (circular trigger); this relies on GitHub honoring `[skip ci]` — a documented assumption
+
+Depends on PR-3 (workflow calls `package.sh`).
+
+---
+
+### PR-5 — `docs/PACKAGING.md`
+
+**Before:** file does not exist.
+
+**After (new file, section outline):**
+
+```
+# Packaging & Release Guide
+
+## 1. How the Claude Code plugin installer works
+## 2. Release branch model
+## 3. Release checklist
+## 4. Dry-run: preview distribution manifest
+## 5. Consumer install
+## Prerequisites
+```
+
+Section detail:
+- **§1** — why `devFiles` is not a native field; why `CLAUDE.md` and `AGENT-RULES.md` leak into consumer Claude context if shipped
+- **§2** — the `release` branch is CI-owned output; **explicit warning: never push to `release` manually** — the release job force-pushes on every release and will overwrite any manual changes without warning; why infra exclusions (`.git/`, `.github/`, etc.) are kept hardcoded in `package.sh` rather than in `devFiles` (repo-specific vs. universal — prevents maintainer upkeep burden)
+- **§3** — full release cycle with expected output: bump `version` in `plugin.json` → commit → `git tag v{version} && git push origin v{version}` → `test` job runs and must pass → `release` job runs: packages, creates GitHub Release with tar.gz, commits updated `marketplace.json` to `main` → verify GitHub Release has tar.gz attached → verify `marketplace.json` ref on `main` matches the new tag
+- **§4** — `scripts/package.sh --dry-run`; run before tagging to confirm no devFiles leak into the archive
+- **§5** — `/plugin marketplace add lantisprime/claude-sdlc` then `/plugin install sdlc-plugin@claude-sdlc`
+- **Prerequisites** — `bats-core` (`brew install bats-core`), `jq` (`brew install jq`); note: `jq` is a local prerequisite only — it is installed by the CI release job automatically and does not need to be pre-installed on the runner
+- **Troubleshooting** — common failures: `jq is required` (install jq locally); `warn: claude not found` (expected in CI — validation skipped, not a failure); `Archive not found` (package.sh failed silently — re-run with `bash -x scripts/package.sh` to trace); `[skip ci]` commit re-triggered workflow (GitHub behavior changed — manually cancel the triggered run)
+
+Depends on PR-4 (documents the full system).
+
+---
+
+### Sequencing
+
+```
+PR-1 → PR-3 → PR-4 → PR-5
+PR-2  (independent, can merge anytime after PR-1)
+```
+
+---
+
 ## Implementation
 
 > Populate after implementation.
@@ -184,10 +404,10 @@ Key files to create/modify:
 
 > Required before `status: accepted` can be set. Complete per `AGENT-RULES.md §3a`.
 
-**Reviewer:** <!-- name or "self-review" -->
-**Date:** <!-- YYYY-MM-DD -->
-**Findings:** <!-- gaps surfaced, alternatives missed, risks not captured — or "no gaps found" -->
-**Decision:** <!-- proceed | revise first -->
+**Reviewer:** Claude Code (Explore subagent — independent review)
+**Date:** 2026-04-27
+**Findings:** No major gaps; all four RFC deliverables covered. Three risks identified and incorporated into the implementation plan: (1) circular trigger risk — release job's `marketplace.json` commit back to `main` could re-fire the release workflow; fix: `[skip ci]` on that commit; (2) `package.sh` JSON parsing without `jq` is fragile; fix: require `jq` as an explicit dependency; (3) OQ-2 intent (why infra exclusions are kept separate from `devFiles`) should be documented in `PACKAGING.md` to prevent future consolidation. OQ-1 (smoke test) correctly deferred. Sequencing of 5 PRs is correct.
+**Decision:** proceed
 
 ---
 
