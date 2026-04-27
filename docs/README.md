@@ -58,11 +58,11 @@ Active RFC trackers and notes.
 | [rfcs/AGENT-RULES.md](rfcs/AGENT-RULES.md) | RFC Agent Rules | active | agent-rules | Load when doing RFC work — concise numbered decision rules for AI/Claude Code, no prose |
 | [rfcs/README.md](rfcs/README.md) | RFC Workflow | active | workflow | Lifecycle overview with rationale — status vocabulary, naming convention (RFC-NNN), stage transitions, archive rules |
 | [rfcs/TEMPLATE.md](rfcs/TEMPLATE.md) | RFC Template | active | template | Copy this when creating a new RFC; includes AI context, alternatives considered, and implementation sections |
-| [rfcs/pending-analysis.md](rfcs/pending-analysis.md) | Pending Analysis | active | tracker | Open design questions: items 1–2 open (deferred), item 3 closed/accepted, item 4 open (secret-scan always-on), item 5 open (RFC-004 OQs) |
+| [rfcs/pending-analysis.md](rfcs/pending-analysis.md) | Pending Analysis | active | tracker | Open design questions: items 1–2 open (deferred); all other items closed |
 | [rfcs/notes/README.md](rfcs/notes/README.md) | RFC Notes Index | active | notes-index | Index of companion notes, risk analyses, and experiment notes for RFCs currently in flight |
 | [rfcs/RFC-001-plan-quality-gates.md](rfcs/RFC-001-plan-quality-gates.md) | Plan Command Quality Gates | accepted | rfc | Closes gap between plan governance intent and enforcement: status check in plan-gate.sh, staleness threshold, scope-delta records, low-provenance markers, degraded-mode banner, domain no-match note |
 | [rfcs/RFC-003-hook-enforcement-alignment.md](rfcs/RFC-003-hook-enforcement-alignment.md) | Hook Enforcement Alignment | accepted | rfc | Closes four gaps between USER-MANUAL.md enforcement claims and actual hook implementations: phase-gate.sh registration + severity, placeholder field validation, work-item file-level traceability, enforcement language audit |
-| [rfcs/RFC-004-maintainer-code-review-enforcement.md](rfcs/RFC-004-maintainer-code-review-enforcement.md) | Maintainer Code-Review Enforcement | draft | rfc | Three-layer code-review gate (AGENT-RULES.md §14, .claude/hooks/ Stop hook, .github/workflows/code-review.yml) for maintainer PRs to this repo; doc-only PRs bypass; consuming-repo artifacts untouched |
+| [rfcs/RFC-004-maintainer-code-review-enforcement.md](rfcs/RFC-004-maintainer-code-review-enforcement.md) | Maintainer Code-Review Enforcement | accepted | rfc | Three-layer code-review gate (AGENT-RULES.md §14, .claude/hooks/ Stop hook, .github/workflows/code-review.yml) for maintainer PRs to this repo; doc-only PRs bypass (plan/gate files excluded); consuming-repo artifacts untouched |
 
 ### Archived RFCs
 
@@ -171,7 +171,7 @@ Derived from `_index.json` update_triggers. A stale `implemented` column against
 |-----|------------|------------------------|----------------------------|
 | [rfcs/RFC-001-plan-quality-gates.md](rfcs/RFC-001-plan-quality-gates.md) | **accepted** | references/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, ideas/capabilities.md, references/_repo-context.md |
 | [rfcs/RFC-003-hook-enforcement-alignment.md](rfcs/RFC-003-hook-enforcement-alignment.md) | **accepted** | references/_repo-context.md | USER-MANUAL.md, SDLC.md, references/_repo-context.md |
-| [rfcs/RFC-004-maintainer-code-review-enforcement.md](rfcs/RFC-004-maintainer-code-review-enforcement.md) | **draft** | references/_repo-context.md, rfcs/pending-analysis.md | references/_repo-context.md (capability counts unchanged — maintainer-only) |
+| [rfcs/RFC-004-maintainer-code-review-enforcement.md](rfcs/RFC-004-maintainer-code-review-enforcement.md) | **accepted** | references/_repo-context.md, rfcs/pending-analysis.md | references/_repo-context.md (capability counts unchanged — maintainer-only) |
 | [rfcs/archived/RFC-002-release-packaging.md](rfcs/archived/RFC-002-release-packaging.md) | **implemented** | references/_repo-context.md | docs/README.md (PACKAGING.md added), references/_repo-context.md |
 | [rfcs/archived/scope-ingest.md](rfcs/archived/scope-ingest.md) | **implemented** | GLOSSARY.md, references/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, ideas/capabilities.md, references/_repo-context.md |
 | [rfcs/archived/multi-team-approval.md](rfcs/archived/multi-team-approval.md) | **implemented** | GLOSSARY.md, references/_repo-context.md, ideas/capabilities.md | SDLC.md, USER-MANUAL.md, GLOSSARY.md, claude-sdlc-enterprise-adoption.md, ideas/capabilities.md, references/_repo-context.md |

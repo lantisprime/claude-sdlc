@@ -2,10 +2,11 @@
 rfc_id: RFC-004
 slug: maintainer-code-review-enforcement
 title: Maintainer code-review enforcement
-status: draft
+status: accepted
 champion: juan.delacruz@acme.com
 created: 2026-04-27
 last_modified: 2026-04-27
+accepted: 2026-04-27
 supersedes: ~
 superseded_by: ~
 ---
@@ -59,6 +60,8 @@ A PR is doc-only when **every** changed file matches:
 *.md, docs/**, templates/**, agents/**, commands/**, .github/**
 ```
 
+**Except:** `.claude/sdlc/plans/**` and `.claude/sdlc/gates/**` are **excluded** from the doc-only set. They are markdown files but represent substantive governance decisions — if they appear in a diff, the PR is treated as a code-PR and review is required. (Resolved: OQ-1.)
+
 This single definition is referenced from the rule, the hook, and the workflow.
 
 ### Layer separation (load-bearing)
@@ -83,11 +86,13 @@ The two layers must not mix. This RFC establishes that pattern; future contribut
 
 ## Implementation plan
 
-> Populate this section when the RFC moves to `accepted`.
-
-| Phase | PRs / tasks | Files in scope |
+| PR | Files | What |
 |---|---|---|
-| 1 | _to be populated on acceptance_ | — |
+| PR-1 | `sdlc-plugin/AGENT-RULES.md` | Add §14: before signing Build gate, invoke `security-review` skill + quality pass; skip for doc-only diffs (per canonical definition above) |
+| PR-2 | `.claude/hooks/code-review-gate.sh`, `.claude/settings.json` | Stop hook (warn, exit 0): detects non-doc changes via `git diff --name-only`; warns if no `security-review-*.md` present in `.claude/sdlc/test/`; tracked settings registration |
+| PR-3 | `.github/workflows/code-review.yml` | CI workflow: doc-only bypass (plan/gate exclusion applied), ≥1 approved review, self-approval filter (`review.author.login != pr.author.login`); branch-protection requirement documented in file header (resolved: OQ-2) |
+
+Hard deps: PR-3 after PR-2 (share the same doc-only glob logic). PR-1 is independent.
 
 ---
 
@@ -130,5 +135,5 @@ The two layers must not mix. This RFC establishes that pattern; future contribut
 
 | # | Question | Owner | Status |
 |---|---|---|---|
-| OQ-1 | Should `.claude/sdlc/plans/*.md` and `.claude/sdlc/gates/*.md` be excluded from doc-only set? They're prose but represent substantive decisions. Proposed default: exclude (treat as code-PR if they appear in diff). | juan.delacruz@acme.com | open |
-| OQ-2 | Branch protection settings on `main` — does the workflow need to be marked "required" via repo settings for the gate to actually block merge? Confirm with repo admin before merge. | juan.delacruz@acme.com | open |
+| OQ-1 | Should `.claude/sdlc/plans/*.md` and `.claude/sdlc/gates/*.md` be excluded from doc-only set? They're prose but represent substantive decisions. Proposed default: exclude (treat as code-PR if they appear in diff). | juan.delacruz@acme.com | **resolved** — exclude; see doc-only definition above |
+| OQ-2 | Branch protection settings on `main` — does the workflow need to be marked "required" via repo settings for the gate to actually block merge? Confirm with repo admin before merge. | juan.delacruz@acme.com | **resolved** — yes, mark as required; PR-3 documents the required settings in the workflow file header |

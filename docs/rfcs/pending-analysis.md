@@ -10,7 +10,7 @@ If you're evaluating the plugin: these are known gaps the maintainers are thinki
 |---|------|--------|------|
 | 1 | [Spike / exploratory-work bypass](#1-spike--exploratory-work-bypass) | Open | High |
 | 2 | [Pre-plan brainstorming for high-level / vague requirements](#2-pre-plan-brainstorming-for-high-level--vague-requirements) | Open | Low |
-| 3 | [RFC-004 maintainer code-review enforcement — open questions](#3-rfc-004-maintainer-code-review-enforcement--open-questions) | Open | Low |
+| 3 | [RFC-004 maintainer code-review enforcement — open questions](#3-rfc-004-maintainer-code-review-enforcement--open-questions) | Closed 2026-04-27 | — |
 | — | [Multi-team approval across Claude Code sessions](#multi-team-approval-across-claude-code-sessions) | Closed 2026-04-19 | — |
 | — | [`secret-scan.sh` — always-on or opt-in?](#secret-scansh--always-on-or-opt-in) | Closed 2026-04-26 | — |
 
@@ -111,6 +111,8 @@ Today, the workaround is either "do the brainstorming outside the plugin and com
 
 ## 3. RFC-004 maintainer code-review enforcement — open questions
 
+> **Status update (2026-04-27):** **Closed — resolved.** Both OQs decided and recorded in [RFC-004-maintainer-code-review-enforcement.md](./RFC-004-maintainer-code-review-enforcement.md). RFC-004 moved to `accepted`. The context below is preserved for historical reference.
+
 > **Raised by:** [RFC-004-maintainer-code-review-enforcement.md](./RFC-004-maintainer-code-review-enforcement.md)
 
 ### Problem
@@ -138,13 +140,13 @@ RFC-004 introduces a doc-only bypass (PR is "doc-only" when every changed file m
 |---|---|---|
 | 1. Spike bypass | Yes — Plan-before-code (#3), Traceability (#5); Tension with Cognitive load (#2) for Option B | High. `CLAUDE.md` constrains the design space — see item 1. |
 | 2. Pre-plan brainstorm | No direct conflict. Cognitive load (#2) actively favors resolution. | Low. Safest item on the page. |
-| 3. RFC-004 OQs | No direct conflict. Operational questions only (default + branch protection settings). | Low. Both questions have proposed defaults. |
+| 3. RFC-004 OQs | No direct conflict. Operational questions only (default + branch protection settings). | Resolved 2026-04-27. RFC-004 accepted. |
 
 ---
 
 ## Process for items on this page
 
-- **Status today:** items 1, 2, and 3 are open. Items 4 and 5 (original numbering) are closed — see [Closed Items](#closed-items) below.
+- **Status today:** items 1 and 2 are open. All other items are closed — see [Closed Items](#closed-items) below.
 - **When an item is ready to decide,** it moves into a short RFC-style write-up (a new file under `docs/rfcs/`) with a single recommended option and a sign-off.
 - **When an item is decided,** this page is updated with the decision + a link to the implementation work.
 - **When an item is rejected,** the rejection and its reason stay on this page — a rejected item is still useful context for future contributors.

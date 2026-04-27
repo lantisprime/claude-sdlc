@@ -7,7 +7,7 @@
 > **RFC work:** also load `docs/rfcs/AGENT-RULES.md` — it contains the concise decision rules for creating, transitioning, and archiving RFCs.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-27 (RFC-004 maintainer-code-review-enforcement drafted)
+**Last updated:** 2026-04-27 (RFC-004 maintainer-code-review-enforcement accepted)
 
 ---
 
@@ -126,9 +126,13 @@ All five RFCs are fully implemented as of 2026-04-27.
 
 ## Draft RFCs
 
-- **`docs/rfcs/RFC-004-maintainer-code-review-enforcement.md`** (draft) — three-layer code-review gate for maintainer PRs to this repo: §14 in `sdlc-plugin/AGENT-RULES.md`, new Stop hook at `.claude/hooks/code-review-gate.sh` (warn), and `.github/workflows/code-review.yml` CI gate requiring ≥1 approved review on non-doc PRs. Doc-only diffs (`*.md`, `docs/**`, `templates/**`, `agents/**`, `commands/**`, `.github/**`) bypass entirely. Consuming-repo artifacts (`sdlc-plugin/hooks/`, `hooks.json`) untouched. 2 open questions tracked in `pending-analysis.md`.
+*(none)*
 
 ## Accepted RFCs (awaiting implementation)
+
+- **`docs/rfcs/RFC-004-maintainer-code-review-enforcement.md`** (accepted) — three-layer code-review gate for maintainer PRs: §14 in `sdlc-plugin/AGENT-RULES.md`, Stop hook `.claude/hooks/code-review-gate.sh` (warn), `.github/workflows/code-review.yml` CI gate (≥1 approved review, self-approval filter). Doc-only bypass applies; `.claude/sdlc/plans/**` and `.claude/sdlc/gates/**` explicitly excluded from doc-only set. 3 PRs: PR-1 `AGENT-RULES.md`, PR-2 hook + settings, PR-3 CI workflow.
+
+
 
 - **`docs/rfcs/RFC-001-plan-quality-gates.md`** (accepted) — closes the gap between plan governance intent and `plan-gate.sh` enforcement: status check (warn on unsigned plan), 48h staleness threshold, scope-delta decision records, low-provenance scope markers, degraded-mode banner, domain no-match note. 7 changes across 4 files: `plan-gate.sh`, `diff-scope-check.sh`, `skills/plan/SKILL.md`, `skills/domain-expert/SKILL.md`.
 
