@@ -8,5 +8,6 @@
   },
   "license": "MIT",
   "keywords": ["sdlc", "workflow", "governance", "agentic", "human-in-the-loop"],
-  "devFiles": ["AGENT-RULES.md", "CLAUDE.md", "docs/", "tests/", "CHANGELOG.md"]
+  "_devFiles_comment": "Consumed by scripts/package.sh — excluded from consumer distribution. Not recognized by the Claude Code installer.",
+  "devFiles": ["AGENT-RULES.md", "CLAUDE.md", "docs/", "tests/", "CHANGELOG.md", "scripts/"]
 }
