@@ -34,6 +34,18 @@
     "_options": "git-hunk-headers | tree-sitter",
     "tree_sitter_language": null
   },
+  "enforcement": {
+    "_comment": "Severity overrides for hooks that publish a strict-mode contract via RFC-003. Defaults match the post-RFC-003 baseline. Set any value to \"warn\" to demote a block to a warning for teams that intentionally permit phase skipping or pre-traceability adoption. phase_gate is consumed by phase-gate.sh; file_traceability by work-item-validation.sh; scope_drift is reserved for diff-scope-check.sh; missing_tests is reserved for modified-code-test-gate.sh.",
+    "phase_gate": "block",
+    "file_traceability": "warn",
+    "scope_drift": "warn",
+    "missing_tests": "warn",
+    "_values": "block | warn"
+  },
+  "_generated_files_comment": "Files listed here are skipped by work-item-validation.sh's file-level traceability check (RFC-003 PR-5/PR-8) when their generated_by source is itself in-scope and REQ-mapped. Add an entry per generated artifact your build system produces. Common candidates: package-lock.json, yarn.lock, generated client SDKs, build artifacts.",
+  "generated_files": [
+    { "path": "package-lock.json", "generated_by": "package.json" }
+  ],
   "integrations": {
     "_comment": "Transport per system: git/github/gitlab/bitbucket use local CLI (git, gh) or native APIs. jira, linear, grafana, datadog, figma require a user-provided MCP server — the plugin does not ship one. cloudwatch is emitted as IaC proposals, not direct API calls. CI values are detection-only; the plugin never triggers pipelines.",
     "vcs": "auto",
