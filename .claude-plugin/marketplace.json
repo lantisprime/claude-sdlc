@@ -1,7 +1,10 @@
 {
   "name": "claude-sdlc",
   "metadata": {
-    "owner": { "name": "lantisprime", "url": "https://github.com/lantisprime/claude-sdlc" }
+    "owner": {
+      "name": "lantisprime",
+      "url": "https://github.com/lantisprime/claude-sdlc"
+    }
   },
   "plugins": [
     {
@@ -10,7 +13,7 @@
       "source": {
         "source": "github",
         "repo": "lantisprime/claude-sdlc",
-        "ref": "v1.1.0"
+        "ref": "v1.2.0"
       }
     }
   ]
