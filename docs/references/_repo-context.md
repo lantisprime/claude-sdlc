@@ -2,10 +2,12 @@
 
 > **Purpose.** Paste or reference this file at the start of any new conversation about the repo so the assistant has accurate grounding without re-fetching everything. Keep it short and current. If a fact drifts, fix it here first.
 >
+> **Plugin artifact work (skills, hooks, commands, templates, config):** load `AGENT-RULES.md` (repo root) — concise decision rules for adding and modifying plugin artifacts.
+>
 > **RFC work:** also load `docs/rfcs/AGENT-RULES.md` — it contains the concise decision rules for creating, transitioning, and archiving RFCs.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-26 (all RFCs implemented — opt-in activation, suspend/resume, scope-ingest, guided-entry, multi-team approval)
+**Last updated:** 2026-04-27 (RFC-002-release-packaging added — draft)
 
 ---
 
@@ -114,7 +116,11 @@ All four RFCs are fully implemented as of 2026-04-26.
 
 ## Draft RFCs
 
-*(none — all accepted RFCs are now implemented)*
+- **`docs/rfcs/RFC-002-release-packaging.md`** (draft) — establishes marketplace.json (self-distributing install via `claude plugin install`), `scripts/package.sh` (devFiles exclusion + release branch + dist tags), `.github/workflows/release.yml` (test gate on every push, release job on tag), `docs/PACKAGING.md` reference. Fixes: `devFiles` is unrecognized by Claude Code installer; no marketplace.json; no CI gate before release.
+
+## Accepted RFCs (awaiting implementation)
+
+- **`docs/rfcs/RFC-001-plan-quality-gates.md`** (accepted) — closes the gap between plan governance intent and `plan-gate.sh` enforcement: status check (warn on unsigned plan), 48h staleness threshold, scope-delta decision records, low-provenance scope markers, degraded-mode banner, domain no-match note. 7 changes across 4 files: `plan-gate.sh`, `diff-scope-check.sh`, `skills/plan/SKILL.md`, `skills/domain-expert/SKILL.md`.
 
 ## Anti-patterns the repo explicitly guards against
 

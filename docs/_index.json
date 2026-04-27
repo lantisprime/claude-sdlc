@@ -221,9 +221,48 @@
       "role": "notes-index",
       "description": "Index of companion notes and risk analyses for RFCs currently in flight.",
       "update_triggers": ["rfc:written", "rfc:accepted"]
+    },
+    {
+      "path": "docs/rfcs/RFC-001-plan-quality-gates.md",
+      "title": "Plan Command Quality Gates",
+      "status": "accepted",
+      "role": "rfc",
+      "description": "Closes gap between plan governance intent and enforcement layer: status check in plan-gate.sh, staleness threshold, scope-delta decision records, low-provenance scope markers, degraded-mode banner, domain no-match note.",
+      "update_triggers": ["rfc:accepted", "rfc:implemented"]
+    },
+    {
+      "path": "docs/rfcs/RFC-002-release-packaging.md",
+      "title": "Release Packaging & Marketplace Distribution",
+      "status": "draft",
+      "role": "rfc",
+      "description": "Adds marketplace.json, scripts/package.sh (devFiles exclusion, release branch, dist tags), .github/workflows/release.yml (test gate + release job), and docs/PACKAGING.md.",
+      "update_triggers": ["rfc:accepted", "rfc:implemented"]
     }
   ],
   "rfc_impact": {
+    "docs/rfcs/RFC-001-plan-quality-gates": {
+      "rfc_status": "accepted",
+      "accepted": [
+        "docs/references/_repo-context.md",
+        "docs/ideas/capabilities.md"
+      ],
+      "implemented": [
+        "docs/SDLC.md",
+        "docs/USER-MANUAL.md",
+        "docs/ideas/capabilities.md",
+        "docs/references/_repo-context.md"
+      ]
+    },
+    "docs/rfcs/RFC-002-release-packaging": {
+      "rfc_status": "draft",
+      "accepted": [
+        "docs/references/_repo-context.md"
+      ],
+      "implemented": [
+        "docs/README.md",
+        "docs/references/_repo-context.md"
+      ]
+    },
     "docs/rfcs/archived/scope-ingest": {
       "rfc_status": "implemented",
       "accepted": [
