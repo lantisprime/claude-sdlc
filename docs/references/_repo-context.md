@@ -7,7 +7,7 @@
 > **RFC work:** also load `docs/rfcs/AGENT-RULES.md` — it contains the concise decision rules for creating, transitioning, and archiving RFCs.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-28 (RFC-006 rfc-lifecycle-quality-gates accepted; 8-PR implementation plan)
+**Last updated:** 2026-04-28 (RFC-006 rfc-lifecycle-quality-gates: 5 of 8 PRs merged — Tier 1 complete; PR-5 next)
 
 ---
 
@@ -135,10 +135,10 @@ Seven RFCs fully implemented.
 
 ## Accepted RFCs (awaiting implementation)
 
-- **`docs/rfcs/RFC-006-rfc-lifecycle-quality-gates.md`** (accepted, 2026-04-28) — RFC Lifecycle Quality Gates **and Build-Stage Enforcement**. Second-opinion review by Haiku 4.5 subagent: `Decision: proceed`, AI-slop check clean, three findings fixed in revision. **8-PR implementation plan**, four dependency tiers:
-  - **Tier 1 (parallel-ready):** PR-1 `docs/rfcs/TEMPLATE.md` (§3b format reconcile); PR-2 `docs/rfcs/AGENT-RULES.md` §2–§7 gate checklists; PR-3 `.claude/hooks/rfc-quality-gate.sh` + bats; PR-4 `.claude/hooks/ai-slop-check.sh` + bats; PR-6 `.claude/agents/rfc-pr-reviewer.md` (Haiku 4.5, exact ID pin).
-  - **Tier 2:** PR-5 `.claude/settings.json` registers both hooks (depends on PR-3 + PR-4).
-  - **Tier 3:** PR-7 `AGENT-RULES.md §3.5 Building` + TEMPLATE.md row (depends on PR-1, PR-3, PR-4, PR-6); PR-8 `§3a` slop-check tightening + TEMPLATE.md (depends on PR-7).
+- **`docs/rfcs/RFC-006-rfc-lifecycle-quality-gates.md`** (accepted, 2026-04-28; **5 of 8 PRs merged**) — RFC Lifecycle Quality Gates **and Build-Stage Enforcement**. Second-opinion review by Haiku 4.5 subagent: `Decision: proceed`, AI-slop check clean, three findings fixed in revision. Eight PRs across four dependency tiers:
+  - **Tier 1 (merged):** PR-1 `docs/rfcs/TEMPLATE.md` §3b format reconcile ([#41](https://github.com/lantisprime/claude-sdlc/pull/41)); PR-2 `docs/rfcs/AGENT-RULES.md` §2–§7 gate checklists ([#42](https://github.com/lantisprime/claude-sdlc/pull/42)); PR-3 `.claude/hooks/rfc-quality-gate.sh` + bats ([#43](https://github.com/lantisprime/claude-sdlc/pull/43)); PR-4 `.claude/hooks/ai-slop-check.sh` + bats ([#44](https://github.com/lantisprime/claude-sdlc/pull/44)); PR-6 `.claude/agents/rfc-pr-reviewer.md` Haiku 4.5 ([#45](https://github.com/lantisprime/claude-sdlc/pull/45)).
+  - **Tier 2 (next up):** PR-5 `.claude/settings.json` registers both hooks (depends on PR-3 + PR-4 — both merged; ready to ship). Must **append** a `hooks.PostToolUse` block to the existing file — RFC-004 PR-4's `hooks.Stop` block must not be overwritten.
+  - **Tier 3 (pending):** PR-7 `AGENT-RULES.md §3.5 Building` + TEMPLATE.md row (depends on PR-1, PR-3, PR-4, PR-6 — all merged; ready); PR-8 `§3a` slop-check tightening + TEMPLATE.md (depends on PR-7).
   
   Eight changes total: rfc-quality-gate hook (warn, status-driven grep), TEMPLATE.md ↔ §3b format reconcile, §2–§7 gate checklists, settings.json registration, new §3.5 Building procedural section (per-PR loop: classify → spawn reviewer if code-touching → tests/run.sh if hooks/tests/scripts/config touched → ai-slop-check on doc-touching with conservative auto-apply), rfc-pr-reviewer agent on Haiku 4.5, ai-slop-check hook (warn, case-insensitive, closed pattern set), §3a Second opinion gains required `**AI-slop check:**` line.
   
