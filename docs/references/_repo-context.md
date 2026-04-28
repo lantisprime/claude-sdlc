@@ -108,7 +108,7 @@ Frontend tasks halt in Phase 2 until some UX artifact exists at `.claude/sdlc/ar
 
 ## Implemented RFCs
 
-Six RFCs fully implemented.
+Seven RFCs fully implemented.
 
 - **`docs/rfcs/archived/multi-team-approval.md`** (implemented) — sign-off files at `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md`; `APPROVALS.md` reconciler; transport ladder Tier 0–3; `approval-reconcile.sh` hook; `sign-off-multi.md` + `approval-packet.md` templates.
 
@@ -121,6 +121,8 @@ Six RFCs fully implemented.
 - **`docs/rfcs/archived/RFC-002-release-packaging.md`** (implemented) — `.claude-plugin/marketplace.json` (self-hosted install), `scripts/package.sh` (devFiles exclusion + release branch + dist tags; `--dry-run` + `--skip-tests`), `.github/workflows/release.yml` (CI test gate + release job with archive check + marketplace.json validation), `docs/PACKAGING.md` maintainer reference.
 
 - **`docs/rfcs/archived/RFC-003-hook-enforcement-alignment.md`** (implemented) — closed four gaps between `USER-MANUAL.md` enforcement claims and actual hook implementations: `phase-gate.sh` `PreToolUse` registration + prior-gate block, placeholder field validation for deploy/fix-fast gates, `work-item-validation.sh` file-level traceability (warn in PR-5, opt-in hard block in PR-8), enforcement language audit. All 8 PRs shipped.
+
+- **`docs/rfcs/archived/RFC-004-maintainer-code-review-enforcement.md`** (implemented, all 5 PRs shipped 2026-04-28) — four-layer pre-merge multi-reviewer gate for maintainer PRs to this repo. §14 in `sdlc-plugin/AGENT-RULES.md` rule (PR-1, [#36](https://github.com/lantisprime/claude-sdlc/pull/36)); four parallel Haiku 4.5 review agents under `.claude/agents/maintainer-{security,code-quality,test-adequacy,dependency}-reviewer.md` (PR-2, [#36](https://github.com/lantisprime/claude-sdlc/pull/36)); Stop hook `.claude/hooks/pre-merge-review-gate.sh` + 14-case bats suite (PR-3, [#37](https://github.com/lantisprime/claude-sdlc/pull/37)); `.claude/settings.json` registration (PR-4, [#38](https://github.com/lantisprime/claude-sdlc/pull/38)); `.github/workflows/pr-review.yml` CI gate (PR-5, [#39](https://github.com/lantisprime/claude-sdlc/pull/39)). Doc-only PRs bypass; `.claude/sdlc/plans/**` and `.claude/sdlc/gates/**` excluded from doc-only set. Strictly maintainer-only — every artifact under `.claude/`, `.github/`, or `sdlc-plugin/AGENT-RULES.md` (itself maintainer-only). Plugin capability counts (`hooks=14`, `agents=5`) unchanged. **Post-merge step (one-time, by repo admin):** add `review-required` to required status checks on `main` via `gh api -X PUT repos/${OWNER}/${REPO}/branches/main/protection` (full payload in `.github/workflows/pr-review.yml` header). Until that runs, the gate is advisory.
 
 ## Open PRs
 
@@ -141,10 +143,6 @@ Six RFCs fully implemented.
   Eight changes total: rfc-quality-gate hook (warn, status-driven grep), TEMPLATE.md ↔ §3b format reconcile, §2–§7 gate checklists, settings.json registration, new §3.5 Building procedural section (per-PR loop: classify → spawn reviewer if code-touching → tests/run.sh if hooks/tests/scripts/config touched → ai-slop-check on doc-touching with conservative auto-apply), rfc-pr-reviewer agent on Haiku 4.5, ai-slop-check hook (warn, case-insensitive, closed pattern set), §3a Second opinion gains required `**AI-slop check:**` line.
   
   Strictly **maintainer-only** — every new artifact under `.claude/` paths; **nothing under `sdlc-plugin/`**. Capability counts (`hooks=14`, `agents=5`) unchanged. OQ-1, OQ-3, OQ-4, OQ-5 closed at acceptance; OQ-2 (last_modified heuristic — "matches today" vs. "within 24h") deferred to PR-3 implementation.
-
-- **`docs/rfcs/RFC-004-maintainer-code-review-enforcement.md`** (accepted, Revision 2 on 2026-04-28) — four-layer pre-merge multi-reviewer gate for maintainer PRs: §14 in `sdlc-plugin/AGENT-RULES.md`, four parallel Haiku 4.5 review agents under `.claude/agents/maintainer-{security,code-quality,test-adequacy,dependency}-reviewer.md` (each writes its own artifact in `.claude/sdlc/test/`), Stop hook `.claude/hooks/pre-merge-review-gate.sh` (warn — checks all four artifacts present), `.github/workflows/pr-review.yml` CI gate (≥1 approved review, self-approval filter). Doc-only bypass applies; `.claude/sdlc/plans/**` and `.claude/sdlc/gates/**` explicitly excluded from doc-only set. 5 PRs: PR-1 `AGENT-RULES.md`, PR-2 four review agents, PR-3 hook + bats, PR-4 settings.json registration, PR-5 CI workflow. Cross-RFC `.claude/settings.json` coordination with RFC-006 PR-5 (append-don't-overwrite). Original 3-PR scope conflated "code review" with the narrower `security-review` skill; Revision 2 split review into four narrowly-scoped agents covering security, correctness, test adequacy, and dependency hygiene.
-
-
 
 - **`docs/rfcs/RFC-001-plan-quality-gates.md`** (accepted) — closes the gap between plan governance intent and `plan-gate.sh` enforcement: status check (warn on unsigned plan), 48h staleness threshold, scope-delta decision records, low-provenance scope markers, degraded-mode banner, domain no-match note. 7 changes across 4 files: `plan-gate.sh`, `diff-scope-check.sh`, `skills/plan/SKILL.md`, `skills/domain-expert/SKILL.md`.
 

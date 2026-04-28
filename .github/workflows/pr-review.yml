@@ -10,12 +10,12 @@
 #   *required status checks* on the `main` branch. After this workflow
 #   first runs successfully on a PR, mark it required by running:
 #
-#     gh api -X PATCH repos/${OWNER}/${REPO}/branches/main/protection \
+#     gh api -X PUT repos/${OWNER}/${REPO}/branches/main/protection \
 #       --input - <<'JSON'
 #     {
 #       "required_status_checks": {
 #         "strict": true,
-#         "contexts": ["pr-review / review-required"]
+#         "contexts": ["test", "review-required"]
 #       },
 #       "enforce_admins": false,
 #       "required_pull_request_reviews": null,
