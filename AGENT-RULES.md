@@ -214,3 +214,34 @@ bats tests/hooks/plan_gate.bats
 | Scope discipline (files touched ÷ files in scope) | 1.0 |
 | Adjacent-function modifications per task | 0 |
 | Test scope ratio (tests modified ÷ code modified) | ≈ 1.0 |
+
+---
+
+## 14. Pre-merge multi-reviewer gate
+
+Before signing a Build gate file (`.claude/sdlc/gates/build-*.md`) on a non-doc PR, run the four maintainer review agents in parallel. Doc-only PRs skip this section entirely.
+
+**Doc-only definition (canonical — same as RFC-004):** a PR is doc-only when every changed file matches `*.md`, `docs/**`, `templates/**`, `agents/**`, `commands/**`, or `.github/**`. Exception: `.claude/sdlc/plans/**` and `.claude/sdlc/gates/**` are excluded — if either appears in the diff, the PR is treated as a code-PR and review is required.
+
+**Procedure for non-doc PRs:**
+
+1. Spawn all four review agents in a single tool-call batch (parallel, not serial):
+   - `.claude/agents/maintainer-security-reviewer.md`
+   - `.claude/agents/maintainer-code-quality-reviewer.md`
+   - `.claude/agents/maintainer-test-adequacy-reviewer.md`
+   - `.claude/agents/maintainer-dependency-reviewer.md`
+2. Wait for all four artifacts to be written under `.claude/sdlc/test/`:
+   - `security-review-<task-slug>.md`
+   - `code-quality-review-<task-slug>.md`
+   - `test-adequacy-review-<task-slug>.md`
+   - `dependency-review-<task-slug>.md`
+3. Read each artifact's `**Verdict:**` line:
+   - `clean` or `not-applicable` → no further action.
+   - `concerns:[…]` → either fix the concerns in the diff (and re-spawn the affected agent) or record an explicit waiver with rationale in the Build gate file before signing.
+4. Sign the Build gate only when every artifact is `clean`, `not-applicable`, or explicitly waived.
+
+**Reinforcement layers:**
+- Hook: `.claude/hooks/pre-merge-review-gate.sh` (Stop, warn) checks artifact presence and warns if any are missing on a non-doc PR. The hook does not enforce parallel invocation or verdict-gating — those are §14 procedural rules maintained by the human + Claude session.
+- CI: `.github/workflows/pr-review.yml` requires ≥1 GitHub APPROVED human review (`review.author.login != pr.author.login`) before merge. §14 covers AI-agent review; CI covers human peer review. Both layers must pass.
+
+Design rationale and the alternatives considered live in `docs/rfcs/RFC-004-maintainer-code-review-enforcement.md`.
