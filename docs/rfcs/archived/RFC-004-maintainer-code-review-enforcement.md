@@ -2,11 +2,12 @@
 rfc_id: RFC-004
 slug: maintainer-code-review-enforcement
 title: Maintainer pre-merge multi-reviewer gate
-status: accepted
+status: implemented
 champion: juan.delacruz@acme.com
 created: 2026-04-27
 last_modified: 2026-04-28
 accepted: 2026-04-27
+implemented: 2026-04-28
 supersedes: ~
 superseded_by: ~
 ---
@@ -179,18 +180,23 @@ graph TD
 
 ## Implementation
 
-> Populate this section after all PRs are merged.
-
 | PR / Commit | What it delivered |
 |---|---|
-| `abc1234` | — |
+| [#36](https://github.com/lantisprime/claude-sdlc/pull/36) — `6ea420f` | **PR-1 + PR-2 (combined).** PR-1: `sdlc-plugin/AGENT-RULES.md` §14 "Pre-merge multi-reviewer gate" — defines the maintainer procedure for invoking the four review agents in parallel before signing a non-doc Build gate; doc-only canonical glob duplicated for self-containment. PR-2: four Haiku 4.5 review agents under `.claude/agents/` — `maintainer-security-reviewer.md`, `maintainer-code-quality-reviewer.md`, `maintainer-test-adequacy-reviewer.md`, `maintainer-dependency-reviewer.md` (last one self-exits `Verdict: not-applicable` when no manifest in diff). |
+| [#37](https://github.com/lantisprime/claude-sdlc/pull/37) — `bb4432b` | **PR-3.** `.claude/hooks/pre-merge-review-gate.sh` Stop hook (warn, exit 0) plus `tests/hooks/pre_merge_review_gate.bats` (14 cases, all pass). Hook detects non-doc changes via `git diff --name-only`, glob-checks each artifact pattern in `.claude/sdlc/test/`, warns once per missing artifact. Diff base detection: `origin/main` → `main` → `HEAD~1` fallback. Graceful degradation outside git repo and on missing artifact directory. |
+| [#38](https://github.com/lantisprime/claude-sdlc/pull/38) — `6270115` | **PR-4.** `.claude/settings.json` (new) — tracked Claude Code settings registering `pre-merge-review-gate.sh` under `hooks.Stop` matcher with no tool match. Path uses `${CLAUDE_PROJECT_DIR}` (this repo), distinct from `${CLAUDE_PLUGIN_ROOT}` used in `sdlc-plugin/hooks/hooks.json` (consumer-shipped). `_comment` field flags cross-RFC coordination with RFC-006 PR-5. |
+| [#39](https://github.com/lantisprime/claude-sdlc/pull/39) — `fcaafd6` | **PR-5.** `.github/workflows/pr-review.yml` CI workflow — `pull_request` + `pull_request_review` triggers, drafts skipped, doc-only bypass via canonical glob, code-PRs require ≥1 APPROVED non-author review (`user.login != PR_AUTHOR` filter). Concurrency cancels superseded runs. Header documents OQ-2 branch-protection PUT command. **Bootstrap chicken-and-egg solved by rebase-last sequencing**: #34–#38 merged first (no gating), then #39 rebased onto main with diff shrunk to single workflow file (matches `.github/*` doc-only glob), self-passed, merged. |
 
-Key files changed (forward reference for the `## Implementation` table):
+**Key files changed:**
 - `sdlc-plugin/AGENT-RULES.md` — new §14 (PR-1)
 - `.claude/agents/maintainer-{security,code-quality,test-adequacy,dependency}-reviewer.md` — four Haiku review agents (PR-2)
 - `.claude/hooks/pre-merge-review-gate.sh` + `tests/hooks/pre_merge_review_gate.bats` — Stop hook (PR-3)
 - `.claude/settings.json` — hook registration (PR-4)
 - `.github/workflows/pr-review.yml` — CI workflow (PR-5)
+
+**Post-merge step (one-time, by repo admin):** add `review-required` to required status checks on `main` via `gh api -X PUT repos/${OWNER}/${REPO}/branches/main/protection` (full payload in `pr-review.yml` header comment). Until that runs, the gate is advisory. Note: the workflow file's header originally said `PATCH` — corrected to `PUT` in a follow-up doc-only PR.
+
+**Maintainer-only:** every artifact under `.claude/`, `.github/`, or `sdlc-plugin/AGENT-RULES.md` (which is itself maintainer-only per its line-3 scope statement). `sdlc-plugin/hooks/`, `sdlc-plugin/agents/`, `sdlc-plugin/skills/` untouched. Plugin capability counts (`hooks=14`, `agents=5`) unchanged.
 
 ---
 
@@ -237,6 +243,6 @@ Key files changed (forward reference for the `## Implementation` table):
 |---|---|---|---|
 | OQ-1 | Should `.claude/sdlc/plans/*.md` and `.claude/sdlc/gates/*.md` be excluded from doc-only set? They're prose but represent substantive decisions. Proposed default: exclude (treat as code-PR if they appear in diff). | juan.delacruz@acme.com | **resolved** — exclude; see doc-only definition above |
 | OQ-2 | Branch protection settings on `main` — does the workflow need to be marked "required" via repo settings for the gate to actually block merge? Confirm with repo admin before merge. | juan.delacruz@acme.com | **resolved** — yes, mark as required; PR-5 documents the required settings in the workflow file header |
-| OQ-3 | Should `maintainer-dependency-reviewer` be invoked unconditionally (with self-`not-applicable` exit when no manifest in diff) or conditionally invoked only when `git diff --name-only` shows a manifest path? Default proposal: unconditional with `not-applicable` artifact, so the hook's artifact-completeness check stays uniform across all PRs. Revisit if the not-applicable-pass cost (~500 tokens per dep-less PR) proves visible. | charltond.ho | **open** — defer to PR-2 implementation |
-| OQ-4 | Should the four review agents be coordinated by a single dispatcher agent (`maintainer-build-review-coordinator`) or invoked directly from §14 prose by the Claude Code session? Default proposal: direct invocation from §14 — no coordinator needed because there is nothing to coordinate (parallel spawn, independent artifacts, no aggregation step before sign). | charltond.ho | **open** — defer to PR-1 wording |
-| OQ-5 | Should the hook check that artifacts are *fresh* (modified since the last commit on the working branch) rather than just present? Stale artifacts from a previous task could pass the existence check. Proposed default: present-only for v1; revisit if stale-artifact false-passes are observed. | charltond.ho | **open** — defer to PR-3 implementation |
+| OQ-3 | Should `maintainer-dependency-reviewer` be invoked unconditionally (with self-`not-applicable` exit when no manifest in diff) or conditionally invoked only when `git diff --name-only` shows a manifest path? Default proposal: unconditional with `not-applicable` artifact, so the hook's artifact-completeness check stays uniform across all PRs. Revisit if the not-applicable-pass cost (~500 tokens per dep-less PR) proves visible. | charltond.ho | **resolved (PR-2)** — unconditional invocation; agent self-exits with `Verdict: not-applicable` artifact when no manifest is in the diff, keeping the hook's artifact-completeness check uniform. Implemented in `.claude/agents/maintainer-dependency-reviewer.md`. |
+| OQ-4 | Should the four review agents be coordinated by a single dispatcher agent (`maintainer-build-review-coordinator`) or invoked directly from §14 prose by the Claude Code session? Default proposal: direct invocation from §14 — no coordinator needed because there is nothing to coordinate (parallel spawn, independent artifacts, no aggregation step before sign). | charltond.ho | **resolved (PR-1)** — direct invocation from §14 prose; no dispatcher agent. §14 specifies the parallel single-tool-call-batch invocation pattern; aggregation happens in the human's read of the four artifacts before signing the gate. |
+| OQ-5 | Should the hook check that artifacts are *fresh* (modified since the last commit on the working branch) rather than just present? Stale artifacts from a previous task could pass the existence check. Proposed default: present-only for v1; revisit if stale-artifact false-passes are observed. | charltond.ho | **resolved (PR-3)** — present-only check shipped in v1. Hook does not check artifact freshness; bats test 13 documents that `Verdict: not-applicable` artifacts (and by extension, any present artifact regardless of mtime) count as present. Revisit if stale-artifact false-passes are observed. |

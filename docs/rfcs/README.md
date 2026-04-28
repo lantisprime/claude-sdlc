@@ -14,12 +14,11 @@ Accepted RFCs awaiting implementation, in recommended order. Pick up the first r
 
 | Order | RFC | PRs | Why this position |
 |---|---|---|---|
-| 1 | [RFC-004 — Maintainer pre-merge multi-reviewer gate](RFC-004-maintainer-code-review-enforcement.md) | 5 | Ships baseline maintainer-PR review discipline (four parallel Haiku review agents + Stop hook + CI workflow) that protects every subsequent PR (including RFC-006's). Creates `.claude/settings.json` first — RFC-006 PR-5 then appends cleanly. Larger than the original 3-PR scope after Revision 2 added the multi-reviewer agent set. |
-| 2 | [RFC-006 — RFC lifecycle quality gates and build-stage enforcement](RFC-006-rfc-lifecycle-quality-gates.md) | 8 | Larger scope (4 dependency tiers). Benefits from RFC-004's review-agent gate during its own implementation. PR-5 has explicit append-don't-overwrite coordination with RFC-004 PR-4. |
+| 1 | [RFC-006 — RFC lifecycle quality gates and build-stage enforcement](RFC-006-rfc-lifecycle-quality-gates.md) | 8 | Only accepted RFC awaiting implementation. Four dependency tiers; PR-5 appends to `.claude/settings.json` (which RFC-004 PR-4 created at `hooks.Stop`). |
 
 **Cross-RFC coordination notes:**
 
-- **`.claude/settings.json` is shared.** RFC-004 PR-4 creates the file with a `Stop` hook entry; RFC-006 PR-5 appends a `PostToolUse` block. Whichever PR lands second must append, never overwrite. Both RFCs document this in their PR constraints.
+- **`.claude/settings.json` is shared (RFC-004 already shipped its half).** The file currently exists with a `hooks.Stop` block from RFC-004 PR-4 ([#38](https://github.com/lantisprime/claude-sdlc/pull/38)). RFC-006 PR-5 must **append** a `hooks.PostToolUse` block — never recreate or overwrite the file.
 - **No new RFC may join the queue without going through `## Second opinion` and reaching `status: accepted`.** Adding a row here is part of the index-sync step in `AGENT-RULES.md §11`.
 
 **When an RFC moves to `implemented`:** remove its row from this table in the same change that moves the RFC file to `archived/`. Do not leave stale rows.

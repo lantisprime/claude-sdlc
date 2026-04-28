@@ -239,12 +239,12 @@
       "update_triggers": []
     },
     {
-      "path": "docs/rfcs/RFC-004-maintainer-code-review-enforcement.md",
+      "path": "docs/rfcs/archived/RFC-004-maintainer-code-review-enforcement.md",
       "title": "Maintainer Pre-Merge Multi-Reviewer Gate",
-      "status": "accepted",
-      "role": "rfc",
-      "description": "Four-layer pre-merge multi-reviewer gate for maintainer PRs (Revision 2 on 2026-04-28 expanded scope from a single security-review artifact check). Layers: AGENT-RULES.md §14 rule; four parallel Haiku 4.5 review agents under .claude/agents/maintainer-{security,code-quality,test-adequacy,dependency}-reviewer.md (each writes its own artifact in .claude/sdlc/test/); .claude/hooks/pre-merge-review-gate.sh Stop hook (warn) checking all four artifacts present; .github/workflows/pr-review.yml CI gate (≥1 approved review, self-approval filter). Doc-only PRs bypass (plan/gate files excluded). Consuming-repo artifacts untouched. 5 PRs; cross-RFC .claude/settings.json coordination with RFC-006 PR-5 (append-don't-overwrite).",
-      "update_triggers": ["rfc:accepted", "rfc:implemented"]
+      "status": "implemented",
+      "role": "rfc-archived",
+      "description": "Four-layer pre-merge multi-reviewer gate for maintainer PRs (Revision 2 on 2026-04-28 expanded scope from a single security-review artifact check; all 5 PRs shipped 2026-04-28). Layers: AGENT-RULES.md §14 rule; four parallel Haiku 4.5 review agents under .claude/agents/maintainer-{security,code-quality,test-adequacy,dependency}-reviewer.md (each writes its own artifact in .claude/sdlc/test/); .claude/hooks/pre-merge-review-gate.sh Stop hook (warn) checking all four artifacts present; .github/workflows/pr-review.yml CI gate (≥1 approved review, self-approval filter). Doc-only PRs bypass (plan/gate files excluded). Consuming-repo artifacts untouched. Cross-RFC .claude/settings.json coordination with RFC-006 PR-5 (append-don't-overwrite). Branch protection PUT required after merge to enforce.",
+      "update_triggers": []
     },
     {
       "path": "docs/rfcs/RFC-005-work-item-reference-validation.md",
@@ -316,14 +316,16 @@
         "docs/references/_repo-context.md"
       ]
     },
-    "docs/rfcs/RFC-004-maintainer-code-review-enforcement": {
-      "rfc_status": "accepted",
+    "docs/rfcs/archived/RFC-004-maintainer-code-review-enforcement": {
+      "rfc_status": "implemented",
       "accepted": [
         "docs/references/_repo-context.md",
         "docs/rfcs/pending-analysis.md"
       ],
       "implemented": [
-        "docs/references/_repo-context.md"
+        "docs/references/_repo-context.md",
+        "docs/references/workflow-log.md",
+        "docs/rfcs/README.md"
       ]
     },
     "docs/rfcs/archived/RFC-002-release-packaging": {
