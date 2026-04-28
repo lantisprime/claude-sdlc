@@ -47,15 +47,30 @@ Document every alternative that was seriously considered and explain concisely w
 
 ## Implementation plan
 
-> Populate this section when the RFC moves to `accepted`. Aim for under 50 lines — list phases, files in scope per phase, and PR sequence. Do not repeat design rationale already covered above.
+> Populate this section when the RFC moves to `accepted`. Use `### PR-N — <file(s)>` subheadings (per `AGENT-RULES.md §3b`).
+> For each PR: a **Before** block (current state or "file does not exist"), an **After** block (exact diff, skeleton, or section outline), one-line **Dependencies** note, and key **Constraints**. Close with a **Sequencing** diagram (Mermaid).
 
-| Phase | PRs / tasks | Files in scope |
-|---|---|---|
-| 1 | _example: create hook script_ | `hooks/example.sh` |
-| 2 | _example: register hook_ | `hooks/hooks.json` |
+### PR-1 — _example: hooks/example.sh_
 
-Sequencing notes:
-- _list any hard dependencies between phases_
+**Before:** _file does not exist_
+
+**After:** _new script — sketch its responsibility in 2–4 lines (skeleton, function signatures, or expected behavior). Reference the exact file path._
+
+**Dependencies:** _none_
+
+**Constraints:** _e.g. POSIX bash, no GNU-only flags; backwards-compatible with older config schema; surgical scope_
+
+### Sequencing
+
+```mermaid
+graph TD
+    PR1[PR-1: example.sh]
+    PR2[PR-2: registration]
+
+    PR1 --> PR2
+```
+
+> Adjust nodes per actual PR count. Use `classDef` to colour-code dependency tiers if helpful (e.g. `tier1` for parallel-ready PRs, `tier2` for those depending on a tier-1 PR, etc.).
 
 ---
 
