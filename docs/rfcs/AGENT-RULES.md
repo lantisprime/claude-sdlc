@@ -40,6 +40,13 @@ Companion notes in `rfcs/notes/` always match the lifecycle of their RFC. When t
 7. Update `docs/references/_repo-context.md` — add to the draft RFC list.
 8. Add open questions to `rfcs/pending-analysis.md`.
 
+**Gate checklist (verify before sharing the draft for review):**
+- [ ] `## AI context` written (3 sentences: what, problem, key trade-off)
+- [ ] Required sections present and non-empty: `## Problem`, `## Proposal`, `## Alternatives considered`
+- [ ] Companion note (if any) in `rfcs/notes/` updated to `> **Status:** companion`
+- [ ] All 4 index files updated: `docs/README.md`, `docs/_index.json`, `docs/references/_repo-context.md`, `rfcs/pending-analysis.md`
+- [ ] Frontmatter complete: `rfc_id`, `slug`, `title`, `champion`, `created`, `last_modified`, `status: draft`
+
 ---
 
 ## 3. Accepting an RFC
@@ -90,6 +97,13 @@ If the decision is `revise first`, address the gaps before setting `status: acce
 6. Update `docs/ideas/capabilities.md` roadmap status.
 7. Close resolved items in `rfcs/pending-analysis.md`.
 
+**Gate checklist (verify before setting `status: accepted`):**
+- [ ] `## Second opinion` populated with `**Decision:** proceed` (not `revise first`)
+- [ ] `## Implementation plan` written with `### PR-N` subheadings (per §3b — not the template placeholder)
+- [ ] `last_modified:` updated in frontmatter to today's date
+- [ ] All 5 index files in §11 updated in the same change
+- [ ] Open questions either resolved in the RFC table or moved to `pending-analysis.md`
+
 ---
 
 ## 4. Deferring an RFC
@@ -100,6 +114,12 @@ If the decision is `revise first`, address the gaps before setting `status: acce
 2. Add `## Deferral note` section: why deferred, what conditions would unpark it.
 3. File stays in `rfcs/` root — do NOT move to `archived/`.
 4. Update `docs/references/_repo-context.md` to note it as deferred.
+
+**Gate checklist (verify before setting `status: deferred`):**
+- [ ] `## Deferral note` populated with both reason AND unpark conditions
+- [ ] `status: deferred` and `last_modified:` updated in frontmatter
+- [ ] `_repo-context.md` notes the deferral
+- [ ] File NOT moved to `archived/` (deferred RFCs stay in `rfcs/` root)
 
 ---
 
@@ -118,6 +138,13 @@ If the decision is `revise first`, address the gaps before setting `status: acce
 9. Update `docs/references/workflow-log.md` — add a section for what was built.
 10. Update living docs as needed: `docs/SDLC.md`, `docs/USER-MANUAL.md`, `docs/GLOSSARY.md`, `docs/ideas/capabilities.md`.
 
+**Gate checklist (verify before setting `status: implemented`):**
+- [ ] `## Implementation` table populated — no `abc1234` placeholder rows; each PR row has both PR link and commit SHA
+- [ ] RFC file moved from `rfcs/<slug>.md` to `rfcs/archived/<slug>.md` (and any companion notes moved with it)
+- [ ] All §11 index files synced: `docs/README.md` (row moved to Archived RFCs + RFC Impact Matrix), `docs/_index.json` (path + role), `_repo-context.md` (count + section), `rfcs/README.md` (queue removal), `workflow-log.md` (new section), `notes/README.md` (companion entries removed if any)
+- [ ] Capability counts in `_repo-context.md` updated if RFC added consumer-facing artifacts (skills/hooks/agents/commands/templates under `sdlc-plugin/`)
+- [ ] All open questions in the RFC table marked resolved with their actual implementation outcomes
+
 ---
 
 ## 6. Withdrawing an RFC
@@ -130,6 +157,13 @@ If the decision is `revise first`, address the gaps before setting `status: acce
 4. Update `docs/references/_repo-context.md` — remove from active RFC list.
 5. Do NOT update living docs (SDLC.md, USER-MANUAL.md) unless the RFC had already changed behavior.
 
+**Gate checklist (verify before setting `status: withdrawn`):**
+- [ ] `## Withdrawal note` populated with reason AND reconsideration conditions
+- [ ] `status: withdrawn` + `last_modified:` updated
+- [ ] RFC + companion notes moved to `archived/`
+- [ ] Index files synced (`docs/README.md`, `docs/_index.json`, `_repo-context.md`, `rfcs/README.md` queue removal if previously accepted)
+- [ ] Living docs (SDLC.md, USER-MANUAL.md) NOT updated unless the RFC had already changed behavior
+
 ---
 
 ## 7. Superseding an RFC
@@ -140,6 +174,13 @@ If the decision is `revise first`, address the gaps before setting `status: acce
 2. On the **new RFC**: add `supersedes: RFC-NNN-<old-slug>` to frontmatter.
 3. Move old RFC and its companion notes to `rfcs/archived/` (same steps as §5, steps 3–7).
 4. The new RFC follows the normal create → accept → implement lifecycle.
+
+**Gate checklist (verify before setting `status: superseded`):**
+- [ ] Old RFC: `superseded_by:` frontmatter set + `## Supersession note` populated with what changed
+- [ ] New RFC: `supersedes:` frontmatter set (cross-link symmetry)
+- [ ] Old RFC + companion notes moved to `archived/`
+- [ ] Index files synced (path + role updates per §5 steps 5–7)
+- [ ] New RFC follows full create → accept → implement lifecycle separately (this checklist only covers the supersession move)
 
 ---
 
