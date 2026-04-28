@@ -190,6 +190,7 @@ Any RFC status change or file move must update all of these:
 | `docs/README.md` | File Registry row (path, status, role) |
 | `docs/_index.json` | `path`, `status`, `role` fields |
 | `docs/references/_repo-context.md` | RFC list (draft / accepted / implemented / deferred) |
+| `rfcs/README.md` | `## Implementation queue` table — add a row when status moves to `accepted`; remove the row when status moves to `implemented`, `withdrawn`, or `superseded`. Re-order rows if dependency or sequencing changes. |
 | `rfcs/notes/README.md` | Remove entries for notes that moved to `archived/` |
 | `rfcs/pending-analysis.md` | Close resolved questions |
 
