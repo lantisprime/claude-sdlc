@@ -1,0 +1,12 @@
+{
+  "_comment": "Tracked maintainer-only Claude Code settings for the sdlc-plugin repo. Registers hooks under .claude/hooks/ which run only in maintainer sessions on this repo (consuming repos do not load this file). Per RFC-004 PR-4. Cross-RFC coordination with RFC-006 PR-5: when RFC-006 lands, append a hooks.PostToolUse block here — do not overwrite this Stop block.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-merge-review-gate.sh" }
+        ]
+      }
+    ]
+  }
+}
