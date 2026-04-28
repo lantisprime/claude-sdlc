@@ -108,17 +108,19 @@ Frontend tasks halt in Phase 2 until some UX artifact exists at `.claude/sdlc/ar
 
 ## Implemented RFCs
 
-All five RFCs are fully implemented as of 2026-04-27.
+Six RFCs fully implemented.
 
-- **`docs/rfcs/multi-team-approval.md`** (implemented) — sign-off files at `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md`; `APPROVALS.md` reconciler; transport ladder Tier 0–3; `approval-reconcile.sh` hook; `sign-off-multi.md` + `approval-packet.md` templates.
+- **`docs/rfcs/archived/multi-team-approval.md`** (implemented) — sign-off files at `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md`; `APPROVALS.md` reconciler; transport ladder Tier 0–3; `approval-reconcile.sh` hook; `sign-off-multi.md` + `approval-packet.md` templates.
 
-- **`docs/rfcs/scope-ingest.md`** (implemented) — `scope-ingest` agent (writes only to `scope-drafts/`); `domain-expert` skill (domain context injection, gap questions, NFRs); `scope-gate.md` template; pseudo-phase scope gate; two-source domain lookup; domain authoring paths A and B.
+- **`docs/rfcs/archived/scope-ingest.md`** (implemented) — `scope-ingest` agent (writes only to `scope-drafts/`); `domain-expert` skill (domain context injection, gap questions, NFRs); `scope-gate.md` template; pseudo-phase scope gate; two-source domain lookup; domain authoring paths A and B.
 
-- **`docs/rfcs/guided-entry-session-resume-multi-role.md`** (implemented) — `/status`, `/start`, `/configure`, `/help`; `session-plan-check.sh` hook; plan versioning; approval packets; auto next-step hints (`_shared/next-hint.sh` + `hints.jsonl` fade-after-3); glossary.
+- **`docs/rfcs/archived/guided-entry-session-resume-multi-role.md`** (implemented) — `/status`, `/start`, `/configure`, `/help`; `session-plan-check.sh` hook; plan versioning; approval packets; auto next-step hints (`_shared/next-hint.sh` + `hints.jsonl` fade-after-3); glossary.
 
-- **`docs/rfcs/opt-in-activation-suspend-resume.md`** (implemented) — opt-in `.enabled` marker; hooks guard on `.enabled`; enhanced `/start` (PATH A: config auto-detect + scope + plan draft; PATH B: re-enable reconciliation with snapshot verify + REQ supersession); `/suspend` with `suspend-snapshot.sh` (AES-256, plain fallback); `.suspension-log.jsonl`; `secret-scan.sh` always-on regardless of activation state.
+- **`docs/rfcs/archived/opt-in-activation-suspend-resume.md`** (implemented) — opt-in `.enabled` marker; hooks guard on `.enabled`; enhanced `/start` (PATH A: config auto-detect + scope + plan draft; PATH B: re-enable reconciliation with snapshot verify + REQ supersession); `/suspend` with `suspend-snapshot.sh` (AES-256, plain fallback); `.suspension-log.jsonl`; `secret-scan.sh` always-on regardless of activation state.
 
 - **`docs/rfcs/archived/RFC-002-release-packaging.md`** (implemented) — `.claude-plugin/marketplace.json` (self-hosted install), `scripts/package.sh` (devFiles exclusion + release branch + dist tags; `--dry-run` + `--skip-tests`), `.github/workflows/release.yml` (CI test gate + release job with archive check + marketplace.json validation), `docs/PACKAGING.md` maintainer reference.
+
+- **`docs/rfcs/archived/RFC-003-hook-enforcement-alignment.md`** (implemented) — closed four gaps between `USER-MANUAL.md` enforcement claims and actual hook implementations: `phase-gate.sh` `PreToolUse` registration + prior-gate block, placeholder field validation for deploy/fix-fast gates, `work-item-validation.sh` file-level traceability (warn in PR-5, opt-in hard block in PR-8), enforcement language audit. All 8 PRs shipped.
 
 ## Open PRs
 
@@ -140,13 +142,11 @@ All five RFCs are fully implemented as of 2026-04-27.
   
   Strictly **maintainer-only** — every new artifact under `.claude/` paths; **nothing under `sdlc-plugin/`**. Capability counts (`hooks=14`, `agents=5`) unchanged. OQ-1, OQ-3, OQ-4, OQ-5 closed at acceptance; OQ-2 (last_modified heuristic — "matches today" vs. "within 24h") deferred to PR-3 implementation.
 
-- **`docs/rfcs/RFC-004-maintainer-code-review-enforcement.md`** (accepted) — three-layer code-review gate for maintainer PRs: §14 in `sdlc-plugin/AGENT-RULES.md`, Stop hook `.claude/hooks/code-review-gate.sh` (warn), `.github/workflows/code-review.yml` CI gate (≥1 approved review, self-approval filter). Doc-only bypass applies; `.claude/sdlc/plans/**` and `.claude/sdlc/gates/**` explicitly excluded from doc-only set. 3 PRs: PR-1 `AGENT-RULES.md`, PR-2 hook + settings, PR-3 CI workflow.
+- **`docs/rfcs/RFC-004-maintainer-code-review-enforcement.md`** (accepted, Revision 2 on 2026-04-28) — four-layer pre-merge multi-reviewer gate for maintainer PRs: §14 in `sdlc-plugin/AGENT-RULES.md`, four parallel Haiku 4.5 review agents under `.claude/agents/maintainer-{security,code-quality,test-adequacy,dependency}-reviewer.md` (each writes its own artifact in `.claude/sdlc/test/`), Stop hook `.claude/hooks/pre-merge-review-gate.sh` (warn — checks all four artifacts present), `.github/workflows/pr-review.yml` CI gate (≥1 approved review, self-approval filter). Doc-only bypass applies; `.claude/sdlc/plans/**` and `.claude/sdlc/gates/**` explicitly excluded from doc-only set. 5 PRs: PR-1 `AGENT-RULES.md`, PR-2 four review agents, PR-3 hook + bats, PR-4 settings.json registration, PR-5 CI workflow. Cross-RFC `.claude/settings.json` coordination with RFC-006 PR-5 (append-don't-overwrite). Original 3-PR scope conflated "code review" with the narrower `security-review` skill; Revision 2 split review into four narrowly-scoped agents covering security, correctness, test adequacy, and dependency hygiene.
 
 
 
 - **`docs/rfcs/RFC-001-plan-quality-gates.md`** (accepted) — closes the gap between plan governance intent and `plan-gate.sh` enforcement: status check (warn on unsigned plan), 48h staleness threshold, scope-delta decision records, low-provenance scope markers, degraded-mode banner, domain no-match note. 7 changes across 4 files: `plan-gate.sh`, `diff-scope-check.sh`, `skills/plan/SKILL.md`, `skills/domain-expert/SKILL.md`.
-
-- **`docs/rfcs/RFC-003-hook-enforcement-alignment.md`** (implemented) — closed four gaps between `USER-MANUAL.md` enforcement claims and actual hook implementations: `phase-gate.sh` `PreToolUse` registration + prior-gate block, placeholder field validation for deploy/fix-fast gates, `work-item-validation.sh` file-level traceability (warn in PR-5, opt-in hard block in PR-8), enforcement language audit. All 8 PRs shipped touching `hooks/phase-gate.sh`, `hooks/work-item-validation.sh`, `hooks/hooks.json`, `docs/USER-MANUAL.md`, `config/tools.example.json`, `templates/plan.md`, `templates/gate.md`, `tests/hooks/`. PR-8 promotes file-level traceability to a hard block when `enforcement.file_traceability: "block"` is set in `config/tools.json` and the active plan has a `## Traceability` table; default warn behaviour is preserved for back-compat.
 
 ## Anti-patterns the repo explicitly guards against
 
