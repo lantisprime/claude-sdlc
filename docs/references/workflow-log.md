@@ -146,7 +146,13 @@ Items 11–13 in the plan analysis (gate_hash verification, TBD enforcement at B
 
 ---
 
-## 8. What's next
+## 8. RFC-003 archived
+
+RFC-003 (Hook Enforcement Alignment) was already implemented (all 8 PRs shipped, HEAD at `80697c4`). File moved from `docs/rfcs/` root to `docs/rfcs/archived/`. Index files updated: `docs/README.md`, `docs/_index.json`, `docs/references/_repo-context.md`.
+
+---
+
+## 9. What's next
 
 1. **Implement plan risk-analysis fixes** — 10 priority items from `plan_command_analysis.md`: pre-signoff checklist, WARN on unsigned status, low-provenance marker, degraded-mode banner, resolved-plan logging, scope-delta decision record, domain no-match note, UNKNOWN-as-open-item in compatibility matrix, materiality checklist, domain context template placeholder.
 2. **V2 scope gate note** — write `docs/rfcs/notes/scope-gate-v2-followup.md`. Open question: should the scope gate be a first-class artifact class in v2 rather than a pseudo phase-gate?
