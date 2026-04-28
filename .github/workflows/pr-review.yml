@@ -1,0 +1,107 @@
+# PR Review Required — RFC-004 PR-5
+#
+# Maintainer-only CI gate. Requires ≥1 APPROVED GitHub review (from a
+# non-author) before a non-doc-only PR can merge to main. Doc-only PRs
+# pass automatically per the canonical glob shared with .claude/hooks/
+# pre-merge-review-gate.sh and sdlc-plugin/AGENT-RULES.md §14.
+#
+# IMPORTANT — branch protection (per RFC-004 OQ-2):
+#   This workflow runs but cannot block merge unless it is added to the
+#   *required status checks* on the `main` branch. After this workflow
+#   first runs successfully on a PR, mark it required by running:
+#
+#     gh api -X PATCH repos/${OWNER}/${REPO}/branches/main/protection \
+#       --input - <<'JSON'
+#     {
+#       "required_status_checks": {
+#         "strict": true,
+#         "contexts": ["pr-review / review-required"]
+#       },
+#       "enforce_admins": false,
+#       "required_pull_request_reviews": null,
+#       "restrictions": null
+#     }
+#     JSON
+#
+#   Or via the GitHub UI: Settings → Branches → main → "Require status
+#   checks to pass before merging" → add `pr-review / review-required`.
+#
+# Without this branch-protection step, the gate is advisory only.
+
+name: pr-review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+# Cancel superseded runs on the same PR (re-pushes, re-reviews) so the
+# latest commit is always the one that determines pass/fail.
+concurrency:
+  group: pr-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review-required:
+    # Skip drafts entirely — drafts are explicitly WIP.
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine doc-only PR
+        id: doc-only
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          CHANGED=$(git diff --name-only "${BASE_SHA}...HEAD")
+          DOC_ONLY=true
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              # Substantive governance files — treat as code-PR even though they are .md.
+              .claude/sdlc/plans/*|.claude/sdlc/gates/*)
+                DOC_ONLY=false; break ;;
+              # Doc patterns — same canonical glob as .claude/hooks/pre-merge-review-gate.sh
+              # and sdlc-plugin/AGENT-RULES.md §14. Keep all three in sync.
+              *.md|docs/*|templates/*|agents/*|commands/*|.github/*)
+                continue ;;
+              *)
+                DOC_ONLY=false; break ;;
+            esac
+          done <<< "$CHANGED"
+          echo "doc_only=${DOC_ONLY}" >> "$GITHUB_OUTPUT"
+          echo "Doc-only: ${DOC_ONLY}"
+          echo "Files changed:"
+          echo "$CHANGED" | sed 's/^/  /'
+
+      - name: Pass — doc-only PR
+        if: steps.doc-only.outputs.doc_only == 'true'
+        run: echo "Doc-only PR — review not required (per AGENT-RULES.md §14)."
+
+      - name: Require approved non-author review
+        if: steps.doc-only.outputs.doc_only == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -euo pipefail
+          # Count APPROVED reviews where the reviewer is not the PR author.
+          # Self-approval is filtered (per RFC-004).
+          COUNT=$(gh api \
+            "repos/${{ github.repository }}/pulls/${PR_NUMBER}/reviews" \
+            --jq "[.[] | select(.state == \"APPROVED\" and .user.login != \"${PR_AUTHOR}\")] | length")
+          echo "Approved non-author reviews: ${COUNT}"
+          if [ "${COUNT}" -lt 1 ]; then
+            echo "::error::At least 1 approved review from a non-author is required for code PRs (per sdlc-plugin/AGENT-RULES.md §14 / RFC-004)."
+            exit 1
+          fi
+          echo "Review requirement satisfied."
