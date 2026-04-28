@@ -94,6 +94,12 @@ The two layers must not mix. This RFC establishes that pattern; future contribut
 
 Hard deps: PR-3 after PR-2 (share the same doc-only glob logic). PR-1 is independent.
 
+**Cross-RFC coordination — `.claude/settings.json` is shared with RFC-006 PR-5.** Either may land first:
+
+- _If PR-2 lands first_ (the expected order per `docs/rfcs/README.md` ## Implementation queue): create `.claude/settings.json` with a fresh `hooks.Stop` block containing the `code-review-gate.sh` entry. RFC-006 PR-5 will later append its `hooks.PostToolUse` block.
+- _If RFC-006 PR-5 has already merged_: the file already exists with a `hooks.PostToolUse` block. **Append** the new `hooks.Stop` block — do not recreate or overwrite the file.
+- Either path: run `python3 -m json.tool .claude/settings.json` (or equivalent) before commit to confirm the file parses.
+
 ---
 
 ## Implementation

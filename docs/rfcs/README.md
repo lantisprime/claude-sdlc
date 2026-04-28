@@ -4,6 +4,26 @@ This directory manages the full lifecycle of RFCs and their companion discussion
 
 > **AI / Claude Code:** load [`AGENT-RULES.md`](AGENT-RULES.md) at the start of any session that involves creating, updating, moving, or closing an RFC. It contains the decision rules without the explanatory prose.
 
+> **AI / Claude Code:** before starting *any* implementation work on an accepted RFC (writing PRs, editing source files, running its scripts), first read the `## Implementation queue` section immediately below. Confirm with the user which RFC and which PR you are picking up.
+
+---
+
+## Implementation queue
+
+Accepted RFCs awaiting implementation, in recommended order. Pick up the first row first unless the user directs otherwise. Each RFC's full PR-level plan lives in its own `## Implementation plan` section.
+
+| Order | RFC | PRs | Why this position |
+|---|---|---|---|
+| 1 | [RFC-004 — Maintainer code-review enforcement](RFC-004-maintainer-code-review-enforcement.md) | 3 | Smaller scope; ships baseline maintainer-PR review discipline that protects every subsequent PR (including RFC-006's). Creates `.claude/settings.json` first — RFC-006 PR-5 then appends cleanly. |
+| 2 | [RFC-006 — RFC lifecycle quality gates and build-stage enforcement](RFC-006-rfc-lifecycle-quality-gates.md) | 8 | Larger scope (4 dependency tiers). Benefits from RFC-004's CI gate during its own implementation. PR-5 has explicit append-don't-overwrite coordination with RFC-004 PR-2. |
+
+**Cross-RFC coordination notes:**
+
+- **`.claude/settings.json` is shared.** RFC-004 PR-2 creates the file with a `Stop` hook entry; RFC-006 PR-5 appends a `PostToolUse` block. Whichever PR lands second must append, never overwrite. Both RFCs document this in their PR constraints.
+- **No new RFC may join the queue without going through `## Second opinion` and reaching `status: accepted`.** Adding a row here is part of the index-sync step in `AGENT-RULES.md §11`.
+
+**When an RFC moves to `implemented`:** remove its row from this table in the same change that moves the RFC file to `archived/`. Do not leave stale rows.
+
 ---
 
 ## Directory structure

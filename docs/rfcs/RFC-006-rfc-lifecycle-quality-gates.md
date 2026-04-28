@@ -297,13 +297,20 @@ Eight PRs across four dependency tiers. Tier 1 PRs are independent and can ship 
 
 ### PR-5 — `.claude/settings.json` (Change 4 — register both hooks)
 
-**Before:** `.claude/settings.json` does not exist. `.claude/settings.local.json` exists separately (gitignored maintainer-local config — untouched).
+**Before:** two cases depending on RFC-004 PR-2 ordering:
+- _Case A — RFC-004 PR-2 has not yet landed:_ `.claude/settings.json` does not exist. `.claude/settings.local.json` exists separately (gitignored maintainer-local config — untouched).
+- _Case B — RFC-004 PR-2 has landed first:_ `.claude/settings.json` exists with a `hooks.Stop` entry for `code-review-gate.sh`. The `hooks.PostToolUse` array may not yet exist.
 
-**After:** new committed `.claude/settings.json` with a `hooks.PostToolUse` entry registering both `rfc-quality-gate.sh` and `ai-slop-check.sh` under matcher `Edit|Write|MultiEdit`, using `${CLAUDE_PROJECT_DIR}/.claude/hooks/...` paths.
+**After:** committed `.claude/settings.json` with a `hooks.PostToolUse` entry registering both `rfc-quality-gate.sh` and `ai-slop-check.sh` under matcher `Edit|Write|MultiEdit`, using `${CLAUDE_PROJECT_DIR}/.claude/hooks/...` paths.
+- _Case A:_ create the file with both `Stop` (placeholder for future) omitted and a fresh `hooks.PostToolUse` block containing the two entries.
+- _Case B:_ **append** the new `PostToolUse` block to the existing JSON. Do not overwrite or restructure RFC-004's `Stop` entry. Validate JSON parses after the edit.
 
-**Dependencies:** PR-3 and PR-4 (the registered scripts must exist).
+**Dependencies:** PR-3 and PR-4 (the registered scripts must exist). Soft ordering with RFC-004 PR-2: either may land first, but whichever lands second must append, not overwrite — see Constraints.
 
-**Constraints:** surgical — do not pre-register other future maintainer-only hooks (e.g. RFC-004's `code-review-gate.sh` gets its own registration PR).
+**Constraints:**
+- Surgical — do not pre-register other future maintainer-only hooks beyond the two from this RFC.
+- **Coordination with RFC-004 PR-2:** if RFC-004 PR-2 has already merged at the time PR-5 is opened, append the two new entries to the existing `.claude/settings.json` (do not recreate the file). If PR-5 lands first, RFC-004 PR-2 must do the symmetric append for its `Stop` entry.
+- Run `python3 -m json.tool .claude/settings.json` (or equivalent) before commit to confirm the file parses.
 
 ### PR-6 — `.claude/agents/rfc-pr-reviewer.md` (Change 6)
 
