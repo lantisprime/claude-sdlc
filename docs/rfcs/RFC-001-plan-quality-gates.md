@@ -151,6 +151,77 @@ This tells the human that domain coverage was evaluated, not skipped, and names 
 
 ---
 
+## Implementation plan
+
+Four PRs, all Tier 1 (parallel-ready). Each PR is scoped to a single source file plus its bats test file where applicable. All seven Changes from `## Proposal` map onto exactly one PR; bash and markdown snippets in the **After** blocks reuse the verbatim snippets from `## Proposal` rather than re-deriving them. Mark each PR row in `## Implementation` immediately after it merges (per AGENT-RULES.md §5 step 1).
+
+### PR-1 — `hooks/plan-gate.sh` + `tests/hooks/plan_gate.bats` (Changes 1 + 2)
+
+**Before:** `hooks/plan-gate.sh` is 47 lines, `set -euo pipefail`. The existing `Status: superseded` warn lives at lines 38–40 (warn-level, exit 0). The existing 24h staleness check uses `-mtime -1` at line 43 with the message "no plan file modified in the last 24h." `tests/hooks/plan_gate.bats` has 7 cases — none cover the unsigned-Status path or the 48h boundary.
+
+**After:**
+- Insert Change 1's Status-field warn between the existing superseded warn (line 40) and the staleness check (line 42), using the exact snippet from `## Proposal` Change 1: `STATUS=$(grep -m1 '^\- \*\*Status:\*\*' "$ACTIVE_PLAN" | sed 's/.*Status:\*\* //')` then warn if `"$STATUS" != "signed"`. Severity: WARN (exit 0).
+- Replace `-mtime -1` with `-mtime -2` on line 43 and update the message text from "24h" to "48h" per Change 2.
+- Add three bats cases to `tests/hooks/plan_gate.bats`: (a) `Status: signed` → silent pass on the new check; (b) `Status: draft` → emits `[plan-gate] WARN: active plan Status is 'draft', not 'signed'`; (c) plan modified 30h ago → no longer triggers the (now 48h) staleness warn.
+
+**Dependencies:** none.
+
+**Constraints:** WARN-only (exit 0) — never block on Status mismatch (rationale at `## Proposal` Change 1 paragraph 2). Preserve the documented grep-pattern fragility limitation (RFC-001 line 62) — do not "harden" the regex to swallow hand-edited plans, since that hides the false-positive surface the limitation acknowledges.
+
+### PR-2 — `hooks/diff-scope-check.sh` + `tests/hooks/diff_scope_check.bats` (Change 3)
+
+**Before:** `hooks/diff-scope-check.sh` is 45 lines. The active plan is resolved by `find` + `stat` mtime sort at lines 16–21, with an early `[ -z "${PLAN:-}" ] && exit 0` guard at line 22 and scope extraction beginning at line 24. There is currently no log line surfacing which plan was selected. `tests/hooks/diff_scope_check.bats` has 6 cases — none assert on stderr log output for plan resolution.
+
+**After:**
+- Insert one line after line 22 (the `[ -z "${PLAN:-}" ] && exit 0` guard) and before line 24 (scope extraction): `echo "[diff-scope] NOTE: enforcing scope from plan: $PLAN" >&2`. Verbatim from `## Proposal` Change 3.
+- Add one bats case asserting that with two plan files of differing mtimes, the hook's stderr contains `[diff-scope] NOTE: enforcing scope from plan: <newer-plan-path>`.
+
+**Dependencies:** none.
+
+**Constraints:** stderr-only (`>&2`) — never alters scope-check behavior or exit code. The log fires on every Edit/Write to a source path the hook intercepts; keep the message single-line so it does not crowd hook output.
+
+### PR-3 — `skills/plan/SKILL.md` (Changes 4 + 5 + 6)
+
+**Before:** `skills/plan/SKILL.md` is 193 lines. Step 2 (Resolve scope) at lines 34–49 has a "Fallback — no source material" path at lines 40–41 and a three-option scope-validation block (treat as CR / expand scope / defer) at lines 44–46. The skill's frontmatter declares `tracker.type` with `on_skip: degrade_to_req_id_only` at lines 4–7. The plan artifact produced by this skill currently has no `## Scope decisions` section, no scope-quality blockquote, and no degraded-traceability blockquote.
+
+**After:**
+- **Change 4** — at the end of the "Fallback — no source material" path (after line 41), instruct Claude to append the `> **Scope source quality: low** — …` blockquote from `## Proposal` Change 4 to the plan artifact. Add the explicit removal instruction from RFC-001 line 91: when re-running `/plan` after `scope-ingest` has produced higher-quality scope, the marker is removed; this removal does not trigger a version bump (scope-quality upgrade is not in the materiality list).
+- **Change 5** — after the three-option block (line 46), instruct Claude to write the `## Scope decisions` section from `## Proposal` Change 5 into the plan artifact. The section inserts in the plan artifact between current Step 2 output (after line 49 anchor) and Step 2.5 (Domain expert check, line 50).
+- **Change 6** — when the `config_requirements` check on `tracker.type` triggers `on_skip: degrade_to_req_id_only`, write the `> **Traceability mode: degraded** — …` blockquote from `## Proposal` Change 6 immediately after the `## Technology stack & compatibility` table in the plan artifact.
+
+**Dependencies:** none.
+
+**Constraints:** All three are warn-by-presence — the markers surface gaps without blocking work. Do not auto-promote `Scope source quality: low` → `medium`/`high` (rejected alternative at RFC-001 line 149). Keep blockquote text identical to `## Proposal` snippets so a future quality-gate hook can match the markers verbatim.
+
+### PR-4 — `skills/domain-expert/SKILL.md` (Change 7)
+
+**Before:** `skills/domain-expert/SKILL.md` is 168 lines. Tier 3 (No match) at lines 68–71 currently sets `domain: unknown` and explicitly says "Do not inject a `## Domain context` section." The skill is invoked from `skills/plan/SKILL.md` Step 2.5 (lines 50–56), which appends the skill's output to the plan artifact; on a Tier 3 no-match the skill returns nothing and Step 2.5 produces no `## Domain context` section.
+
+**After:**
+- Replace the Tier 3 "Do not inject a `## Domain context` section" instruction with the snippet from `## Proposal` Change 7: emit a `## Domain context` section whose body is `**Domain:** unknown — no domain profile matched this task. Domain-specific concerns (regulatory requirements, security hotspots, NFR reminders) were not evaluated.`.
+- Leave the Tier 3 authoring-flow offer (the optional "do you want to author a domain profile?" prompt) unchanged — only the artifact-write behavior flips.
+
+**Dependencies:** none.
+
+**Constraints:** The note must be durable in the plan artifact — do not gate it on whether the context "looks domain-sensitive" (rejected alternative at RFC-001 line 150). OQ-1 is closed: always write the note, even when no `domains/` directory exists at either level.
+
+### Sequencing
+
+```mermaid
+graph TD
+    PR1[PR-1: plan-gate.sh — Status check + 48h staleness]
+    PR2[PR-2: diff-scope-check.sh — resolved-plan log]
+    PR3[PR-3: skills/plan/SKILL.md — scope quality markers]
+    PR4[PR-4: skills/domain-expert/SKILL.md — Tier 3 note]
+
+    classDef tier1 fill:#9f9,stroke:#363
+    class PR1,PR2,PR3,PR4 tier1
+```
+
+- **Tier 1 (green, parallel-ready):** all four PRs. No file overlap, no shared frontmatter or schema changes, no dependencies between them. Ship in any order or in parallel.
+
+---
+
 ## Implementation
 
 > Populate after implementation.

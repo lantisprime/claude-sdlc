@@ -144,7 +144,7 @@ Seven RFCs fully implemented.
   
   Strictly **maintainer-only** — every new artifact under `.claude/` paths; **nothing under `sdlc-plugin/`**. Capability counts (`hooks=14`, `agents=5`) unchanged. OQ-1, OQ-3, OQ-4, OQ-5 closed at acceptance; OQ-2 (last_modified heuristic — "matches today" vs. "within 24h") deferred to PR-3 implementation.
 
-- **`docs/rfcs/RFC-001-plan-quality-gates.md`** (accepted) — closes the gap between plan governance intent and `plan-gate.sh` enforcement: status check (warn on unsigned plan), 48h staleness threshold, scope-delta decision records, low-provenance scope markers, degraded-mode banner, domain no-match note. 7 changes across 4 files: `plan-gate.sh`, `diff-scope-check.sh`, `skills/plan/SKILL.md`, `skills/domain-expert/SKILL.md`.
+- **`docs/rfcs/RFC-001-plan-quality-gates.md`** (accepted) — closes the gap between plan governance intent and `plan-gate.sh` enforcement: status check (warn on unsigned plan), 48h staleness threshold, scope-delta decision records, low-provenance scope markers, degraded-mode banner, domain no-match note. 7 changes across 4 files: `plan-gate.sh`, `diff-scope-check.sh`, `skills/plan/SKILL.md`, `skills/domain-expert/SKILL.md`. **§3b implementation plan authored** — 4 Tier 1 / parallel-ready PRs (one per file); all warn-only. Independent of RFC-006 (no file overlap).
 
 ## Anti-patterns the repo explicitly guards against
 

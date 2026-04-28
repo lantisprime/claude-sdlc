@@ -15,7 +15,7 @@ Accepted RFCs awaiting implementation, in recommended order. Pick up the first r
 | Order | RFC | PRs | Why this position |
 |---|---|---|---|
 | 1 | [RFC-006 — RFC lifecycle quality gates and build-stage enforcement](RFC-006-rfc-lifecycle-quality-gates.md) | 8 | **In flight — 5 of 8 PRs merged.** Tier 1 complete (PR-1 #41, PR-2 #42, PR-3 #43, PR-4 #44, PR-6 #45). PR-5 next: `.claude/settings.json` registration; appends to RFC-004 PR-4's `hooks.Stop` block — must not overwrite. PR-7 and PR-8 follow. |
-| 2 | [RFC-001 — Plan quality gates](RFC-001-plan-quality-gates.md) | TBD | Accepted (frontmatter `status: accepted`, `last_modified: 2026-04-27`) but `## Implementation plan` is not in §3b `### PR-N` format — section is missing entirely. **Author the §3b plan before opening any PR** (AGENT-RULES.md §3b step 2). 7 changes already scoped across `plan-gate.sh`, `diff-scope-check.sh`, `skills/plan/SKILL.md`, `skills/domain-expert/SKILL.md`. Independent of RFC-006 (no file overlap). |
+| 2 | [RFC-001 — Plan quality gates](RFC-001-plan-quality-gates.md) | 4 | §3b `## Implementation plan` now authored — four Tier 1 / parallel-ready PRs across `plan-gate.sh` (Changes 1+2), `diff-scope-check.sh` (Change 3), `skills/plan/SKILL.md` (Changes 4+5+6), `skills/domain-expert/SKILL.md` (Change 7). All warn-only. Independent of RFC-006 (no file overlap) — can ship interleaved. |
 
 **Cross-RFC coordination notes:**
 
