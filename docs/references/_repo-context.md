@@ -7,7 +7,7 @@
 > **RFC work:** also load `docs/rfcs/AGENT-RULES.md` — it contains the concise decision rules for creating, transitioning, and archiving RFCs.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-27 (RFC-004 maintainer-code-review-enforcement accepted)
+**Last updated:** 2026-04-28 (RFC-006 rfc-lifecycle-quality-gates accepted; 8-PR implementation plan)
 
 ---
 
@@ -128,7 +128,17 @@ All five RFCs are fully implemented as of 2026-04-27.
 
 - **`docs/rfcs/RFC-005-work-item-reference-validation.md`** (draft) — two-layer work-item existence check: Layer 1 (default warn) confirms REQ IDs resolve to local `.claude/sdlc/requirements/` artifact files and CR IDs resolve to signed CR files; Layer 2 (opt-in) queries the detected ticketing integration (GitHub Issues via `gh`, Jira via REST, Linear via GraphQL) for ticket existence and open status, warn-only with graceful degradation on network failure. Extends `work-item-validation.sh`; adds `enforcement.work_item_existence` and `work_item_lookups` config blocks.
 
+
 ## Accepted RFCs (awaiting implementation)
+
+- **`docs/rfcs/RFC-006-rfc-lifecycle-quality-gates.md`** (accepted, 2026-04-28) — RFC Lifecycle Quality Gates **and Build-Stage Enforcement**. Second-opinion review by Haiku 4.5 subagent: `Decision: proceed`, AI-slop check clean, three findings fixed in revision. **8-PR implementation plan**, four dependency tiers:
+  - **Tier 1 (parallel-ready):** PR-1 `docs/rfcs/TEMPLATE.md` (§3b format reconcile); PR-2 `docs/rfcs/AGENT-RULES.md` §2–§7 gate checklists; PR-3 `.claude/hooks/rfc-quality-gate.sh` + bats; PR-4 `.claude/hooks/ai-slop-check.sh` + bats; PR-6 `.claude/agents/rfc-pr-reviewer.md` (Haiku 4.5, exact ID pin).
+  - **Tier 2:** PR-5 `.claude/settings.json` registers both hooks (depends on PR-3 + PR-4).
+  - **Tier 3:** PR-7 `AGENT-RULES.md §3.5 Building` + TEMPLATE.md row (depends on PR-1, PR-3, PR-4, PR-6); PR-8 `§3a` slop-check tightening + TEMPLATE.md (depends on PR-7).
+  
+  Eight changes total: rfc-quality-gate hook (warn, status-driven grep), TEMPLATE.md ↔ §3b format reconcile, §2–§7 gate checklists, settings.json registration, new §3.5 Building procedural section (per-PR loop: classify → spawn reviewer if code-touching → tests/run.sh if hooks/tests/scripts/config touched → ai-slop-check on doc-touching with conservative auto-apply), rfc-pr-reviewer agent on Haiku 4.5, ai-slop-check hook (warn, case-insensitive, closed pattern set), §3a Second opinion gains required `**AI-slop check:**` line.
+  
+  Strictly **maintainer-only** — every new artifact under `.claude/` paths; **nothing under `sdlc-plugin/`**. Capability counts (`hooks=14`, `agents=5`) unchanged. OQ-1, OQ-3, OQ-4, OQ-5 closed at acceptance; OQ-2 (last_modified heuristic — "matches today" vs. "within 24h") deferred to PR-3 implementation.
 
 - **`docs/rfcs/RFC-004-maintainer-code-review-enforcement.md`** (accepted) — three-layer code-review gate for maintainer PRs: §14 in `sdlc-plugin/AGENT-RULES.md`, Stop hook `.claude/hooks/code-review-gate.sh` (warn), `.github/workflows/code-review.yml` CI gate (≥1 approved review, self-approval filter). Doc-only bypass applies; `.claude/sdlc/plans/**` and `.claude/sdlc/gates/**` explicitly excluded from doc-only set. 3 PRs: PR-1 `AGENT-RULES.md`, PR-2 hook + settings, PR-3 CI workflow.
 
