@@ -240,10 +240,10 @@
     },
     {
       "path": "docs/rfcs/RFC-004-maintainer-code-review-enforcement.md",
-      "title": "Maintainer Code-Review Enforcement",
+      "title": "Maintainer Pre-Merge Multi-Reviewer Gate",
       "status": "accepted",
       "role": "rfc",
-      "description": "Three-layer code-review gate for maintainer PRs to this repo: AGENT-RULES.md §14 rule, .claude/hooks/code-review-gate.sh Stop hook (warn), and .github/workflows/code-review.yml CI gate. Doc-only PRs bypass (plan/gate files excluded); consuming-repo artifacts untouched.",
+      "description": "Four-layer pre-merge multi-reviewer gate for maintainer PRs (Revision 2 on 2026-04-28 expanded scope from a single security-review artifact check). Layers: AGENT-RULES.md §14 rule; four parallel Haiku 4.5 review agents under .claude/agents/maintainer-{security,code-quality,test-adequacy,dependency}-reviewer.md (each writes its own artifact in .claude/sdlc/test/); .claude/hooks/pre-merge-review-gate.sh Stop hook (warn) checking all four artifacts present; .github/workflows/pr-review.yml CI gate (≥1 approved review, self-approval filter). Doc-only PRs bypass (plan/gate files excluded). Consuming-repo artifacts untouched. 5 PRs; cross-RFC .claude/settings.json coordination with RFC-006 PR-5 (append-don't-overwrite).",
       "update_triggers": ["rfc:accepted", "rfc:implemented"]
     },
     {
