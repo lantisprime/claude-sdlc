@@ -384,13 +384,13 @@ graph TD
 
 | PR | Files changed | Review verdict | Tests | Slop |
 |---|---|---|---|---|
-| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
-| _pending_ | `docs/rfcs/AGENT-RULES.md`, `docs/rfcs/TEMPLATE.md`, `.claude/hooks/rfc-quality-gate.sh`, `tests/hooks/rfc_quality_gate.bats` | _pending_ | pass | flagged:[pre-existing FPs in Change 7 slop-pattern docs only; PR-7 lines clean] |
+| [#41](https://github.com/lantisprime/claude-sdlc/pull/41) | `docs/rfcs/TEMPLATE.md` | n/a (pre-§3.5) | n/a (no code) | n/a (pre-§3.5) |
+| [#42](https://github.com/lantisprime/claude-sdlc/pull/42) | `docs/rfcs/AGENT-RULES.md` | n/a (pre-§3.5) | n/a (no code) | n/a (pre-§3.5) |
+| [#43](https://github.com/lantisprime/claude-sdlc/pull/43) | `.claude/hooks/rfc-quality-gate.sh`, `tests/hooks/rfc_quality_gate.bats` | n/a (pre-§3.5) | pass | n/a (no docs) |
+| [#44](https://github.com/lantisprime/claude-sdlc/pull/44) | `.claude/hooks/ai-slop-check.sh`, `tests/hooks/ai_slop_check.bats` | n/a (pre-§3.5) | pass | n/a (no docs) |
+| [#45](https://github.com/lantisprime/claude-sdlc/pull/45) | `.claude/agents/rfc-pr-reviewer.md` | n/a (pre-§3.5) | n/a (no code) | n/a (pre-§3.5) |
+| [#48](https://github.com/lantisprime/claude-sdlc/pull/48) | `.claude/settings.json` | n/a (pre-§3.5) | pass (5/5 suites) | n/a (no docs) |
+| [#49](https://github.com/lantisprime/claude-sdlc/pull/49) | `docs/rfcs/AGENT-RULES.md`, `docs/rfcs/TEMPLATE.md`, `docs/rfcs/RFC-006-rfc-lifecycle-quality-gates.md`, `.claude/hooks/rfc-quality-gate.sh`, `tests/hooks/rfc_quality_gate.bats` | n/a (pre-§3.5) | pass (184/184) | flagged:[pre-existing FPs in Change 7 slop-pattern docs only; PR-7 lines clean] |
 | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
 
 Key files changed:
