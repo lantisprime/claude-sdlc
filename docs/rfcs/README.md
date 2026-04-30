@@ -14,11 +14,10 @@ Accepted RFCs awaiting implementation, in recommended order. Pick up the first r
 
 | Order | RFC | PRs | Why this position |
 |---|---|---|---|
-| 1 | [RFC-006 — RFC lifecycle quality gates and build-stage enforcement](RFC-006-rfc-lifecycle-quality-gates.md) | 8 | Only accepted RFC awaiting implementation. Four dependency tiers; PR-5 appends to `.claude/settings.json` (which RFC-004 PR-4 created at `hooks.Stop`). |
+| _empty_ | _No accepted RFCs awaiting implementation. Add new RFCs here when they reach `status: accepted`._ | — | — |
 
 **Cross-RFC coordination notes:**
 
-- **`.claude/settings.json` is shared (RFC-004 already shipped its half).** The file currently exists with a `hooks.Stop` block from RFC-004 PR-4 ([#38](https://github.com/lantisprime/claude-sdlc/pull/38)). RFC-006 PR-5 must **append** a `hooks.PostToolUse` block — never recreate or overwrite the file.
 - **No new RFC may join the queue without going through `## Second opinion` and reaching `status: accepted`.** Adding a row here is part of the index-sync step in `AGENT-RULES.md §11`.
 
 **When an RFC moves to `implemented`:** remove its row from this table in the same change that moves the RFC file to `archived/`. Do not leave stale rows.

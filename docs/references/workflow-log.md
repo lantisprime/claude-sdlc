@@ -177,15 +177,33 @@ OQ-3 (dependency-reviewer invocation), OQ-4 (dispatcher vs direct), OQ-5 (artifa
 
 ---
 
-## 10. What's next
+## 10. RFC-006 — RFC lifecycle quality gates and build-stage enforcement (implemented 2026-04-30)
 
-1. **RFC-006 implementation** — only accepted RFC awaiting work. 8 PRs across 4 dependency tiers; PR-5 must append to existing `.claude/settings.json` (do not overwrite RFC-004's `Stop` block).
-2. **Implement plan risk-analysis fixes** — 10 priority items from `plan_command_analysis.md`: pre-signoff checklist, WARN on unsigned status, low-provenance marker, degraded-mode banner, resolved-plan logging, scope-delta decision record, domain no-match note, UNKNOWN-as-open-item in compatibility matrix, materiality checklist, domain context template placeholder.
-3. **V2 scope gate note** — write `docs/rfcs/notes/scope-gate-v2-followup.md`. Open question: should the scope gate be a first-class artifact class in v2 rather than a pseudo phase-gate?
-4. **OQ-1 in guided-entry RFC** — resolve set-change semantics for `In-scope files`. Required before guided-entry PR 4 can begin.
-5. **Dogfood** — install the plugin in 1–2 real repos and run a full task end-to-end. Prerequisite for unparking multi-team approval step 4.
-6. **Steps 4 & 5 (multi-team approval)** — only after dogfood data meets the unpark criteria.
+All 8 PRs shipped across four dependency tiers. Strictly maintainer-only — every artifact under `.claude/` paths; nothing under `sdlc-plugin/`. Plugin capability counts (`hooks=14`, `agents=5`) unchanged.
+
+**Tier 1 (parallel-ready):** PR-1 [#41](https://github.com/lantisprime/claude-sdlc/pull/41) `docs/rfcs/TEMPLATE.md` — Implementation-plan format reconciled to §3b's `### PR-N` subheading shape; PR-2 [#42](https://github.com/lantisprime/claude-sdlc/pull/42) `docs/rfcs/AGENT-RULES.md` — gate checklists added to §2–§7; PR-3 [#43](https://github.com/lantisprime/claude-sdlc/pull/43) `.claude/hooks/rfc-quality-gate.sh` + bats — status-driven grep checks (warn-only); PR-4 [#44](https://github.com/lantisprime/claude-sdlc/pull/44) `.claude/hooks/ai-slop-check.sh` + bats — case-insensitive grep over a closed pattern set from `sdlc-plugin/AGENT-RULES.md §12`; PR-6 [#45](https://github.com/lantisprime/claude-sdlc/pull/45) `.claude/agents/rfc-pr-reviewer.md` — Haiku 4.5 with exact ID pin (`claude-haiku-4-5-20251001`).
+
+**Tier 2:** PR-5 [#48](https://github.com/lantisprime/claude-sdlc/pull/48) `.claude/settings.json` — appended `hooks.PostToolUse` block registering both new hooks; preserved RFC-004's `hooks.Stop` block (cross-RFC coordination resolved cleanly).
+
+**Tier 3:** PR-7 [#49](https://github.com/lantisprime/claude-sdlc/pull/49) `docs/rfcs/AGENT-RULES.md §3.5` Building per-PR loop + TEMPLATE.md `## Implementation` table format + extended hook stub-detection to recognise `_pending_` sentinel; PR-8 [#53](https://github.com/lantisprime/claude-sdlc/pull/53) `docs/rfcs/AGENT-RULES.md §3a` slop-check field + Haiku 4.5 default note + decision rules tightening; same commit edits TEMPLATE.md for parser parity.
+
+**Cross-RFC coordination delivered:** RFC-004's `.claude/settings.json` `hooks.Stop` block (PR-4 of RFC-004) preserved verbatim while PR-5 of RFC-006 appended `hooks.PostToolUse`. The append-don't-overwrite discipline now codified in the `_comment` field for any future hook additions.
+
+**Bootstrap recursion handled.** The build-stage loop introduced by §3.5 (PR-7) was applied retroactively to RFC-006's own PRs in PR-52 catch-up; the `n/a (pre-§3.5)` value was used as a one-off vocabulary extension for retroactive rows. PR-8's slop-check field tightening was the final piece of the loop.
+
+**Follow-ups tracked in `pending-analysis.md` §5:** extend `rfc-quality-gate.sh` to grep for the new `**AI-slop check:**` field and warn when concerns remain unresolved alongside `**Decision:** proceed`. Out-of-scope discussion notes (red-X review-required UX) live in `docs/rfcs/notes/pr-review-workflow-red-x-discussion.md` — pending RFC-007 promotion.
 
 ---
 
-*Last updated: 2026-04-28. HEAD at `fcaafd6` on `main` (`lantisprime/claude-sdlc`) — RFC-004 implemented.*
+## 11. What's next
+
+1. **Implement plan risk-analysis fixes** — 10 priority items from `plan_command_analysis.md`: pre-signoff checklist, WARN on unsigned status, low-provenance marker, degraded-mode banner, resolved-plan logging, scope-delta decision record, domain no-match note, UNKNOWN-as-open-item in compatibility matrix, materiality checklist, domain context template placeholder.
+2. **V2 scope gate note** — write `docs/rfcs/notes/scope-gate-v2-followup.md`. Open question: should the scope gate be a first-class artifact class in v2 rather than a pseudo phase-gate?
+3. **OQ-1 in guided-entry RFC** — resolve set-change semantics for `In-scope files`. Required before guided-entry PR 4 can begin.
+4. **Dogfood** — install the plugin in 1–2 real repos and run a full task end-to-end. Prerequisite for unparking multi-team approval step 4.
+5. **Steps 4 & 5 (multi-team approval)** — only after dogfood data meets the unpark criteria.
+6. **RFC-007 (pr-review red-X UX)** — promote `docs/rfcs/notes/pr-review-workflow-red-x-discussion.md` to a real RFC if/when the user prioritises it. Discussion note already documents three rejected workflow-level options and the preferred direction (GitHub-native `required_pull_request_reviews`).
+
+---
+
+*Last updated: 2026-04-30. HEAD at the RFC-006 close-out merge — RFC-006 implemented + archived.*

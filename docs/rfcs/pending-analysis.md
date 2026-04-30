@@ -11,7 +11,8 @@ If you're evaluating the plugin: these are known gaps the maintainers are thinki
 | 1 | [Spike / exploratory-work bypass](#1-spike--exploratory-work-bypass) | Open | High |
 | 2 | [Pre-plan brainstorming for high-level / vague requirements](#2-pre-plan-brainstorming-for-high-level--vague-requirements) | Open | Low |
 | 3 | [RFC-004 maintainer code-review enforcement — open questions](#3-rfc-004-maintainer-code-review-enforcement--open-questions) | Closed 2026-04-27 | — |
-| 4 | [RFC-006 RFC lifecycle quality gates — open questions](#4-rfc-006-rfc-lifecycle-quality-gates--open-questions) | Mostly closed (only 4b open) | Low |
+| 4 | [RFC-006 RFC lifecycle quality gates — open questions](#4-rfc-006-rfc-lifecycle-quality-gates--open-questions) | Closed 2026-04-30 — RFC implemented | — |
+| 5 | [Parser extension for §3a `**AI-slop check:**` field](#5-parser-extension-for-3a-ai-slop-check-field) | Open | Low |
 | — | [Multi-team approval across Claude Code sessions](#multi-team-approval-across-claude-code-sessions) | Closed 2026-04-19 | — |
 | — | [`secret-scan.sh` — always-on or opt-in?](#secret-scansh--always-on-or-opt-in) | Closed 2026-04-26 | — |
 
@@ -137,24 +138,52 @@ RFC-004 introduces a doc-only bypass (PR is "doc-only" when every changed file m
 
 ## 4. RFC-006 RFC lifecycle quality gates — open questions
 
-> **Status update (2026-04-28):** **Mostly closed** — RFC-006 moved to `accepted` 2026-04-28 with second-opinion `proceed`. Items 4a, 4c, 4d, 4e closed at acceptance per the RFC's `## Open questions` table. Only **4b** remains open and is deferred to PR-3 implementation.
+> **Status update (2026-04-30):** **Closed — RFC-006 implemented and archived.** All 8 PRs shipped (#41, #42, #43, #44, #45, #48, #49, #53). 4b resolved at PR-3 implementation: `last_modified == TODAY` heuristic shipped as proposed; cross-day false-positive rate is acceptable per the OQ-2 acceptance criterion ("revisit if observable").
 >
-> **Raised by:** [RFC-006-rfc-lifecycle-quality-gates.md](./RFC-006-rfc-lifecycle-quality-gates.md)
+> **Raised by:** [RFC-006-rfc-lifecycle-quality-gates.md](./archived/RFC-006-rfc-lifecycle-quality-gates.md) (archived)
 
 ### Open questions
 
 | # | Question | Status |
 |---|---|---|
 | 4a | Should the hook also warn when an RFC under `archived/` is edited beyond errata (AGENT-RULES.md §8)? | **Closed 2026-04-28** — out of scope for RFC-006. Diff-content analysis has a different cost shape than grep-on-current-file; scoped as a follow-up RFC. |
-| 4b | Should `last_modified:` validation be relaxed to "within the last 24h" rather than "matches today"? | **Open** — deferred to PR-3 implementation. Default proposal: "matches today"; revisit if false-positive rate is observable. The decision is local to one grep check and reversible without touching the rest of RFC-006. |
+| 4b | Should `last_modified:` validation be relaxed to "within the last 24h" rather than "matches today"? | **Closed 2026-04-30** — `matches today` heuristic shipped as default in PR-3 (#43). Cross-day false-positive rate is acceptable; reversible in a follow-up commit if observed rate disagrees. |
 | 4c | Build-stage step 3 triggers `tests/run.sh` on changes to `hooks/`, `tests/`, `scripts/`, `config/`. Configurable or hardcoded? | **Closed 2026-04-28** — hardcoded in §3.5 prose. Maintainer-only audience and small surface area don't justify the configurability cost. |
 | 4d | `ai-slop-check.sh` auto-fix mode: conservative or aggressive? | **Closed 2026-04-28** — conservative. Auto-apply only deletion of single hedge words, swap of inflated metaphors against a fixed lookup table, or trim of triplets to duplets. Anything else flagged for human review. Aggressive can be added later as a `--aggressive` flag. |
 | 4e | `rfc-pr-reviewer` verdict storage — inline in the PR row, or sidecar file? | **Closed 2026-04-28** — inline append with hard 500-char limit. Keeps the RFC self-contained and grep-checkable. Longer detail lives in PR review comments. |
 
 ### Next steps
 
-1. Decide 4b before or during PR-3 implementation. The choice is local; either default ("today" or "24h window") can ship and be reversed in a follow-up commit if observed false-positive rate disagrees.
-2. Close 4b in this file once the implementation lands the chosen heuristic.
+All items closed. RFC-006 implementation complete and archived 2026-04-30.
+
+---
+
+## 5. Parser extension for §3a `**AI-slop check:**` field
+
+> **Status:** Open. Surfaced post-RFC-006 implementation by PR-53's bot review (2026-04-30).
+>
+> **Raised by:** [archived/RFC-006-rfc-lifecycle-quality-gates.md](./archived/RFC-006-rfc-lifecycle-quality-gates.md) PR-8 → bot review on [#53](https://github.com/lantisprime/claude-sdlc/pull/53).
+
+### Problem
+
+RFC-006 PR-8 added a required `**AI-slop check:**` field to the `## Second opinion` block in both `AGENT-RULES.md §3a` and `TEMPLATE.md`. The decision rules forbid `**Decision:** proceed` when `**AI-slop check:** concerns:[…]` is recorded. This rule is currently honour-system: `.claude/hooks/rfc-quality-gate.sh`'s `accepted`-status branch checks for `**Decision:** proceed` but does not parse the `**AI-slop check:**` field. An RFC could move to `status: accepted` with `**Decision:** proceed` AND `**AI-slop check:** concerns:[…]` and the hook would not warn.
+
+### Options
+
+| Option | Description | Tradeoff |
+|---|---|---|
+| (a) Extend `rfc-quality-gate.sh` `accepted` branch to grep for `**AI-slop check:**` line; warn when missing or `concerns:[…]` while `**Decision:** proceed` | Closes the gap. Pure grep. ~5 lines added to the hook + 2 bats cases. | Low cost. Same warn-only severity as existing checks. |
+| (b) Defer indefinitely | Honour-system continues. | Low immediate cost; risk grows if multiple RFCs accumulate without the check. |
+| (c) Build a richer parser (yaml-block aware) | Could also validate the field's value is in the closed vocabulary `clean | fixed in revision | concerns:[…]` | Higher cost; the existing hook is grep-based for portability. |
+
+### Recommendation
+
+**(a)**, shipped as a tiny follow-up PR. The grep is straightforward; the bats coverage is one true-positive + one true-negative case parallel to the existing `Decision: revise first` test.
+
+### Next steps
+
+1. Open a small PR adding ~5 lines to `.claude/hooks/rfc-quality-gate.sh` and 2 bats cases to `tests/hooks/rfc_quality_gate.bats`.
+2. Close this section once the hook lands.
 
 ---
 
@@ -165,13 +194,14 @@ RFC-004 introduces a doc-only bypass (PR is "doc-only" when every changed file m
 | 1. Spike bypass | Yes — Plan-before-code (#3), Traceability (#5); Tension with Cognitive load (#2) for Option B | High. `CLAUDE.md` constrains the design space — see item 1. |
 | 2. Pre-plan brainstorm | No direct conflict. Cognitive load (#2) actively favors resolution. | Low. Safest item on the page. |
 | 3. RFC-004 OQs | No direct conflict. Operational questions only (default + branch protection settings). | Resolved 2026-04-27. RFC-004 accepted. |
-| 4. RFC-006 OQs | No direct conflict. Operational questions only. | Mostly closed 2026-04-28; only 4b (`last_modified` heuristic) remains open, deferred to PR-3. |
+| 4. RFC-006 OQs | No direct conflict. Operational questions only. | Closed 2026-04-30 — RFC-006 implemented. 4b shipped as `matches today` heuristic in PR-3. |
+| 5. Parser extension for §3a `**AI-slop check:**` | No direct conflict. Closes an honour-system gap from RFC-006 PR-8. | Open. ~5-line hook patch + 2 bats cases. |
 
 ---
 
 ## Process for items on this page
 
-- **Status today:** items 1 and 2 are fully open; item 4 has one open sub-question (4b) deferred to PR-3 implementation. All other items are closed — see [Closed Items](#closed-items) below.
+- **Status today:** items 1, 2, and 5 are fully open; item 4 closed at RFC-006 implementation 2026-04-30. All other items are closed — see [Closed Items](#closed-items) below.
 - **When an item is ready to decide,** it moves into a short RFC-style write-up (a new file under `docs/rfcs/`) with a single recommended option and a sign-off.
 - **When an item is decided,** this page is updated with the decision + a link to the implementation work.
 - **When an item is rejected,** the rejection and its reason stay on this page — a rejected item is still useful context for future contributors.
