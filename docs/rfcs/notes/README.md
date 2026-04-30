@@ -44,6 +44,7 @@ Files stay here while their related RFC is still active or not yet accepted. Onc
 | --- | --- | --- |
 | [`plan_command_analysis.md`](./plan_command_analysis.md) | companion | Risk analysis for `/plan` command — 18 risks from code inspection + ChatGPT synthesis. Companion to RFC-001-plan-quality-gates.md; items 11–13 scoped as separate architectural changes. |
 | [`analysis_command_analysis.md`](./analysis_command_analysis.md) | discussion | Risk analysis for `/analyze` command — 14 risks from code inspection + ChatGPT synthesis. Recommended sequencing: template changes first, then skill additions, then hook changes. |
+| [`pr-review-workflow-red-x-discussion.md`](./pr-review-workflow-red-x-discussion.md) | discussion | Why `pr-review.yml` shows red-X on PR open before any review, why three workflow-level fixes (b1/b2/b3) are insufficient or unsafe, and why GitHub-native `required_pull_request_reviews` (b4) is the preferred direction — pending RFC promotion. |
 
 Reference files (`_repo-context.md`, `_session-handoff.md`, `workflow-log.md`) are in [`docs/references/`](../../references/). Archived RFC companion notes are in [`docs/rfcs/archived/`](../archived/).
 
