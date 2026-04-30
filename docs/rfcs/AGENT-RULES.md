@@ -76,12 +76,17 @@ Record findings in `## Second opinion`:
 **Reviewer:** <name or "self-review">
 **Date:** YYYY-MM-DD
 **Findings:** [gaps surfaced, alternatives missed, risks not captured — or "no gaps found"]
+**AI-slop check:** clean | fixed in revision | concerns:[<list>]
 **Decision:** proceed | revise first
 ```
 
-If the decision is `revise first`, address the gaps before setting `status: accepted`.
+**Decision rules:**
 
-> **Preferred approach:** spawn an independent subagent to perform the review rather than self-reviewing. An agent with no prior context on the RFC surfaces risks and alternatives that familiarity obscures.
+- `**Decision:** proceed` is permitted only when `**AI-slop check:**` is `clean` or `fixed in revision`.
+- If `**AI-slop check:** concerns:[<list>]` is recorded, `**Decision:** proceed` is forbidden — must be `revise first` until the concerns are resolved or fixed in revision.
+- If the decision is `revise first` (whether due to slop concerns or any other gaps), address the gaps before setting `status: accepted`.
+
+> **Preferred approach:** spawn an independent subagent to perform the review rather than self-reviewing. An agent with no prior context on the RFC surfaces risks and alternatives that familiarity obscures. The slop-check pass should default to **Haiku 4.5** for cost discipline (matching Change 6 of RFC-006: ~1–3k tokens per review vs. ~10–15k on Sonnet).
 
 **3b. After second opinion clears:**
 
