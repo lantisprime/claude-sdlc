@@ -1,10 +1,19 @@
 {
-  "_comment": "Tracked maintainer-only Claude Code settings for the sdlc-plugin repo. Registers hooks under .claude/hooks/ which run only in maintainer sessions on this repo (consuming repos do not load this file). Per RFC-004 PR-4. Cross-RFC coordination with RFC-006 PR-5: when RFC-006 lands, append a hooks.PostToolUse block here — do not overwrite this Stop block.",
+  "_comment": "Tracked maintainer-only Claude Code settings for the sdlc-plugin repo. Registers hooks under .claude/hooks/ which run only in maintainer sessions on this repo (consuming repos do not load this file). Per RFC-004 PR-4 (Stop) and RFC-006 PR-5 (PostToolUse). Future hook additions must append to the existing Stop or PostToolUse arrays — never overwrite either block.",
   "hooks": {
     "Stop": [
       {
         "hooks": [
           { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-merge-review-gate.sh" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/rfc-quality-gate.sh" },
+          { "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/ai-slop-check.sh" }
         ]
       }
     ]
