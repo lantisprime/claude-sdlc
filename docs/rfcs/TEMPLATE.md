@@ -101,6 +101,7 @@ Key files changed (high-level summary, populated when status moves to `implement
 **Reviewer:** <!-- name or "self-review" -->
 **Date:** <!-- YYYY-MM-DD -->
 **Findings:** <!-- gaps surfaced, alternatives missed, risks not captured — or "no gaps found" -->
+**AI-slop check:** <!-- clean | fixed in revision | concerns:[<list>] -->
 **Decision:** <!-- proceed | revise first -->
 
 ---
