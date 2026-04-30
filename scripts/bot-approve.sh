@@ -2,8 +2,14 @@
 set -euo pipefail
 
 # Approves a PR as the bot account (lantiscooperdev) to satisfy branch
-# protection's "required non-author approval" rule when the maintainer
-# (lantisprime) is the only human contributor.
+# protection's "required non-author approval" rule.
+#
+# BREAK-GLASS ONLY. Routine PR review uses scripts/bot-review.sh which
+# posts a --comment-state review (no approval, doesn't satisfy the gate).
+# This script submits an APPROVE review, satisfying the non-author review
+# gate without user input — run only when the user explicitly authorizes
+# a bot approve (e.g. workflow auto-commit PRs from CI, or unblocking a
+# stuck merge with prior consent).
 #
 # Usage: scripts/bot-approve.sh <PR#> [body]
 
