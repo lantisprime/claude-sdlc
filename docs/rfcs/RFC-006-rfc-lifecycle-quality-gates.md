@@ -5,7 +5,7 @@ title: RFC Lifecycle Quality Gates and Build-Stage Enforcement
 status: accepted
 champion: charltond.ho
 created: 2026-04-28
-last_modified: 2026-04-28
+last_modified: 2026-04-30
 supersedes: ~
 superseded_by: ~
 ---
@@ -380,11 +380,18 @@ graph TD
 
 ## Implementation
 
-> Populate this section after all PRs are merged. Leave empty during draft/accepted stages.
+> Populate during build stage per `AGENT-RULES.md §3.5` — mark each PR row immediately after it merges. Do not batch at the end.
 
-| PR / Commit | What it delivered |
-|---|---|
-| `abc1234` | — |
+| PR | Files changed | Review verdict | Tests | Slop |
+|---|---|---|---|---|
+| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| _pending_ | `docs/rfcs/AGENT-RULES.md`, `docs/rfcs/TEMPLATE.md`, `.claude/hooks/rfc-quality-gate.sh`, `tests/hooks/rfc_quality_gate.bats` | _pending_ | pass | flagged:[pre-existing FPs in Change 7 slop-pattern docs only; PR-7 lines clean] |
+| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
 
 Key files changed:
 - `.claude/hooks/rfc-quality-gate.sh` — new hook (Change 1) — maintainer-only
