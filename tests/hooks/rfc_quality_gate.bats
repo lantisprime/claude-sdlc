@@ -228,6 +228,37 @@ EOF
   [[ "$output" == *"placeholder"* ]]
 }
 
+@test "implemented with only _pending_ placeholders — warns" {
+  write_minimal_rfc "$RFC_DIR/RFC-099-test.md" "implemented"
+  cat >> "$RFC_DIR/RFC-099-test.md" <<EOF
+
+## Implementation
+
+| PR | Files | Verdict | Tests | Slop |
+|---|---|---|---|---|
+| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+EOF
+  run_hook_for "$RFC_DIR/RFC-099-test.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"placeholder"* ]]
+}
+
+@test "implemented with mixed _pending_ and real rows — no warning (one real row is enough)" {
+  write_minimal_rfc "$RFC_DIR/RFC-099-test.md" "implemented"
+  cat >> "$RFC_DIR/RFC-099-test.md" <<EOF
+
+## Implementation
+
+| PR | Files | Verdict | Tests | Slop |
+|---|---|---|---|---|
+| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| #42 | hooks/foo.sh | approved | pass | clean |
+EOF
+  run_hook_for "$RFC_DIR/RFC-099-test.md"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"placeholder"* ]]
+}
+
 @test "implemented with real PR row — no warning" {
   write_minimal_rfc "$RFC_DIR/RFC-099-test.md" "implemented"
   cat >> "$RFC_DIR/RFC-099-test.md" <<EOF

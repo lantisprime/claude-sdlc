@@ -76,13 +76,13 @@ graph TD
 
 ## Implementation
 
-> Populate this section after all PRs are merged. Leave empty during draft/accepted stages.
+> Populate during build stage per `AGENT-RULES.md §3.5` — mark each PR row immediately after it merges. Do not batch at the end. The `rfc-quality-gate.sh` hook WARNs on the `status: implemented` transition while any row holds the `_pending_` sentinel.
 
-| PR / Commit | What it delivered |
-|---|---|
-| `abc1234` | — |
+| PR | Files changed | Review verdict | Tests | Slop |
+|---|---|---|---|---|
+| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
 
-Key files changed:
+Key files changed (high-level summary, populated when status moves to `implemented`):
 - `path/to/file.sh` — what changed
 - `path/to/SKILL.md` — what changed
 

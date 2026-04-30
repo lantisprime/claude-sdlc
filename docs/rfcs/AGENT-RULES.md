@@ -106,6 +106,36 @@ If the decision is `revise first`, address the gaps before setting `status: acce
 
 ---
 
+## 3.5 Building (after `accepted`, before `implemented`)
+
+**Trigger:** the first PR for an accepted RFC is opened.
+
+**Per-PR loop** — for each PR listed in `## Implementation plan`, before marking its row in the RFC's `## Implementation` table:
+
+1. **Classify the PR by changed paths:**
+   - `code-change`: any file outside `docs/` and not matching `*.md`.
+   - `docs-change`: only `*.md` files and files under `docs/`.
+   - `mixed`: both.
+
+2. **If `code-change` or `mixed`:** spawn `.claude/agents/rfc-pr-reviewer.md` (Haiku 4.5). The agent reads the RFC's `## Implementation plan`, reads the PR diff, and returns a verdict from the closed set: `approved` | `changes-requested` | `concerns:[…]`. Record the verdict on the PR row.
+
+3. **If the PR touches `hooks/`, `tests/`, `scripts/`, or `config/`:** run `tests/run.sh`. Record `pass` or `fail (n suites)` on the PR row.
+
+4. **If `docs-change` or `mixed`:** invoke `.claude/hooks/ai-slop-check.sh` against the PR's changed `.md` files. Auto-apply only: (a) deletion of a single hedge word, (b) swap of an inflated metaphor for a neutral synonym from a fixed lookup table, or (c) trim of a triplet to a duplet. Anything else is flagged for human review on the PR row.
+
+5. **PR row complete only when:** review verdict is recorded, tests pass if applicable, and slop check is clean or auto-fixed. Closed cell vocabularies:
+   - **Verdict:** `approved` | `changes-requested` | `concerns:[…]` | `n/a (docs-only)`
+   - **Tests:** `pass` | `fail (n suites)` | `n/a (no code)`
+   - **Slop:** `clean` | `auto-fixed` | `flagged:[…]` | `n/a (no docs)`
+
+**Move to `implemented`** (per §5) only when every planned PR row is complete per the above. The `rfc-quality-gate.sh` stub-row check (PR-3, extended in PR-7) WARNs on the `status: implemented` transition while any row still holds the template `_pending_` sentinel — completing rows is the maintainer's responsibility, surfaced by the warn-only gate.
+
+**Gate checklist (verify before opening any PR for an accepted RFC):**
+- [ ] PR scope matches one row in `## Implementation plan` — no "while I'm here" cleanup
+- [ ] Local `tests/run.sh` green if PR touches `hooks/`/`tests/`/`scripts/`/`config/`
+
+---
+
 ## 4. Deferring an RFC
 
 **Trigger:** RFC is valid but conditions aren't right to implement it now.
