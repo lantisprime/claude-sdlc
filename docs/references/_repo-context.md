@@ -7,7 +7,7 @@
 > **RFC work:** also load `docs/rfcs/AGENT-RULES.md` — it contains the concise decision rules for creating, transitioning, and archiving RFCs.
 
 **Repo:** https://github.com/lantisprime/claude-sdlc
-**Last updated:** 2026-04-28 (RFC-006 rfc-lifecycle-quality-gates accepted; 8-PR implementation plan)
+**Last updated:** 2026-04-30 (RFC-006 rfc-lifecycle-quality-gates implemented + archived)
 
 ---
 
@@ -108,7 +108,7 @@ Frontend tasks halt in Phase 2 until some UX artifact exists at `.claude/sdlc/ar
 
 ## Implemented RFCs
 
-Seven RFCs fully implemented.
+Eight RFCs fully implemented.
 
 - **`docs/rfcs/archived/multi-team-approval.md`** (implemented) — sign-off files at `.claude/sdlc/sign-offs/<REQ-ID>-<role>.md`; `APPROVALS.md` reconciler; transport ladder Tier 0–3; `approval-reconcile.sh` hook; `sign-off-multi.md` + `approval-packet.md` templates.
 
@@ -124,6 +124,8 @@ Seven RFCs fully implemented.
 
 - **`docs/rfcs/archived/RFC-004-maintainer-code-review-enforcement.md`** (implemented, all 5 PRs shipped 2026-04-28) — four-layer pre-merge multi-reviewer gate for maintainer PRs to this repo. §14 in `sdlc-plugin/AGENT-RULES.md` rule (PR-1, [#36](https://github.com/lantisprime/claude-sdlc/pull/36)); four parallel Haiku 4.5 review agents under `.claude/agents/maintainer-{security,code-quality,test-adequacy,dependency}-reviewer.md` (PR-2, [#36](https://github.com/lantisprime/claude-sdlc/pull/36)); Stop hook `.claude/hooks/pre-merge-review-gate.sh` + 14-case bats suite (PR-3, [#37](https://github.com/lantisprime/claude-sdlc/pull/37)); `.claude/settings.json` registration (PR-4, [#38](https://github.com/lantisprime/claude-sdlc/pull/38)); `.github/workflows/pr-review.yml` CI gate (PR-5, [#39](https://github.com/lantisprime/claude-sdlc/pull/39)). Doc-only PRs bypass; `.claude/sdlc/plans/**` and `.claude/sdlc/gates/**` excluded from doc-only set. Strictly maintainer-only — every artifact under `.claude/`, `.github/`, or `sdlc-plugin/AGENT-RULES.md` (itself maintainer-only). Plugin capability counts (`hooks=14`, `agents=5`) unchanged. **Post-merge step (one-time, by repo admin):** add `review-required` to required status checks on `main` via `gh api -X PUT repos/${OWNER}/${REPO}/branches/main/protection` (full payload in `.github/workflows/pr-review.yml` header). Until that runs, the gate is advisory.
 
+- **`docs/rfcs/archived/RFC-006-rfc-lifecycle-quality-gates.md`** (implemented, all 8 PRs shipped 2026-04-30) — RFC Lifecycle Quality Gates and Build-Stage Enforcement. Adds machine-verifiable lifecycle gates plus a build-stage loop and AI-slop enforcement to `docs/rfcs/AGENT-RULES.md`. PR-1 TEMPLATE.md ↔ §3b format reconcile ([#41](https://github.com/lantisprime/claude-sdlc/pull/41)); PR-2 §2–§7 gate checklists ([#42](https://github.com/lantisprime/claude-sdlc/pull/42)); PR-3 `.claude/hooks/rfc-quality-gate.sh` + bats ([#43](https://github.com/lantisprime/claude-sdlc/pull/43)); PR-4 `.claude/hooks/ai-slop-check.sh` + bats ([#44](https://github.com/lantisprime/claude-sdlc/pull/44)); PR-5 `.claude/settings.json` PostToolUse registration appended to RFC-004's Stop block ([#48](https://github.com/lantisprime/claude-sdlc/pull/48)); PR-6 `.claude/agents/rfc-pr-reviewer.md` (Haiku 4.5, exact ID pin) ([#45](https://github.com/lantisprime/claude-sdlc/pull/45)); PR-7 §3.5 Building per-PR loop + stub-detection extension ([#49](https://github.com/lantisprime/claude-sdlc/pull/49)); PR-8 §3a slop-check field + Haiku 4.5 default note ([#53](https://github.com/lantisprime/claude-sdlc/pull/53)). Strictly **maintainer-only** — every artifact under `.claude/` paths; nothing under `sdlc-plugin/`. Plugin capability counts (`hooks=14`, `agents=5`) unchanged. Follow-up tracked in `pending-analysis.md` §5: extend `rfc-quality-gate.sh` to grep for the new `**AI-slop check:**` field and warn when concerns remain unresolved alongside `Decision: proceed`.
+
 ## Open PRs
 
 *(none)*
@@ -134,15 +136,6 @@ Seven RFCs fully implemented.
 
 
 ## Accepted RFCs (awaiting implementation)
-
-- **`docs/rfcs/RFC-006-rfc-lifecycle-quality-gates.md`** (accepted, 2026-04-28) — RFC Lifecycle Quality Gates **and Build-Stage Enforcement**. Second-opinion review by Haiku 4.5 subagent: `Decision: proceed`, AI-slop check clean, three findings fixed in revision. **8-PR implementation plan**, four dependency tiers:
-  - **Tier 1 (parallel-ready):** PR-1 `docs/rfcs/TEMPLATE.md` (§3b format reconcile); PR-2 `docs/rfcs/AGENT-RULES.md` §2–§7 gate checklists; PR-3 `.claude/hooks/rfc-quality-gate.sh` + bats; PR-4 `.claude/hooks/ai-slop-check.sh` + bats; PR-6 `.claude/agents/rfc-pr-reviewer.md` (Haiku 4.5, exact ID pin).
-  - **Tier 2:** PR-5 `.claude/settings.json` registers both hooks (depends on PR-3 + PR-4).
-  - **Tier 3:** PR-7 `AGENT-RULES.md §3.5 Building` + TEMPLATE.md row (depends on PR-1, PR-3, PR-4, PR-6); PR-8 `§3a` slop-check tightening + TEMPLATE.md (depends on PR-7).
-  
-  Eight changes total: rfc-quality-gate hook (warn, status-driven grep), TEMPLATE.md ↔ §3b format reconcile, §2–§7 gate checklists, settings.json registration, new §3.5 Building procedural section (per-PR loop: classify → spawn reviewer if code-touching → tests/run.sh if hooks/tests/scripts/config touched → ai-slop-check on doc-touching with conservative auto-apply), rfc-pr-reviewer agent on Haiku 4.5, ai-slop-check hook (warn, case-insensitive, closed pattern set), §3a Second opinion gains required `**AI-slop check:**` line.
-  
-  Strictly **maintainer-only** — every new artifact under `.claude/` paths; **nothing under `sdlc-plugin/`**. Capability counts (`hooks=14`, `agents=5`) unchanged. OQ-1, OQ-3, OQ-4, OQ-5 closed at acceptance; OQ-2 (last_modified heuristic — "matches today" vs. "within 24h") deferred to PR-3 implementation.
 
 - **`docs/rfcs/RFC-001-plan-quality-gates.md`** (accepted) — closes the gap between plan governance intent and `plan-gate.sh` enforcement: status check (warn on unsigned plan), 48h staleness threshold, scope-delta decision records, low-provenance scope markers, degraded-mode banner, domain no-match note. 7 changes across 4 files: `plan-gate.sh`, `diff-scope-check.sh`, `skills/plan/SKILL.md`, `skills/domain-expert/SKILL.md`.
 

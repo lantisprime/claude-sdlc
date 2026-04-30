@@ -255,10 +255,10 @@
       "update_triggers": ["rfc:accepted", "rfc:implemented"]
     },
     {
-      "path": "docs/rfcs/RFC-006-rfc-lifecycle-quality-gates.md",
+      "path": "docs/rfcs/archived/RFC-006-rfc-lifecycle-quality-gates.md",
       "title": "RFC Lifecycle Quality Gates and Build-Stage Enforcement",
-      "status": "accepted",
-      "role": "rfc",
+      "status": "implemented",
+      "role": "rfc-archived",
       "description": "Adds machine-verifiable lifecycle gates plus a build-stage loop and AI-slop enforcement to docs/rfcs/AGENT-RULES.md. Eight changes: (1) .claude/hooks/rfc-quality-gate.sh — warn checks for required sections, second-opinion decision, implementation-plan format, populated implementation table, last_modified freshness; (2) TEMPLATE.md ↔ AGENT-RULES.md §3b reconciliation on implementation-plan format (### PR-N subheadings); (3) inline gate checklists in §2–§7; (4) hook registration in .claude/settings.json; (5) new §3.5 Building procedural section — per-PR loop: classify by changed paths, spawn rfc-pr-reviewer agent if code-touching, run tests/run.sh if hooks/tests/scripts/config touched, run ai-slop-check on doc-touching changes; (6) new .claude/agents/rfc-pr-reviewer.md on Haiku 4.5 — checks scope match, surgical-edit, slop, test coverage; (7) new .claude/hooks/ai-slop-check.sh — grep-based check on §12 anti-pattern list; (8) §3a Second opinion gains required AI-slop-check line. Strictly maintainer-only — every new artifact under .claude/ paths; nothing under sdlc-plugin/; capability counts (hooks=14, agents=5) unchanged.",
       "update_triggers": ["rfc:accepted", "rfc:implemented"]
     },
@@ -282,14 +282,17 @@
         "docs/references/_repo-context.md"
       ]
     },
-    "docs/rfcs/RFC-006-rfc-lifecycle-quality-gates": {
-      "rfc_status": "accepted",
+    "docs/rfcs/archived/RFC-006-rfc-lifecycle-quality-gates": {
+      "rfc_status": "implemented",
       "accepted": [
         "docs/references/_repo-context.md",
         "docs/rfcs/pending-analysis.md"
       ],
       "implemented": [
-        "docs/references/_repo-context.md"
+        "docs/references/_repo-context.md",
+        "docs/references/workflow-log.md",
+        "docs/rfcs/README.md",
+        "docs/rfcs/pending-analysis.md"
       ]
     },
     "docs/rfcs/RFC-001-plan-quality-gates": {

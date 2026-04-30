@@ -2,7 +2,7 @@
 rfc_id: RFC-006
 slug: rfc-lifecycle-quality-gates
 title: RFC Lifecycle Quality Gates and Build-Stage Enforcement
-status: accepted
+status: implemented
 champion: charltond.ho
 created: 2026-04-28
 last_modified: 2026-04-30
@@ -391,7 +391,7 @@ graph TD
 | [#45](https://github.com/lantisprime/claude-sdlc/pull/45) | `.claude/agents/rfc-pr-reviewer.md` | n/a (pre-§3.5) | n/a (no code) | n/a (pre-§3.5) |
 | [#48](https://github.com/lantisprime/claude-sdlc/pull/48) | `.claude/settings.json` | n/a (pre-§3.5) | pass (5/5 suites) | n/a (no docs) |
 | [#49](https://github.com/lantisprime/claude-sdlc/pull/49) | `docs/rfcs/AGENT-RULES.md`, `docs/rfcs/TEMPLATE.md`, `docs/rfcs/RFC-006-rfc-lifecycle-quality-gates.md`, `.claude/hooks/rfc-quality-gate.sh`, `tests/hooks/rfc_quality_gate.bats` | n/a (pre-§3.5) | pass (184/184) | flagged:[pre-existing FPs in Change 7 slop-pattern docs only; PR-7 lines clean] |
-| _pending_ | _pending_ | _pending_ | _pending_ | _pending_ |
+| [#53](https://github.com/lantisprime/claude-sdlc/pull/53) | `docs/rfcs/AGENT-RULES.md`, `docs/rfcs/TEMPLATE.md` | approved | pass (5/5 suites) | clean |
 
 Key files changed:
 - `.claude/hooks/rfc-quality-gate.sh` — new hook (Change 1) — maintainer-only
