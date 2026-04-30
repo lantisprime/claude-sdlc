@@ -88,15 +88,17 @@ case "$STATUS" in
             warn "${FILE_PATH##*/}: status implemented but '## Implementation' section is missing"
         else
             # Look for at least one data row (after the |--- separator) that
-            # is not the abc1234 placeholder.
+            # is not a placeholder. Two sentinels recognised:
+            #   - abc1234 — legacy template (pre-RFC-006 PR-7)
+            #   - _pending_ — RFC-006 PR-7 build-stage template
             if ! awk '
                 /^## Implementation$/ { in_impl=1; next }
                 /^## / { in_impl=0 }
                 in_impl && /^\|[ -]*-+/ { after_sep=1; next }
-                in_impl && after_sep && /^\| / && !/abc1234/ { found=1; exit }
+                in_impl && after_sep && /^\| / && !/abc1234/ && !/_pending_/ { found=1; exit }
                 END { exit (found ? 0 : 1) }
             ' "$FILE_PATH"; then
-                warn "${FILE_PATH##*/}: status implemented but '## Implementation' table has only placeholder rows ('abc1234') or no data rows"
+                warn "${FILE_PATH##*/}: status implemented but '## Implementation' table has only placeholder rows ('abc1234' or '_pending_') or no data rows"
             fi
         fi
         ;;
